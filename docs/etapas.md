@@ -3,8 +3,8 @@
 - [x] Aprovar o design e a navegação.
 - [x] Definir tecnologias e escopo.
 - [x] Registrar documentação no Git.
-- [ ] Preparar React/Vite, Express e configuração MySQL.
-- [ ] Implementar estrutura visual aprovada.
+- [x] Preparar React/Vite, Express e configuração MySQL.
+- [x] Implementar estrutura visual aprovada (menu, seletor e tema).
 - [ ] Implementar tarefas do dia com persistência MySQL.
 - [ ] Adicionar horários, prioridades e ordenação.
 - [ ] Implementar recorrências e Semana.

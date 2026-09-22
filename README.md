@@ -1,6 +1,6 @@
-# Meu dia
+# Dayvilo
 
-Organizador pessoal web, começando pela rotina diária. Nome provisório.
+Organizador pessoal web, começando pela rotina diária.
 
 ## Objetivo
 
@@ -24,4 +24,8 @@ Planejar o dia com uma lista flexível, horários opcionais e tarefas recorrente
 
 Cada mudança coerente recebe um commit. Os pushes enviam os commits para o GitHub, preservando o histórico. Credenciais e dados pessoais não pertencem ao repositório.
 
-Consulte [o escopo aprovado](docs/escopo.md) e [as etapas de desenvolvimento](docs/etapas.md).
+Consulte [o escopo aprovado](docs/escopo.md), [as etapas de desenvolvimento](docs/etapas.md) e [as instruções para rodar localmente](docs/desenvolvimento.md).
+
+## Estado atual
+
+Estrutura inicial React/Express e navegação visual aprovadas. Cadastro de tarefas, persistência no MySQL e autenticação ainda serão implementados. O repositório público não significa que a aplicação já esteja publicada.
