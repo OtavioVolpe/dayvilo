@@ -1,31 +1,53 @@
 # Dayvilo
 
-Organizador pessoal web, começando pela rotina diária.
+Aplicação web de organização pessoal, com foco em uma rotina flexível e uma interface simples para celular e computador.
 
-## Objetivo
+A área de rotina reúne três visões: **Hoje**, **Semana** e **Histórico**. O design privilegia clareza e navegação entre as áreas da vida pessoal.
 
-Planejar o dia com uma lista flexível, horários opcionais e tarefas recorrentes. Primeiro para uso pessoal; depois, para outras pessoas.
+## Tecnologias
 
-## Tecnologias aprovadas
+- **Interface:** React, JavaScript, Vite, CSS e Lucide.
+- **Servidor:** Node.js e Express.
+- **Banco de dados:** MySQL, com o driver mysql2.
 
-- React com JavaScript e Vite na interface.
-- CSS próprio, seguindo a prévia aprovada.
-- Node.js com Express no servidor.
-- MySQL para persistência.
-- Aplicação web responsiva, sem PWA.
+## Executar localmente
 
-## Organização
+Requisitos: Node.js 24 ou superior, npm e MySQL 8.
 
-- `client/`: interface React.
-- `server/`: API Express e conexão com MySQL.
-- `docs/`: escopo e decisões.
+```sh
+git clone https://github.com/OtavioVolpe/dayvilo.git
+cd dayvilo
+npm install
+npm run dev
+```
 
-## Desenvolvimento incremental
+- Interface: http://127.0.0.1:5173
+- API: http://127.0.0.1:3001/api/health
 
-Cada mudança coerente recebe um commit. Os pushes enviam os commits para o GitHub, preservando o histórico. Credenciais e dados pessoais não pertencem ao repositório.
+### MySQL
 
-Consulte [o escopo aprovado](docs/escopo.md), [as etapas de desenvolvimento](docs/etapas.md) e [as instruções para rodar localmente](docs/desenvolvimento.md).
+Copie `server/.env.example` para `server/.env` e preencha os dados de conexão de uma base MySQL existente. Use uma conta da aplicação com acesso apenas a essa base.
 
-## Estado atual
+```sh
+npm run db:check
+```
 
-Estrutura inicial React/Express e navegação visual aprovadas. Cadastro de tarefas, persistência no MySQL e autenticação ainda serão implementados. O repositório público não significa que a aplicação já esteja publicada.
+O comando verifica a conexão com `SELECT 1`; não cria bancos nem tabelas. O arquivo `.env` não é versionado.
+
+### Comandos
+
+| Comando | Função |
+| --- | --- |
+| `npm run dev` | Inicia a interface e a API localmente. |
+| `npm run build` | Compila a interface em `client/dist`. |
+| `npm start` | Inicia somente a API. |
+| `npm run db:check` | Verifica a conexão com MySQL. |
+
+## Estrutura
+
+```text
+dayvilo/
+├── client/     # Interface React
+├── server/     # API Express e acesso ao MySQL
+└── package.json
+```

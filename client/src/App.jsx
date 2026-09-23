@@ -16,17 +16,15 @@ export default function App() {
     <div className="app-shell">
       <header className="app-header">
         <span className="brand"><span className="brand-mark"><Sprout size={22} aria-hidden="true" /></span>Dayvilo</span>
-        <span className="development-label">Em desenvolvimento</span>
       </header>
       <div className="app-layout">
         <nav className="areas" aria-label="Áreas pessoais">
           <p className="areas-label">Seu espaço</p>
           {areas.map(({ name, icon: Icon }) => (
-            <button key={name} disabled={name !== 'Rotina'} aria-current={name === 'Rotina' ? 'page' : undefined} aria-label={name === 'Rotina' ? name : `${name}, módulo futuro`} onClick={() => setView('Hoje')}>
+            <button key={name} disabled={name !== 'Rotina'} aria-current={name === 'Rotina' ? 'page' : undefined} aria-label={name === 'Rotina' ? name : `${name}, indisponível`} onClick={() => setView('Hoje')}>
               <Icon size={20} aria-hidden="true" /><span>{name}</span>
             </button>
           ))}
-          <p className="future-label">Outras áreas em breve</p>
         </nav>
         <main>
           <nav className="routine-tabs" aria-label="Visualizações da rotina">
@@ -40,7 +38,6 @@ export default function App() {
           <section className="initial-state" aria-live="polite">
             <ListTodo size={26} aria-hidden="true" />
             <h2>{view === 'Hoje' ? 'Sua rotina começa aqui' : view === 'Semana' ? 'Seu planejamento semanal' : 'Seu histórico de atividades'}</h2>
-            <p>Esta é a estrutura inicial do Dayvilo. O cadastro de tarefas e a conexão dos seus registros entram na próxima entrega.</p>
           </section>
         </main>
       </div>
