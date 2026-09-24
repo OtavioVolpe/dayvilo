@@ -24,6 +24,15 @@ export function criarRepositorioTarefas(banco) {
       );
       return this.buscar(usuarioId, resultado.insertId);
     },
+    async editar(usuarioId, id, dados) {
+      await banco.execute('UPDATE tarefas SET titulo = ?, observacao = ?, horario = ?, prioridade = ? WHERE usuario_id = ? AND id = ?',
+        [dados.titulo, dados.observacao, dados.horario, dados.prioridade, usuarioId, id]);
+      return this.buscar(usuarioId, id);
+    },
+    async excluir(usuarioId, id) {
+      const [resultado] = await banco.execute('DELETE FROM tarefas WHERE usuario_id = ? AND id = ?', [usuarioId, id]);
+      return resultado.affectedRows > 0;
+    },
     async definirConclusao(usuarioId, id, concluida) {
       await banco.execute(
         "UPDATE tarefas SET situacao = ?, concluida_em = IF(?, CURRENT_TIMESTAMP, NULL) WHERE usuario_id = ? AND id = ?",

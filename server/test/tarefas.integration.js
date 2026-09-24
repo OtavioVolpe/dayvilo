@@ -32,6 +32,22 @@ test('MySQL: criar, listar, concluir e isolar tarefas por usuário', async () =>
     assert.equal((await chamar(`/tarefas/${alheia.insertId}/conclusao`, 'PATCH', { concluida: true })).status, 404);
     assert.equal((await chamar('/tarefas', 'POST', { titulo: 'Teste', usuario_id: outro.insertId })).status, 400);
     assert.equal((await chamar('/tarefas?data=2026-02-30')).status, 400);
+    const alteracao = { titulo: 'Leitura revisada', horario: '18:15', prioridade: false, observacao: 'Capítulo 2' };
+    await chamar('/tarefas/' + id + '/conclusao', 'PATCH', { concluida: true });
+    const editada = await chamar('/tarefas/' + id, 'PUT', alteracao);
+    assert.equal(editada.status, 200);
+    assert.equal(editada.dados.tarefa.situacao, 'concluida');
+    assert.equal(editada.dados.tarefa.data_prevista, '2026-09-24');
+    assert.equal(editada.dados.tarefa.horario, '18:15');
+    assert.equal(editada.dados.tarefa.prioridade, false);
+    assert.equal((await chamar('/tarefas?data=2026-09-24')).dados.tarefas[0].titulo, 'Leitura revisada');
+    assert.equal((await chamar('/tarefas/' + id, 'PUT', { titulo: ' ' })).status, 400);
+    assert.equal((await chamar('/tarefas/' + alheia.insertId, 'PUT', alteracao)).status, 404);
+    assert.equal((await chamar('/tarefas/' + alheia.insertId, 'DELETE')).status, 404);
+    assert.equal((await chamar('/tarefas/' + id, 'DELETE')).status, 200);
+    assert.equal((await chamar('/tarefas?data=2026-09-24')).dados.tarefas.length, 0);
+    assert.equal((await chamar('/tarefas/' + id, 'DELETE')).status, 404);
+    assert.equal((await chamar('/tarefas/' + id, 'PUT', alteracao)).status, 404);
     assert.equal((await fetch(endereco + '/tarefas', { headers: { Origin: 'https://example.com' } })).status, 403);
   } finally {
     if (servidor) { servidor.closeAllConnections(); await new Promise(resolve => servidor.close(resolve)); }

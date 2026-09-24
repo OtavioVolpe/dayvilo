@@ -31,6 +31,17 @@ export function criarAplicacao({ banco, usuario, porta = 3001 }) {
     const tarefa = await tarefas.criar(usuario.id, dados);
     resposta.status(201).json({ tarefa });
   });
+  aplicacao.put('/api/tarefas/:id', async (requisicao, resposta) => {
+    const id = validarId(requisicao.params.id);
+    validarObjeto(requisicao.body, ['titulo', 'observacao', 'horario', 'prioridade']);
+    const tarefa = await tarefas.editar(usuario.id, id, validarNovaTarefa(requisicao.body));
+    if (!tarefa) return resposta.status(404).json({ erro: 'Tarefa não encontrada.' });
+    resposta.json({ tarefa });
+  });
+  aplicacao.delete('/api/tarefas/:id', async (requisicao, resposta) => {
+    if (!await tarefas.excluir(usuario.id, validarId(requisicao.params.id))) return resposta.status(404).json({ erro: 'Tarefa não encontrada.' });
+    resposta.json({ excluida: true });
+  });
   aplicacao.patch('/api/tarefas/:id/conclusao', async (requisicao, resposta) => {
     const id = validarId(requisicao.params.id);
     validarObjeto(requisicao.body, ['concluida']);

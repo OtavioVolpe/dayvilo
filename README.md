@@ -50,7 +50,7 @@ As tabelas `usuarios` e `tarefas` guardam os dados da aplicação. A conta MySQL
 
 Depois das migrações, execute `npm run db:perfil`. O comando cria um perfil pessoal e registra seu identificador em `server/.env`. Se já estiver configurado, mantém o perfil existente.
 
-Inicie com `npm run dev`. A tela Hoje permite criar tarefas com horário opcional, observação e prioridade, organizar por horário e marcar ou desmarcar conclusões. Os dados ficam salvos no MySQL.
+Inicie com `npm run dev`. A tela Hoje permite criar e editar tarefas com horário opcional, observação e prioridade, organizar por horário, marcar ou desmarcar conclusões e excluir tarefas com confirmação. Os dados ficam salvos no MySQL.
 
 A execução usa um único perfil local, sem autenticação, e a API aceita apenas acesso pelo próprio computador. Não exponha esse modo na internet.
 
