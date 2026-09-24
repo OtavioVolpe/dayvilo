@@ -46,6 +46,14 @@ Não edite uma migração já aplicada; adicione outro arquivo numerado para mud
 
 As tabelas `usuarios` e `tarefas` guardam os dados da aplicação. A conta MySQL usada na conexão é independente dos registros de `usuarios`.
 
+### Perfil local
+
+Depois das migrações, execute `npm run db:perfil`. O comando cria um perfil pessoal e registra seu identificador em `server/.env`. Se já estiver configurado, mantém o perfil existente.
+
+Inicie com `npm run dev`. A tela Hoje permite criar tarefas com horário opcional, observação e prioridade, organizar por horário e marcar ou desmarcar conclusões. Os dados ficam salvos no MySQL.
+
+A execução usa um único perfil local, sem autenticação, e a API aceita apenas acesso pelo próprio computador. Não exponha esse modo na internet.
+
 ### Comandos
 
 | Comando | Função |
@@ -55,7 +63,9 @@ As tabelas `usuarios` e `tarefas` guardam os dados da aplicação. A conta MySQL
 | `npm start` | Inicia somente a API. |
 | `npm run db:check` | Verifica a conexão com MySQL. |
 | `npm run db:migrate` | Aplica as migrações pendentes à base configurada. |
-| `npm test` | Verifica as proteções do controle de migrações. |
+| `npm run db:perfil` | Configura o perfil local. |
+| `npm test` | Verifica migrações e validações de tarefas. |
+| `npm run test:integracao` | Testa a API com MySQL e reverte os dados de teste. |
 
 ## Estrutura
 
@@ -65,3 +75,4 @@ dayvilo/
 ├── server/     # API Express e acesso ao MySQL
 └── package.json
 ```
+
