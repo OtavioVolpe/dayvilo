@@ -12,7 +12,7 @@ A área de rotina reúne três visões: **Hoje**, **Semana** e **Histórico**. O
 
 ## Executar localmente
 
-Requisitos: Node.js 24 ou superior, npm e MySQL 8.
+Requisitos: Node.js 24 ou superior, npm e MySQL 8.0.16 ou superior.
 
 ```sh
 git clone https://github.com/OtavioVolpe/dayvilo.git
@@ -34,6 +34,16 @@ npm run db:check
 
 O comando verifica a conexão com `SELECT 1`; não cria bancos nem tabelas. O arquivo `.env` não é versionado.
 
+Para criar as tabelas na base configurada, execute:
+
+```sh
+npm run db:migrate
+```
+
+O usuário da conexão precisa de permissões de leitura/escrita, `CREATE` e `REFERENCES` nessa base. As migrações são arquivos SQL numerados em `server/migrations`. Execute-as em ordem pelo comando: ele registra as aplicadas em `schema_migrations` e não as repete. Cada arquivo contém uma única instrução SQL.
+
+Não edite uma migração já aplicada; adicione outro arquivo numerado para mudanças de estrutura. Se uma execução falhar, inspecione o banco antes de corrigir o registro marcado como `started`: comandos de estrutura no MySQL podem ser confirmados mesmo quando uma etapa posterior falha.
+
 ### Comandos
 
 | Comando | Função |
@@ -42,6 +52,8 @@ O comando verifica a conexão com `SELECT 1`; não cria bancos nem tabelas. O ar
 | `npm run build` | Compila a interface em `client/dist`. |
 | `npm start` | Inicia somente a API. |
 | `npm run db:check` | Verifica a conexão com MySQL. |
+| `npm run db:migrate` | Aplica as migrações pendentes à base configurada. |
+| `npm test` | Verifica as proteções do controle de migrações. |
 
 ## Estrutura
 

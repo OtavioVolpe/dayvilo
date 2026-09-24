@@ -9,7 +9,9 @@
     "dev": "concurrently -k -n api,web \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w client",
     "start": "npm run start -w server",
-    "db:check": "npm run db:check -w server"
+    "db:check": "node --env-file-if-exists=server/.env server/scripts/check-db.js",
+    "db:migrate": "node --env-file-if-exists=server/.env server/scripts/migrate.js",
+    "test": "node --test --test-isolation=none server/test/*.test.js"
   },
   "devDependencies": { "concurrently": "10.0.5" }
 }

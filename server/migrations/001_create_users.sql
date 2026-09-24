@@ -1,0 +1,8 @@
+CREATE TABLE users (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  display_name VARCHAR(100) NOT NULL,
+  time_zone VARCHAR(64) NOT NULL DEFAULT 'America/Sao_Paulo',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  CONSTRAINT users_name_not_empty CHECK (CHAR_LENGTH(TRIM(display_name)) > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

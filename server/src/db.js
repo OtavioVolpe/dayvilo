@@ -11,5 +11,6 @@ export function createDatabasePool() {
     user: process.env.MYSQL_USER, password: process.env.MYSQL_PASSWORD,
     database: process.env.MYSQL_DATABASE, connectionLimit: 5,
     charset: 'utf8mb4', dateStrings: true, multipleStatements: false,
+    timezone: 'Z', connectTimeout: 10000,
   });
 }

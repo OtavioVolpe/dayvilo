@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "node --env-file-if-exists=.env --watch src/index.js",
     "start": "node --env-file-if-exists=.env src/index.js",
-    "db:check": "node --env-file-if-exists=.env scripts/check-db.js"
+    "db:check": "node --env-file-if-exists=.env scripts/check-db.js",
+    "db:migrate": "node --env-file-if-exists=.env scripts/migrate.js",
+    "test": "node --test --test-isolation=none test/*.test.js"
   },
   "dependencies": { "express": "5.2.1", "mysql2": "3.24.4" }
 }
