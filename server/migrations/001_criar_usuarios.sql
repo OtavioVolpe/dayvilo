@@ -1,0 +1,8 @@
+CREATE TABLE usuarios (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  nome VARCHAR(100) NOT NULL,
+  fuso_horario VARCHAR(64) NOT NULL DEFAULT 'America/Sao_Paulo',
+  criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  CONSTRAINT usuarios_nome_obrigatorio CHECK (CHAR_LENGTH(TRIM(nome)) > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

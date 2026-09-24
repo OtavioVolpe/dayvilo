@@ -1,13 +1,13 @@
-import { createDatabasePool } from '../src/db.js';
+import { criarPoolBanco } from '../src/db.js';
 
-let pool;
+let poolBanco;
 try {
-  pool = createDatabasePool();
-  await pool.execute('SELECT 1');
+  poolBanco = criarPoolBanco();
+  await poolBanco.execute('SELECT 1');
   console.log('Conexão com MySQL validada. Nenhum dado foi modificado.');
-} catch (error) {
-  console.error(error.code ? `Não foi possível conectar ao MySQL (${error.code}). Confira server/.env.` : error.message);
+} catch (erro) {
+  console.erro(erro.code ? `Não foi possível conectar ao MySQL (${erro.code}). Confira server/.env.` : erro.message);
   process.exitCode = 1;
 } finally {
-  await pool?.end();
+  await poolBanco?.end();
 }

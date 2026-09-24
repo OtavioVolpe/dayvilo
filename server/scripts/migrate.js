@@ -1,18 +1,18 @@
-import { createDatabasePool } from '../src/db.js';
-import { readMigrations, runMigrations } from '../src/migrations.js';
+import { criarPoolBanco } from '../src/db.js';
+import { lerMigracoes, executarMigracoes } from '../src/migrations.js';
 
-let pool;
-let connection;
+let poolBanco;
+let conexao;
 try {
-  pool = createDatabasePool();
-  const migrations = await readMigrations();
-  connection = await pool.getConnection();
-  await connection.query("SET time_zone = '+00:00'");
-  await runMigrations(connection, migrations);
-} catch (error) {
-  console.error(error.code ? `Não foi possível aplicar as migrações (${error.code}). Confira a conexão e as permissões do banco.` : error.message);
+  poolBanco = criarPoolBanco();
+  const migracoes = await lerMigracoes();
+  conexao = await poolBanco.getConnection();
+  await conexao.query("SET time_zone = '+00:00'");
+  await executarMigracoes(conexao, migracoes);
+} catch (erro) {
+  console.erro(erro.code ? `Não foi possível aplicar as migrações (${erro.code}). Confira a conexão e as permissões do banco.` : erro.message);
   process.exitCode = 1;
 } finally {
-  connection?.release();
-  await pool?.end();
+  conexao?.release();
+  await poolBanco?.end();
 }
