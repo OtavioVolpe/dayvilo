@@ -44,6 +44,14 @@ test('MySQL: criar, listar, concluir e isolar tarefas por usuário', async () =>
     assert.equal((await chamar('/tarefas/' + id, 'PUT', { titulo: ' ' })).status, 400);
     assert.equal((await chamar('/tarefas/' + alheia.insertId, 'PUT', alteracao)).status, 404);
     assert.equal((await chamar('/tarefas/' + alheia.insertId, 'DELETE')).status, 404);
+    const reagendada = await chamar('/tarefas/' + id, 'PUT', { ...alteracao, data_prevista: '2026-09-25' });
+    assert.equal(reagendada.status, 200);
+    assert.equal(reagendada.dados.tarefa.situacao, 'concluida');
+    assert.equal((await chamar('/tarefas?data=2026-09-24')).dados.tarefas.length, 0);
+    assert.equal((await chamar('/tarefas?data=2026-09-25')).dados.tarefas[0].id, id);
+    assert.equal((await chamar('/tarefas/' + id, 'PUT', { ...alteracao, data_prevista: '2026-02-30' })).status, 400);
+    assert.equal((await chamar('/tarefas/' + id, 'PUT', { ...alteracao, data_prevista: null })).status, 400);
+    assert.equal((await chamar('/tarefas?data=2026-09-25')).dados.tarefas[0].data_prevista, '2026-09-25');
     assert.equal((await chamar('/tarefas/' + id, 'DELETE')).status, 200);
     assert.equal((await chamar('/tarefas?data=2026-09-24')).dados.tarefas.length, 0);
     assert.equal((await chamar('/tarefas/' + id, 'DELETE')).status, 404);

@@ -25,8 +25,8 @@ export function criarRepositorioTarefas(banco) {
       return this.buscar(usuarioId, resultado.insertId);
     },
     async editar(usuarioId, id, dados) {
-      await banco.execute('UPDATE tarefas SET titulo = ?, observacao = ?, horario = ?, prioridade = ? WHERE usuario_id = ? AND id = ?',
-        [dados.titulo, dados.observacao, dados.horario, dados.prioridade, usuarioId, id]);
+      await banco.execute('UPDATE tarefas SET titulo = ?, observacao = ?, horario = ?, prioridade = ?, data_prevista = COALESCE(?, data_prevista) WHERE usuario_id = ? AND id = ?',
+        [dados.titulo, dados.observacao, dados.horario, dados.prioridade, dados.data_prevista, usuarioId, id]);
       return this.buscar(usuarioId, id);
     },
     async excluir(usuarioId, id) {

@@ -33,7 +33,8 @@ export function criarAplicacao({ banco, usuario, porta = 3001 }) {
   });
   aplicacao.put('/api/tarefas/:id', async (requisicao, resposta) => {
     const id = validarId(requisicao.params.id);
-    validarObjeto(requisicao.body, ['titulo', 'observacao', 'horario', 'prioridade']);
+    validarObjeto(requisicao.body, ['titulo', 'observacao', 'horario', 'prioridade', 'data_prevista']);
+    if (Object.hasOwn(requisicao.body, 'data_prevista')) validarData(requisicao.body.data_prevista);
     const tarefa = await tarefas.editar(usuario.id, id, validarNovaTarefa(requisicao.body));
     if (!tarefa) return resposta.status(404).json({ erro: 'Tarefa não encontrada.' });
     resposta.json({ tarefa });
