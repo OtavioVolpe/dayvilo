@@ -13,6 +13,21 @@ export function criarRepositorioTarefas(banco) {
       );
       return tarefas.map(apresentarTarefa);
     },
+    async listarAtrasadas(usuarioId, hoje) {
+      const [tarefas] = await banco.execute(
+        'SELECT ' + colunas + " FROM tarefas WHERE usuario_id = ? AND situacao = 'pendente' AND data_prevista < ? ORDER BY data_prevista, horario IS NULL, horario, id",
+        [usuarioId, hoje],
+      );
+      return tarefas.map(apresentarTarefa);
+    },
+    async reagendar(usuarioId, id, data) {
+      await banco.execute('UPDATE tarefas SET data_prevista = ? WHERE usuario_id = ? AND id = ?', [data, usuarioId, id]);
+      return this.buscar(usuarioId, id);
+    },
+    async definirSituacao(usuarioId, id, situacao) {
+      await banco.execute("UPDATE tarefas SET situacao = ?, concluida_em = IF(? = 'concluida', COALESCE(concluida_em, CURRENT_TIMESTAMP), NULL) WHERE usuario_id = ? AND id = ?", [situacao, situacao, usuarioId, id]);
+      return this.buscar(usuarioId, id);
+    },
     async listarPeriodo(usuarioId, inicio, fim) {
       const [tarefas] = await banco.execute(
         'SELECT ' + colunas + ' FROM tarefas WHERE usuario_id = ? AND data_prevista BETWEEN ? AND ? ORDER BY data_prevista, horario IS NULL, horario, ordem, id',

@@ -23,6 +23,25 @@ export function criarAplicacao({ banco, usuario, porta = 3001 }) {
   aplicacao.get('/api/perfil', (_requisicao, resposta) => resposta.json({
     nome: usuario.nome, fuso_horario: usuario.fuso_horario, data_hoje: obterDataHoje(usuario.fuso_horario),
   }));
+  aplicacao.get('/api/tarefas/atrasadas', async (_requisicao, resposta) => {
+    const hoje = obterDataHoje(usuario.fuso_horario);
+    resposta.json({ hoje, tarefas: await tarefas.listarAtrasadas(usuario.id, hoje) });
+  });
+  aplicacao.patch('/api/tarefas/:id/situacao', async (requisicao, resposta) => {
+    const id = validarId(requisicao.params.id);
+    validarObjeto(requisicao.body, ['situacao']);
+    if (!['pendente', 'concluida', 'pulada'].includes(requisicao.body.situacao)) throw new ErroValidacao('Situação inválida.');
+    const tarefa = await tarefas.definirSituacao(usuario.id, id, requisicao.body.situacao);
+    if (!tarefa) return resposta.status(404).json({ erro: 'Tarefa não encontrada.' });
+    resposta.json({ tarefa });
+  });
+  aplicacao.patch('/api/tarefas/:id/agendamento', async (requisicao, resposta) => {
+    const id = validarId(requisicao.params.id);
+    validarObjeto(requisicao.body, ['data_prevista']);
+    const tarefa = await tarefas.reagendar(usuario.id, id, validarData(requisicao.body.data_prevista));
+    if (!tarefa) return resposta.status(404).json({ erro: 'Tarefa não encontrada.' });
+    resposta.json({ tarefa });
+  });
   aplicacao.get('/api/tarefas/historico', async (requisicao, resposta) => {
     const periodo = validarPeriodoHistorico(requisicao.query.inicio, requisicao.query.fim, obterDataHoje(usuario.fuso_horario));
     resposta.json({ ...periodo, tarefas: await tarefas.listarPeriodo(usuario.id, periodo.inicio, periodo.fim) });

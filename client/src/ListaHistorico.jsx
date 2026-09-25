@@ -10,6 +10,7 @@ export default function ListaHistorico({ tarefas, situacao, definirSituacao, blo
       <p><strong>{tarefas.length}</strong>Tarefas no período</p>
       <p><strong>{concluidas}</strong>Concluídas</p>
       <p><strong>{pendentes}</strong>Pendentes</p>
+      <p><strong>{tarefas.filter(tarefa => tarefa.situacao === "pulada").length}</strong>Puladas</p>
     </div>
     <div className="filtro-historico"><label>Situação <select value={situacao} disabled={bloqueado} onChange={evento => definirSituacao(evento.target.value)}>
       <option value="todas">Todas</option><option value="concluida">Concluídas</option><option value="pendente">Pendentes</option><option value="pulada">Puladas</option>
