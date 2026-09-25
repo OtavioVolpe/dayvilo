@@ -1,4 +1,5 @@
 import express from 'express';
+import { criarTarefasRepetidas } from './servicos/repeticao.js';
 import { validarPeriodoHistorico } from './historico.js';
 import { obterSemana } from './semana.js';
 import { criarRepositorioTarefas } from './repositorio-tarefas.js';
@@ -34,6 +35,10 @@ export function criarAplicacao({ banco, usuario, porta = 3001 }) {
     const data = requisicao.query.data === undefined
       ? obterDataHoje(usuario.fuso_horario) : validarData(requisicao.query.data);
     resposta.json({ tarefas: await tarefas.listar(usuario.id, data) });
+  });
+  aplicacao.post('/api/tarefas/repetidas', async (requisicao, resposta) => {
+    if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });
+    resposta.status(201).json(await criarTarefasRepetidas(tarefas, usuario.id, requisicao.body));
   });
   aplicacao.post('/api/tarefas', async (requisicao, resposta) => {
     if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });

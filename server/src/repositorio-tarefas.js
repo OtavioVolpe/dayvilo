@@ -31,6 +31,15 @@ export function criarRepositorioTarefas(banco) {
       );
       return this.buscar(usuarioId, resultado.insertId);
     },
+    async criarRepetidas(usuarioId, dados, datas) {
+      // Um único INSERT no InnoDB salva todas as ocorrências ou nenhuma.
+      const valores = datas.flatMap(data => [usuarioId, dados.titulo, dados.observacao, data, dados.horario, dados.prioridade]);
+      const marcadores = datas.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
+      const [resultado] = await banco.execute(
+        'INSERT INTO tarefas (usuario_id, titulo, observacao, data_prevista, horario, prioridade) VALUES ' + marcadores, valores,
+      );
+      return { tarefa: await this.buscar(usuarioId, resultado.insertId), quantidade: datas.length };
+    },
     async editar(usuarioId, id, dados) {
       await banco.execute('UPDATE tarefas SET titulo = ?, observacao = ?, horario = ?, prioridade = ?, data_prevista = COALESCE(?, data_prevista) WHERE usuario_id = ? AND id = ?',
         [dados.titulo, dados.observacao, dados.horario, dados.prioridade, dados.data_prevista, usuarioId, id]);

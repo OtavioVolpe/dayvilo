@@ -13,6 +13,7 @@ async function solicitar(caminho, opcoes) {
 }
 
 export default function Planejamento({ semanal = false, historico = false }) {
+  const [repeticao, definirRepeticao] = useState('nenhuma');
   const [periodo, definirPeriodo] = useState(null);
   const [periodoConsultado, definirPeriodoConsultado] = useState(null);
   const [situacao, definirSituacao] = useState('todas');
@@ -56,6 +57,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
   }, [tentativa, dataSelecionada, semanal, historico, periodo]);
 
   function abrirFormulario(tarefa = null, dia = data) {
+    definirRepeticao('nenhuma');
     definirNovaData(dia);
     definirEditando(tarefa); definirAberto(true); definirErro(''); definirAviso('');
     requestAnimationFrame(() => {
@@ -82,10 +84,14 @@ export default function Planejamento({ semanal = false, historico = false }) {
     const campos = new FormData(formulario);
     definirSalvando(true); definirErro('');
     try {
-      const { tarefa } = await solicitar(editando ? '/tarefas/' + editando.id : '/tarefas', {
+      const dadosTarefa = { titulo: campos.get('titulo'), horario: campos.get('horario') || null,
+        observacao: campos.get('observacao'), prioridade: campos.has('prioridade'), data_prevista: campos.get('data_prevista') };
+      const repetir = !editando && repeticao !== 'nenhuma';
+      const corpo = repetir ? { tarefa: dadosTarefa, repeticao: { tipo: repeticao, ate: campos.get('repetir_ate'),
+        ...(repeticao === 'semanal' ? { dias: campos.getAll('dias_semana').map(Number) } : {}) } } : dadosTarefa;
+      const { tarefa, quantidade } = await solicitar(editando ? '/tarefas/' + editando.id : repetir ? '/tarefas/repetidas' : '/tarefas', {
         method: editando ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ titulo: campos.get('titulo'), horario: campos.get('horario') || null,
-          observacao: campos.get('observacao'), prioridade: campos.has('prioridade'), data_prevista: campos.get('data_prevista') }),
+        body: JSON.stringify(corpo),
       });
       if (historico) {
         definirTarefas(anteriores => anteriores.map(item => item.id === tarefa.id ? tarefa : item)
@@ -97,7 +103,11 @@ export default function Planejamento({ semanal = false, historico = false }) {
         definirDataSelecionada(tarefa.data_prevista);
       }
       definirAviso(historico ? 'Tarefa atualizada. Se saiu do período ou do filtro, consulte a nova data em Hoje ou Semana.' : editando ? 'Tarefa atualizada. O planejamento foi salvo.' : 'Tarefa criada. A lista mostra a data escolhida.');
-      formulario.reset(); definirAberto(false); definirEditando(null);
+      if (repetir) {
+        definirAviso(quantidade + ' ocorrência(s) criadas. Cada uma pode ser concluída ou editada separadamente.');
+        definirCarregando(true); definirTentativa(valor => valor + 1);
+      }
+      formulario.reset(); definirAberto(false); definirEditando(null); definirRepeticao('nenhuma');
     } catch (falha) { definirErro(falha.message); }
     finally { definirSalvando(false); }
   }
@@ -173,6 +183,15 @@ export default function Planejamento({ semanal = false, historico = false }) {
       <fieldset disabled={salvando || carregando}><legend>{editando ? "Editar tarefa" : "Nova tarefa"}</legend>
         <label>O que você quer fazer?<input defaultValue={editando?.titulo ?? ""} name="titulo" required maxLength={200} placeholder="Ex.: ler algumas páginas" /></label>
         <div className="campos-opcionais"><label>Data<input defaultValue={editando?.data_prevista ?? (novaData || data)} name="data_prevista" type="date" required min="1000-01-01" max="9999-12-31" /></label><label>Horário (opcional)<input defaultValue={editando?.horario ?? ""} name="horario" type="time" /></label><label className="campo-prioridade"><input defaultChecked={editando?.prioridade ?? false} name="prioridade" type="checkbox" />Marcar como prioridade</label></div>
+        {!editando && <div className="configuracao-repeticao">
+          <label>Repetir<select value={repeticao} onChange={evento => definirRepeticao(evento.target.value)}><option value="nenhuma">Não repetir</option><option value="diaria">Todos os dias</option><option value="semanal">Dias da semana</option></select></label>
+          {repeticao !== 'nenhuma' && <>
+            <label>Repetir até<input name="repetir_ate" type="date" required min="1000-01-01" max="9999-12-31" defaultValue={deslocarData(novaData || data, 29)} /></label>
+            {repeticao === 'semanal' && <fieldset className="dias-repeticao"><legend>Em quais dias?</legend>{[[1,'Seg'],[2,'Ter'],[3,'Qua'],[4,'Qui'],[5,'Sex'],[6,'Sáb'],[0,'Dom']].map(([dia,nome]) => <label key={dia}><input type="checkbox" name="dias_semana" value={dia} />{nome}</label>)}</fieldset>}
+            <p>As ocorrências serão criadas até a data final, em um período de até 366 dias. Alterações e exclusões afetam apenas a tarefa escolhida.</p>
+          </>}
+        </div>}
+        {editando && <p className="explicacao-historico">Esta edição altera apenas esta tarefa, mesmo que ela tenha sido criada com repetição.</p>}
         <label>Observação (opcional)<textarea defaultValue={editando?.observacao ?? ""} name="observacao" maxLength={4000} rows={2} /></label>
         <div className="acoes-formulario"><button type="button" className="botao-secundario" onClick={() => { definirAberto(false); definirEditando(null); }}>Cancelar</button><button className="botao-principal" type="submit">{salvando ? 'Salvando…' : 'Salvar tarefa'}</button></div>
       </fieldset>
