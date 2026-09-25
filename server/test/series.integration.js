@@ -1,0 +1,51 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { once } from 'node:events';
+import { criarAplicacao } from '../src/app.js';
+import { criarPoolBanco } from '../src/db.js';
+import { criarRepositorioTarefas } from '../src/repositorio-tarefas.js';
+import { obterDataHoje } from '../src/validacao-tarefas.js';
+
+test('séries preservam passado, concluídas, puladas e outros perfis; falha reverte criação', async () => {
+  const pool=criarPoolBanco(); const banco=await pool.getConnection(); let servidor;
+  try {
+    await banco.beginTransaction();
+    const [u]=await banco.execute('INSERT INTO usuarios (nome) VALUES (?)',['Teste série']);
+    const [outro]=await banco.execute('INSERT INTO usuarios (nome) VALUES (?)',['Outro']);
+    const hoje=obterDataHoje('America/Sao_Paulo');
+    const dia=n=>{const d=new Date(hoje+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
+    servidor=criarAplicacao({banco,usuario:{id:u.insertId,nome:'Teste',fuso_horario:'America/Sao_Paulo'}}).listen(0,'127.0.0.1'); await once(servidor,'listening');
+    const url=`http://127.0.0.1:${servidor.address().port}/api`;
+    const chamar=async(rota,method='GET',body)=>{const r=await fetch(url+rota,{method,headers:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});return {status:r.status,dados:await r.json()};};
+    const criado=await chamar('/tarefas/repetidas','POST',{tarefa:{titulo:'Original',data_prevista:dia(-1)},repeticao:{tipo:'diaria',ate:dia(4)}});
+    assert.equal(criado.status,201);assert.equal(criado.dados.quantidade,6);assert.ok(criado.dados.tarefa.serie_id);
+    const repo=criarRepositorioTarefas(banco);
+    let tarefas=await repo.listarPeriodo(u.insertId,dia(-1),dia(4));
+    assert.equal(new Set(tarefas.map(t=>t.serie_id)).size,1);
+    await repo.definirSituacao(u.insertId,tarefas[2].id,'concluida');await repo.definirSituacao(u.insertId,tarefas[3].id,'pulada');
+    const concluidaId=tarefas[2].id;
+    const [[antes]]=await banco.execute('SELECT concluida_em FROM tarefas WHERE id=?',[concluidaId]);
+    const alterada=await chamar('/tarefas/'+tarefas[0].id+'/serie','PUT',{titulo:'Novo',horario:'07:00',prioridade:true});
+    assert.equal(alterada.status,200);assert.equal(alterada.dados.inicio,hoje);assert.equal(alterada.dados.quantidade,3);
+    tarefas=await repo.listarPeriodo(u.insertId,dia(-1),dia(4));
+    assert.deepEqual(tarefas.map(t=>t.titulo),['Original','Novo','Original','Original','Novo','Novo']);
+    assert.deepEqual(tarefas.map(t=>t.data_prevista),[-1,0,1,2,3,4].map(dia));
+    const fim=await chamar('/tarefas/'+tarefas[4].id+'/serie/encerramento','PATCH',{});
+    assert.equal(fim.dados.quantidade,2);
+    const repetido=await chamar('/tarefas/'+tarefas[4].id+'/serie/encerramento','PATCH',{});assert.equal(repetido.dados.quantidade,0);
+    tarefas=await repo.listarPeriodo(u.insertId,dia(-1),dia(4));
+    assert.deepEqual(tarefas.map(t=>t.situacao),['pendente','pendente','concluida','pulada','pulada','pulada']);
+    const [[depois]]=await banco.execute('SELECT concluida_em FROM tarefas WHERE id=?',[concluidaId]);assert.equal(depois.concluida_em,antes.concluida_em);
+    const antiga=await repo.criar(u.insertId,{titulo:'Sem vínculo',observacao:null,data_prevista:hoje,horario:null,prioridade:false});assert.equal(antiga.serie_id,null);
+    assert.equal((await chamar('/tarefas/'+antiga.id+'/serie','PUT',{titulo:'Não'})).status,404);
+    const privada=await repo.criarRepetidas(outro.insertId,{titulo:'Privada',observacao:null,horario:null,prioridade:false},[hoje]);
+    assert.equal((await chamar('/tarefas/'+privada.tarefa.id+'/serie','PUT',{titulo:'Não'})).status,404);
+    assert.equal((await chamar('/tarefas/'+privada.tarefa.id+'/serie/encerramento','PATCH',{})).status,404);
+    assert.equal((await chamar('/tarefas/'+tarefas[1].id+'/serie','PUT',{titulo:'Não',data_prevista:hoje})).status,400);
+    const [[contagem]]=await banco.execute('SELECT COUNT(*) AS total FROM tarefas WHERE usuario_id=?',[u.insertId]);
+    let vinculos=0;
+    const falha={query:banco.query.bind(banco),execute:async(sql,valores)=>{if(sql.startsWith('INSERT INTO ocorrencias_series')&&++vinculos===2)throw new Error('Falha simulada');return banco.execute(sql,valores);}};
+    await assert.rejects(criarRepositorioTarefas(falha).criarRepetidas(u.insertId,{titulo:'Rollback',observacao:null,horario:null,prioridade:false},[hoje,dia(1)]),/Falha simulada/);
+    const [[final]]=await banco.execute('SELECT COUNT(*) AS total FROM tarefas WHERE usuario_id=?',[u.insertId]);assert.equal(final.total,contagem.total);
+  } finally {if(servidor){servidor.closeAllConnections();await new Promise(r=>servidor.close(r));}await banco.rollback();banco.release();await pool.end();}
+});

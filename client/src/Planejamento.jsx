@@ -13,6 +13,8 @@ async function solicitar(caminho, opcoes) {
 }
 
 export default function Planejamento({ semanal = false, historico = false }) {
+  const [modoSerie, definirModoSerie] = useState(false);
+  const [encerrando, definirEncerrando] = useState(null);
   const [atrasadas, definirAtrasadas] = useState([]);
   const [repeticao, definirRepeticao] = useState('nenhuma');
   const [periodo, definirPeriodo] = useState(null);
@@ -60,7 +62,8 @@ export default function Planejamento({ semanal = false, historico = false }) {
     return () => { ativo = false; };
   }, [tentativa, dataSelecionada, semanal, historico, periodo]);
 
-  function abrirFormulario(tarefa = null, dia = data) {
+  function abrirFormulario(tarefa = null, dia = data, serie = false) {
+    definirModoSerie(serie); definirEncerrando(null);
     definirRepeticao('nenhuma');
     definirNovaData(dia);
     definirEditando(tarefa); definirAberto(true); definirErro(''); definirAviso('');
@@ -91,6 +94,16 @@ export default function Planejamento({ semanal = false, historico = false }) {
     try {
       const dadosTarefa = { titulo: campos.get('titulo'), horario: campos.get('horario') || null,
         observacao: campos.get('observacao'), prioridade: campos.has('prioridade'), data_prevista: campos.get('data_prevista') };
+      if (modoSerie && editando) {
+        const { data_prevista, ...dadosSerie } = dadosTarefa;
+        const resultado = await solicitar('/tarefas/' + editando.id + '/serie', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dadosSerie),
+        });
+        definirAviso(resultado.quantidade + ' ocorrência(s) pendentes atualizadas. As demais foram preservadas.');
+        definirAberto(false); definirEditando(null); definirModoSerie(false);
+        definirCarregando(true); definirTentativa(valor => valor + 1);
+        return;
+      }
       const repetir = !editando && repeticao !== 'nenhuma';
       const corpo = repetir ? { tarefa: dadosTarefa, repeticao: { tipo: repeticao, ate: campos.get('repetir_ate'),
         ...(repeticao === 'semanal' ? { dias: campos.getAll('dias_semana').map(Number) } : {}) } } : dadosTarefa;
@@ -116,6 +129,18 @@ export default function Planejamento({ semanal = false, historico = false }) {
       formulario.reset(); definirAberto(false); definirEditando(null); definirRepeticao('nenhuma');
     } catch (falha) { definirErro(falha.message); }
     finally { definirSalvando(false); }
+  }
+
+  async function encerrarSerie(tarefa) {
+    definirAtualizando(ids => [...ids, tarefa.id]); definirErro('');
+    try {
+      const resultado = await solicitar('/tarefas/' + tarefa.id + '/serie/encerramento', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}',
+      });
+      definirAviso(resultado.quantidade + ' ocorrência(s) pendentes marcadas como puladas. As demais foram preservadas.');
+      definirEncerrando(null); definirCarregando(true); definirTentativa(valor => valor + 1);
+    } catch (falha) { definirErro(falha.message); }
+    finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
   }
 
   async function alternar(tarefa) {
@@ -173,15 +198,24 @@ export default function Planejamento({ semanal = false, historico = false }) {
       <input type="checkbox" aria-label={`Concluir: ${tarefa.titulo}`} checked={tarefa.situacao === 'concluida'} disabled={aberto || salvando || atualizando.includes(tarefa.id)} onChange={() => alternar(tarefa)} />
       <div className="tarefa-conteudo"><span className="tarefa-titulo">{tarefa.titulo}</span>
         {tarefa.observacao && <p className="observacao">{tarefa.observacao}</p>}
-        <div className="detalhes">{atrasada === true && <span>Prevista para {formatarData(tarefa.data_prevista, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}{(historico || tarefa.situacao === "pulada") && <span>{({ pendente: "Pendente", concluida: "Concluída", pulada: "Pulada" })[tarefa.situacao]}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario || 'Sem horário'}</span>
+        <div className="detalhes">{tarefa.serie_id && <span>Repetição</span>}{atrasada === true && <span>Prevista para {formatarData(tarefa.data_prevista, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}{(historico || tarefa.situacao === "pulada") && <span>{({ pendente: "Pendente", concluida: "Concluída", pulada: "Pulada" })[tarefa.situacao]}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario || 'Sem horário'}</span>
           {tarefa.prioridade && <span className="prioridade"><Star size={13} aria-hidden="true" />Prioridade</span>}</div>
       </div>
       <div className="acoes-tarefa">
+        {tarefa.serie_id && <>
+          <button className="acao-texto" type="button" disabled={aberto || salvando || atualizando.length > 0} aria-label={'Editar próximas: ' + tarefa.titulo} onClick={() => abrirFormulario(tarefa, data, true)}>Editar próximas</button>
+          <button className="acao-texto" type="button" disabled={aberto || salvando || atualizando.length > 0} aria-label={'Encerrar repetição: ' + tarefa.titulo} onClick={() => { definirEncerrando(tarefa.id); definirExcluindo(null); }}>Encerrar repetição</button>
+        </>}
         {atrasada === true && <button className="acao-texto" type="button" disabled={aberto || salvando || atualizando.includes(tarefa.id)} onClick={() => alterarTarefa(tarefa, 'hoje')}>Trazer para hoje</button>}
         {tarefa.situacao !== 'concluida' && <button className="acao-texto" type="button" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={(tarefa.situacao === 'pulada' ? 'Restaurar: ' : 'Pular: ') + tarefa.titulo} onClick={() => alterarTarefa(tarefa, tarefa.situacao === 'pulada' ? 'pendente' : 'pulada')}>{tarefa.situacao === 'pulada' ? 'Restaurar' : 'Pular'}</button>}
         <button type="button" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Editar: ${tarefa.titulo}`} onClick={() => abrirFormulario(tarefa)}><Pencil size={17} aria-hidden="true" /></button>
         <button type="button" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Excluir: ${tarefa.titulo}`} onClick={() => definirExcluindo(tarefa.id)}><Trash2 size={17} aria-hidden="true" /></button>
       </div>
+      {encerrando === tarefa.id && <div className="confirmacao-exclusao" role="group" aria-label="Confirmar encerramento">
+        <p>Marcar como puladas as ocorrências pendentes desta repetição a partir de {formatarData(tarefa.data_prevista > hoje ? tarefa.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}? Concluídas, puladas e datas anteriores serão preservadas.</p>
+        <button type="button" disabled={atualizando.length > 0} onClick={() => definirEncerrando(null)}>Cancelar</button>
+        <button type="button" disabled={aberto || salvando || atualizando.length > 0} onClick={() => encerrarSerie(tarefa)}>Confirmar encerramento</button>
+      </div>}
       {excluindo === tarefa.id && <div className="confirmacao-exclusao" role="group" aria-label="Confirmar exclusão">
         <p>Excluir esta tarefa? Esta ação não pode ser desfeita.</p>
         <button type="button" disabled={atualizando.includes(tarefa.id)} onClick={() => definirExcluindo(null)}>Cancelar</button>
@@ -217,19 +251,20 @@ export default function Planejamento({ semanal = false, historico = false }) {
     }}><label>{semanal ? "Semana que inclui" : "Ver tarefas de"}<input aria-label="Data da lista" name="dia" type="date" required min="1000-01-01" max="9999-12-31" defaultValue={data} disabled={aberto || salvando || atualizando.length > 0} /></label><button type="submit" className="botao-secundario" disabled={!data || aberto || salvando || atualizando.length > 0}>{semanal ? "Ver semana" : "Ver dia"}</button><button type="button" className="botao-secundario" disabled={aberto || salvando || atualizando.length > 0} onClick={() => { definirCarregando(true); definirDataSelecionada(''); definirTentativa(valor => valor + 1); definirAviso(''); definirExcluindo(null); }}>{semanal ? "Semana atual" : "Voltar para hoje"}</button></form>}
     {aviso && <p className="aviso-tarefa" role="status">{aviso}</p>}
     {erro && <div className="mensagem-erro" role="alert">{erro} <button type="button" onClick={() => definirTentativa(valor => valor + 1)}>Recarregar lista</button></div>}
-    <form key={editando?.id ?? `nova-${novaData || data}`} ref={formularioRef} onSubmit={adicionar} className="formulario-tarefa" hidden={!aberto}>
-      <fieldset disabled={salvando || carregando}><legend>{editando ? "Editar tarefa" : "Nova tarefa"}</legend>
+    <form key={(editando?.id ?? `nova-${novaData || data}`) + String(modoSerie)} ref={formularioRef} onSubmit={adicionar} className="formulario-tarefa" hidden={!aberto}>
+      <fieldset disabled={salvando || carregando}><legend>{modoSerie ? "Editar próximas ocorrências" : editando ? "Editar tarefa" : "Nova tarefa"}</legend>
         <label>O que você quer fazer?<input defaultValue={editando?.titulo ?? ""} name="titulo" required maxLength={200} placeholder="Ex.: ler algumas páginas" /></label>
-        <div className="campos-opcionais"><label>Data<input defaultValue={editando?.data_prevista ?? (novaData || data)} name="data_prevista" type="date" required min="1000-01-01" max="9999-12-31" /></label><label>Horário (opcional)<input defaultValue={editando?.horario ?? ""} name="horario" type="time" /></label><label className="campo-prioridade"><input defaultChecked={editando?.prioridade ?? false} name="prioridade" type="checkbox" />Marcar como prioridade</label></div>
+        <div className="campos-opcionais"><label>Data<input defaultValue={editando?.data_prevista ?? (novaData || data)} name="data_prevista" type="date" disabled={modoSerie} required min="1000-01-01" max="9999-12-31" /></label><label>Horário (opcional)<input defaultValue={editando?.horario ?? ""} name="horario" type="time" /></label><label className="campo-prioridade"><input defaultChecked={editando?.prioridade ?? false} name="prioridade" type="checkbox" />Marcar como prioridade</label></div>
         {!editando && <div className="configuracao-repeticao">
           <label>Repetir<select value={repeticao} onChange={evento => definirRepeticao(evento.target.value)}><option value="nenhuma">Não repetir</option><option value="diaria">Todos os dias</option><option value="semanal">Dias da semana</option></select></label>
           {repeticao !== 'nenhuma' && <>
             <label>Repetir até<input name="repetir_ate" type="date" required min="1000-01-01" max="9999-12-31" defaultValue={deslocarData(novaData || data, 29)} /></label>
             {repeticao === 'semanal' && <fieldset className="dias-repeticao"><legend>Em quais dias?</legend>{[[1,'Seg'],[2,'Ter'],[3,'Qua'],[4,'Qui'],[5,'Sex'],[6,'Sáb'],[0,'Dom']].map(([dia,nome]) => <label key={dia}><input type="checkbox" name="dias_semana" value={dia} />{nome}</label>)}</fieldset>}
-            <p>As ocorrências serão criadas até a data final, em um período de até 366 dias. Alterações e exclusões afetam apenas a tarefa escolhida.</p>
+            <p>As ocorrências serão criadas até a data final, em um período de até 366 dias. As ocorrências ficam vinculadas e você poderá editar ou encerrar as próximas em conjunto.</p>
           </>}
         </div>}
-        {editando && <p className="explicacao-historico">Esta edição altera apenas esta tarefa, mesmo que ela tenha sido criada com repetição.</p>}
+        {modoSerie && editando && <div className="configuracao-repeticao"><p>Altera título, horário, prioridade e observação de todas as ocorrências pendentes desta repetição a partir de {formatarData(editando.data_prevista > hoje ? editando.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}, inclusive as editadas individualmente. As datas, as concluídas e as puladas serão preservadas.</p><label className="campo-prioridade"><input type="checkbox" required />Confirmo a alteração nas próximas ocorrências pendentes</label></div>}
+        {editando && !modoSerie && <p className="explicacao-historico">Esta edição altera apenas esta tarefa, mesmo que ela tenha sido criada com repetição.</p>}
         <label>Observação (opcional)<textarea defaultValue={editando?.observacao ?? ""} name="observacao" maxLength={4000} rows={2} /></label>
         <div className="acoes-formulario"><button type="button" className="botao-secundario" onClick={() => { definirAberto(false); definirEditando(null); }}>Cancelar</button><button className="botao-principal" type="submit">{salvando ? 'Salvando…' : 'Salvar tarefa'}</button></div>
       </fieldset>

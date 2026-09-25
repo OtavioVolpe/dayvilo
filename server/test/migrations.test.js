@@ -26,7 +26,7 @@ test('não insere migração antiga em um banco que já avançou', () => {
 
 test('carrega SQL em ordem com impressão digital estável', async () => {
   const migracoes = await lerMigracoes();
-  assert.deepEqual(migracoes.map(item => item.nome), [primeira.nome, segunda.nome]);
+  assert.deepEqual(migracoes.map(item => item.nome), [primeira.nome, segunda.nome, '003_vincular_ocorrencias.sql']);
   assert.ok(migracoes.every(item => /^[a-f0-9]{64}$/.test(item.assinatura)));
 });
 

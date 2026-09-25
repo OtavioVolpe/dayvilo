@@ -65,6 +65,27 @@ export function criarAplicacao({ banco, usuario, porta = 3001 }) {
     const tarefa = await tarefas.criar(usuario.id, dados);
     resposta.status(201).json({ tarefa });
   });
+  aplicacao.put('/api/tarefas/:id/serie', async (requisicao, resposta) => {
+    const id = validarId(requisicao.params.id);
+    validarObjeto(requisicao.body, ['titulo', 'observacao', 'horario', 'prioridade']);
+    const dados = validarNovaTarefa(requisicao.body);
+    const referencia = await tarefas.buscar(usuario.id, id);
+    if (!referencia?.serie_id) return resposta.status(404).json({ erro: 'Série não encontrada para esta tarefa.' });
+    const hoje = obterDataHoje(usuario.fuso_horario);
+    const inicio = referencia.data_prevista > hoje ? referencia.data_prevista : hoje;
+    const quantidade = await tarefas.editarProximas(usuario.id, referencia.serie_id, inicio, dados);
+    resposta.json({ quantidade, inicio });
+  });
+  aplicacao.patch('/api/tarefas/:id/serie/encerramento', async (requisicao, resposta) => {
+    const id = validarId(requisicao.params.id);
+    validarObjeto(requisicao.body, []);
+    const referencia = await tarefas.buscar(usuario.id, id);
+    if (!referencia?.serie_id) return resposta.status(404).json({ erro: 'Série não encontrada para esta tarefa.' });
+    const hoje = obterDataHoje(usuario.fuso_horario);
+    const inicio = referencia.data_prevista > hoje ? referencia.data_prevista : hoje;
+    const quantidade = await tarefas.encerrarProximas(usuario.id, referencia.serie_id, inicio);
+    resposta.json({ quantidade, inicio });
+  });
   aplicacao.put('/api/tarefas/:id', async (requisicao, resposta) => {
     const id = validarId(requisicao.params.id);
     validarObjeto(requisicao.body, ['titulo', 'observacao', 'horario', 'prioridade', 'data_prevista']);

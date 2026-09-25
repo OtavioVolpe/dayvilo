@@ -1,4 +1,6 @@
-const colunas = 'id, titulo, observacao, data_prevista, horario, prioridade, situacao, ordem';
+import { randomUUID } from 'node:crypto';
+
+const colunas = 'id, titulo, observacao, data_prevista, horario, prioridade, situacao, ordem, (SELECT serie_id FROM ocorrencias_series WHERE tarefa_id = tarefas.id) AS serie_id';
 
 function apresentarTarefa(tarefa) {
   return { ...tarefa, prioridade: Boolean(tarefa.prioridade), horario: tarefa.horario?.slice(0, 5) ?? null };
@@ -47,13 +49,44 @@ export function criarRepositorioTarefas(banco) {
       return this.buscar(usuarioId, resultado.insertId);
     },
     async criarRepetidas(usuarioId, dados, datas) {
-      // Um único INSERT no InnoDB salva todas as ocorrências ou nenhuma.
-      const valores = datas.flatMap(data => [usuarioId, dados.titulo, dados.observacao, data, dados.horario, dados.prioridade]);
-      const marcadores = datas.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
+      const conexao = banco.getConnection ? await banco.getConnection() : banco;
+      const propria = conexao !== banco;
+      const serieId = randomUUID();
+      let primeira;
+      try {
+        if (propria) await conexao.beginTransaction();
+        else await conexao.query('SAVEPOINT criar_serie');
+        for (const data of datas) {
+          const [resultado] = await conexao.execute(
+            'INSERT INTO tarefas (usuario_id, titulo, observacao, data_prevista, horario, prioridade) VALUES (?, ?, ?, ?, ?, ?)',
+            [usuarioId, dados.titulo, dados.observacao, data, dados.horario, dados.prioridade],
+          );
+          primeira ??= resultado.insertId;
+          await conexao.execute('INSERT INTO ocorrencias_series (tarefa_id, serie_id) VALUES (?, ?)', [resultado.insertId, serieId]);
+        }
+        const tarefa = await criarRepositorioTarefas(conexao).buscar(usuarioId, primeira);
+        if (propria) await conexao.commit();
+        else await conexao.query('RELEASE SAVEPOINT criar_serie');
+        return { tarefa, quantidade: datas.length };
+      } catch (erro) {
+        if (propria) await conexao.rollback();
+        else await conexao.query('ROLLBACK TO SAVEPOINT criar_serie');
+        throw erro;
+      } finally { if (propria) conexao.release(); }
+    },
+    async editarProximas(usuarioId, serieId, inicio, dados) {
       const [resultado] = await banco.execute(
-        'INSERT INTO tarefas (usuario_id, titulo, observacao, data_prevista, horario, prioridade) VALUES ' + marcadores, valores,
+        "UPDATE tarefas JOIN ocorrencias_series ON tarefa_id = tarefas.id SET titulo = ?, observacao = ?, horario = ?, prioridade = ? WHERE usuario_id = ? AND serie_id = ? AND data_prevista >= ? AND situacao = 'pendente'",
+        [dados.titulo, dados.observacao, dados.horario, dados.prioridade, usuarioId, serieId, inicio],
       );
-      return { tarefa: await this.buscar(usuarioId, resultado.insertId), quantidade: datas.length };
+      return resultado.affectedRows;
+    },
+    async encerrarProximas(usuarioId, serieId, inicio) {
+      const [resultado] = await banco.execute(
+        "UPDATE tarefas JOIN ocorrencias_series ON tarefa_id = tarefas.id SET situacao = 'pulada', concluida_em = NULL WHERE usuario_id = ? AND serie_id = ? AND data_prevista >= ? AND situacao = 'pendente'",
+        [usuarioId, serieId, inicio],
+      );
+      return resultado.affectedRows;
     },
     async editar(usuarioId, id, dados) {
       await banco.execute('UPDATE tarefas SET titulo = ?, observacao = ?, horario = ?, prioridade = ?, data_prevista = COALESCE(?, data_prevista) WHERE usuario_id = ? AND id = ?',
