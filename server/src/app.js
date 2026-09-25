@@ -1,4 +1,5 @@
 import express from 'express';
+import { obterSemana } from './semana.js';
 import { criarRepositorioTarefas } from './repositorio-tarefas.js';
 import { ErroValidacao, obterDataHoje, validarData, validarId, validarNovaTarefa, validarObjeto } from './validacao-tarefas.js';
 
@@ -20,6 +21,10 @@ export function criarAplicacao({ banco, usuario, porta = 3001 }) {
   aplicacao.get('/api/perfil', (_requisicao, resposta) => resposta.json({
     nome: usuario.nome, fuso_horario: usuario.fuso_horario, data_hoje: obterDataHoje(usuario.fuso_horario),
   }));
+  aplicacao.get('/api/tarefas/semana', async (requisicao, resposta) => {
+    const semana = obterSemana(requisicao.query.data ?? obterDataHoje(usuario.fuso_horario));
+    resposta.json({ ...semana, tarefas: await tarefas.listarPeriodo(usuario.id, semana.inicio, semana.fim) });
+  });
   aplicacao.get('/api/tarefas', async (requisicao, resposta) => {
     const data = requisicao.query.data === undefined
       ? obterDataHoje(usuario.fuso_horario) : validarData(requisicao.query.data);

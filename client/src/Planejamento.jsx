@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { deslocarData, formatarData } from './datas.js';
 import { Plus, Star, Clock, ListTodo, Pencil, Trash2 } from 'lucide-react';
 
 async function solicitar(caminho, opcoes) {
@@ -10,7 +11,10 @@ async function solicitar(caminho, opcoes) {
   return dados;
 }
 
-export default function Hoje() {
+export default function Planejamento({ semanal = false }) {
+  const [dias, definirDias] = useState([]);
+  const [hoje, definirHoje] = useState('');
+  const [novaData, definirNovaData] = useState('');
   const formularioRef = useRef(null);
   const [editando, definirEditando] = useState(null);
   const [excluindo, definirExcluindo] = useState(null);
@@ -34,15 +38,16 @@ export default function Hoje() {
       try {
         const perfil = await solicitar('/perfil');
         const dia = dataSelecionada || perfil.data_hoje;
-        const dados = await solicitar(`/tarefas?data=${dia}`);
-        if (ativo) { definirData(dia); definirTarefas(dados.tarefas); }
+        const dados = await solicitar(`/tarefas${semanal ? "/semana" : ""}?data=${dia}`);
+        if (ativo) { definirData(dia); definirDias(dados.dias || []); definirHoje(perfil.data_hoje); definirTarefas(dados.tarefas); }
       } catch (falha) { if (ativo) definirErro(falha.message); }
       finally { if (ativo) definirCarregando(false); }
     })();
     return () => { ativo = false; };
-  }, [tentativa, dataSelecionada]);
+  }, [tentativa, dataSelecionada, semanal]);
 
-  function abrirFormulario(tarefa = null) {
+  function abrirFormulario(tarefa = null, dia = data) {
+    definirNovaData(dia);
     definirEditando(tarefa); definirAberto(true); definirErro(''); definirAviso('');
     requestAnimationFrame(() => {
       formularioRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -73,13 +78,13 @@ export default function Hoje() {
         body: JSON.stringify({ titulo: campos.get('titulo'), horario: campos.get('horario') || null,
           observacao: campos.get('observacao'), prioridade: campos.has('prioridade'), data_prevista: campos.get('data_prevista') }),
       });
-      if (tarefa.data_prevista === data) {
+      if (semanal ? dias.includes(tarefa.data_prevista) : tarefa.data_prevista === data) {
         definirTarefas(anteriores => editando ? anteriores.map(item => item.id === tarefa.id ? tarefa : item) : [...anteriores, tarefa]);
       } else {
         definirCarregando(true);
         definirDataSelecionada(tarefa.data_prevista);
       }
-      definirAviso(editando ? 'Tarefa atualizada. A lista mostra a data escolhida.' : 'Tarefa criada. A lista mostra a data escolhida.');
+      definirAviso(editando ? 'Tarefa atualizada. O planejamento foi salvo.' : 'Tarefa criada. A lista mostra a data escolhida.');
       formulario.reset(); definirAberto(false); definirEditando(null);
     } catch (falha) { definirErro(falha.message); }
     finally { definirSalvando(false); }
@@ -95,6 +100,11 @@ export default function Hoje() {
       definirTarefas(anteriores => anteriores.map(item => item.id === tarefa.id ? dados.tarefa : item));
     } catch (falha) { definirErro(falha.message); }
     finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
+  }
+
+  function mudarSemana(quantidade) {
+    definirCarregando(true); definirExcluindo(null); definirAviso('');
+    definirDataSelecionada(deslocarData(data, quantidade));
   }
 
   const concluidas = tarefas.filter(tarefa => tarefa.situacao === 'concluida');
@@ -120,29 +130,44 @@ export default function Hoje() {
     </li>
   );
 
-  return <section aria-label="Tarefas do dia" aria-busy={carregando}>
-    <div className="lista-cabecalho"><h2>Minha rotina</h2><button className="botao-principal" disabled={salvando || carregando || !data} onClick={() => abrirFormulario()} aria-expanded={aberto}><Plus size={17} aria-hidden="true" />Nova tarefa</button></div>
+  return <section aria-label={semanal ? "Tarefas da semana" : "Tarefas do dia"} aria-busy={carregando}>
+    <div className="lista-cabecalho"><h2>{semanal ? "Minha semana" : "Minha rotina"}</h2><button className="botao-principal" disabled={salvando || carregando || !data} onClick={() => abrirFormulario()} aria-expanded={aberto}><Plus size={17} aria-hidden="true" />Nova tarefa</button></div>
+    {semanal && dias.length > 0 && <div className="navegacao-semana">
+      <button className="botao-secundario" disabled={aberto || carregando || atualizando.length > 0} onClick={() => mudarSemana(-7)}>← Semana anterior</button>
+      <p>{formatarData(dias[0])} a {formatarData(dias[6], { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+      <button className="botao-secundario" disabled={aberto || carregando || atualizando.length > 0} onClick={() => mudarSemana(7)}>Próxima semana →</button>
+    </div>}
     <form className="seletor-dia" key={data} onSubmit={evento => {
       evento.preventDefault();
       const dia = new FormData(evento.currentTarget).get('dia');
       definirCarregando(true); definirExcluindo(null); definirAviso(''); definirDataSelecionada(dia); definirTentativa(valor => valor + 1);
-    }}><label>Ver tarefas de<input aria-label="Data da lista" name="dia" type="date" required min="1000-01-01" max="9999-12-31" defaultValue={data} disabled={aberto || salvando || atualizando.length > 0} /></label><button type="submit" className="botao-secundario" disabled={!data || aberto || salvando || atualizando.length > 0}>Ver dia</button><button type="button" className="botao-secundario" disabled={aberto || salvando || atualizando.length > 0} onClick={() => { definirCarregando(true); definirDataSelecionada(''); definirTentativa(valor => valor + 1); definirAviso(''); definirExcluindo(null); }}>Voltar para hoje</button></form>
+    }}><label>{semanal ? "Semana que inclui" : "Ver tarefas de"}<input aria-label="Data da lista" name="dia" type="date" required min="1000-01-01" max="9999-12-31" defaultValue={data} disabled={aberto || salvando || atualizando.length > 0} /></label><button type="submit" className="botao-secundario" disabled={!data || aberto || salvando || atualizando.length > 0}>{semanal ? "Ver semana" : "Ver dia"}</button><button type="button" className="botao-secundario" disabled={aberto || salvando || atualizando.length > 0} onClick={() => { definirCarregando(true); definirDataSelecionada(''); definirTentativa(valor => valor + 1); definirAviso(''); definirExcluindo(null); }}>{semanal ? "Semana atual" : "Voltar para hoje"}</button></form>
     {aviso && <p className="aviso-tarefa" role="status">{aviso}</p>}
     {erro && <div className="mensagem-erro" role="alert">{erro} <button type="button" onClick={() => definirTentativa(valor => valor + 1)}>Recarregar lista</button></div>}
-    <form key={editando?.id ?? `nova-${data}`} ref={formularioRef} onSubmit={adicionar} className="formulario-tarefa" hidden={!aberto}>
+    <form key={editando?.id ?? `nova-${novaData || data}`} ref={formularioRef} onSubmit={adicionar} className="formulario-tarefa" hidden={!aberto}>
       <fieldset disabled={salvando || carregando}><legend>{editando ? "Editar tarefa" : "Nova tarefa"}</legend>
         <label>O que você quer fazer?<input defaultValue={editando?.titulo ?? ""} name="titulo" required maxLength={200} placeholder="Ex.: ler algumas páginas" /></label>
-        <div className="campos-opcionais"><label>Data<input defaultValue={editando?.data_prevista ?? data} name="data_prevista" type="date" required min="1000-01-01" max="9999-12-31" /></label><label>Horário (opcional)<input defaultValue={editando?.horario ?? ""} name="horario" type="time" /></label><label className="campo-prioridade"><input defaultChecked={editando?.prioridade ?? false} name="prioridade" type="checkbox" />Marcar como prioridade</label></div>
+        <div className="campos-opcionais"><label>Data<input defaultValue={editando?.data_prevista ?? (novaData || data)} name="data_prevista" type="date" required min="1000-01-01" max="9999-12-31" /></label><label>Horário (opcional)<input defaultValue={editando?.horario ?? ""} name="horario" type="time" /></label><label className="campo-prioridade"><input defaultChecked={editando?.prioridade ?? false} name="prioridade" type="checkbox" />Marcar como prioridade</label></div>
         <label>Observação (opcional)<textarea defaultValue={editando?.observacao ?? ""} name="observacao" maxLength={4000} rows={2} /></label>
         <div className="acoes-formulario"><button type="button" className="botao-secundario" onClick={() => { definirAberto(false); definirEditando(null); }}>Cancelar</button><button className="botao-principal" type="submit">{salvando ? 'Salvando…' : 'Salvar tarefa'}</button></div>
       </fieldset>
     </form>
     {carregando ? <p role="status" className="estado-lista">Carregando sua rotina…</p> : data && <>
-      {tarefas.length > 0 && <div className="progresso"><div><span>{concluidas.length} de {tarefas.length} concluídas</span><span>{Math.round(concluidas.length / tarefas.length * 100)}%</span></div><progress aria-label="Progresso do dia" value={concluidas.length} max={tarefas.length} /></div>}
+      {tarefas.length > 0 && <div className="progresso"><div><span>{concluidas.length} de {tarefas.length} concluídas</span><span>{Math.round(concluidas.length / tarefas.length * 100)}%</span></div><progress aria-label={semanal ? "Progresso da semana" : "Progresso do dia"} value={concluidas.length} max={tarefas.length} /></div>}
+      {semanal ? <div className="grade-semana">{dias.map(dia => {
+        const itens = tarefas.filter(tarefa => tarefa.data_prevista === dia).sort((a, b) => Number(a.situacao === 'concluida') - Number(b.situacao === 'concluida') || (a.horario || '99').localeCompare(b.horario || '99') || a.id - b.id);
+        return <section className={dia === hoje ? 'dia-semana dia-atual' : 'dia-semana'} key={dia} aria-label={formatarData(dia, { weekday: 'long', day: 'numeric', month: 'long' })}>
+          <header><h3>{formatarData(dia, { weekday: 'short' })} <span>{formatarData(dia)}</span>{dia === hoje && <small>Hoje</small>}</h3>
+          <button className="botao-secundario" disabled={salvando || atualizando.length > 0} aria-label={'Adicionar tarefa em ' + formatarData(dia)} onClick={() => abrirFormulario(null, dia)}><Plus size={16} aria-hidden="true" />Tarefa</button></header>
+          <p className="resumo-dia">{itens.filter(tarefa => tarefa.situacao === 'concluida').length} de {itens.length} concluídas</p>
+          {itens.length ? <ul className="lista-tarefas">{itens.map(linha)}</ul> : <p className="dia-vazio">Sem tarefas. Um pouco de espaço livre.</p>}
+        </section>;
+      })}</div> : <>
       {pendentes.length > 0 && <><div className="ordenacao"><label>Organizar por <select value={ordem} onChange={evento => definirOrdem(evento.target.value)}><option value="criacao">Ordem de criação</option><option value="horario">Horário</option></select></label></div><ul className="lista-tarefas">{pendentes.map(linha)}</ul></>}
       {tarefas.length === 0 && <div className="initial-state"><ListTodo size={26} aria-hidden="true" /><h2>Um dia com espaço livre</h2><p>Nenhuma tarefa para esta data. Adicione o que fizer sentido para seu dia.</p></div>}
       {tarefas.length > 0 && pendentes.length === 0 && <p className="estado-lista">Tudo concluído nesta data. Aproveite seu tempo!</p>}
       {concluidas.length > 0 && <details className="tarefas-concluidas" open><summary>Concluídas ({concluidas.length})</summary><ul className="lista-tarefas">{concluidas.map(linha)}</ul></details>}
+    </>}
     </>}
   </section>;
 }

@@ -13,6 +13,13 @@ export function criarRepositorioTarefas(banco) {
       );
       return tarefas.map(apresentarTarefa);
     },
+    async listarPeriodo(usuarioId, inicio, fim) {
+      const [tarefas] = await banco.execute(
+        'SELECT ' + colunas + ' FROM tarefas WHERE usuario_id = ? AND data_prevista BETWEEN ? AND ? ORDER BY data_prevista, horario IS NULL, horario, ordem, id',
+        [usuarioId, inicio, fim],
+      );
+      return tarefas.map(apresentarTarefa);
+    },
     async buscar(usuarioId, id) {
       const [[tarefa]] = await banco.execute(`SELECT ${colunas} FROM tarefas WHERE usuario_id = ? AND id = ?`, [usuarioId, id]);
       return tarefa ? apresentarTarefa(tarefa) : null;
