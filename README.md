@@ -2,7 +2,7 @@
 
 Aplicação web de organização pessoal, com foco em uma rotina flexível e uma interface simples para celular e computador.
 
-A área de rotina reúne três visões: **Hoje**, **Semana** e **Histórico**. A visão semanal organiza as tarefas de segunda a domingo, permite navegar entre semanas e adicionar, editar ou concluir tarefas de cada dia. O design privilegia clareza e navegação entre as áreas da vida pessoal.
+A área de rotina reúne três visões: **Hoje**, **Semana** e **Histórico**. A visão semanal organiza as tarefas de segunda a domingo, permite navegar entre semanas e adicionar, editar ou concluir tarefas de cada dia. O Histórico consulta as tarefas pela data planejada, com filtros de situação e períodos de até 366 dias. Mostra o estado atual das tarefas; alterações de data e exclusões também afetam essa consulta. O design privilegia clareza e navegação entre as áreas da vida pessoal.
 
 ## Tecnologias
 

@@ -40,6 +40,13 @@ test('MySQL: criar, listar, concluir e isolar tarefas por usuário', async () =>
     assert.deepEqual(semanal.dados.tarefas.map(tarefa => tarefa.titulo), ['Segunda', 'Ler', 'Domingo']);
     assert.equal((await chamar('/tarefas/semana?data=2026-02-30')).status, 400);
     assert.equal((await chamar('/tarefas/semana?data=2026-10-12')).dados.tarefas.length, 0);
+    await banco.execute('INSERT INTO tarefas (usuario_id,titulo,data_prevista) VALUES (?,?,?),(?,?,?),(?,?,?)', [perfil.insertId, 'Histórico inicial', '2024-01-01', perfil.insertId, 'Histórico final', '2024-01-31', outro.insertId, 'Privada antiga', '2024-01-15']);
+    const historico = await chamar('/tarefas/historico?inicio=2024-01-01&fim=2024-01-31');
+    assert.equal(historico.status, 200);
+    assert.deepEqual(historico.dados.tarefas.map(tarefa => tarefa.titulo), ['Histórico inicial', 'Histórico final']);
+    assert.equal((await chamar('/tarefas/historico?inicio=2024-02-01&fim=2024-02-29')).dados.tarefas.length, 0);
+    assert.equal((await chamar('/tarefas/historico?inicio=2024-02-01&fim=2024-01-01')).status, 400);
+    assert.equal((await chamar('/tarefas/historico?inicio=2024-01-01&fim=2025-01-01')).status, 400);
     const alteracao = { titulo: 'Leitura revisada', horario: '18:15', prioridade: false, observacao: 'Capítulo 2' };
     await chamar('/tarefas/' + id + '/conclusao', 'PATCH', { concluida: true });
     const editada = await chamar('/tarefas/' + id, 'PUT', alteracao);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Planejamento from './Planejamento.jsx';
-import { Sprout, Sun, Utensils, Dumbbell, BookOpen, ListTodo } from 'lucide-react';
+import { Sprout, Sun, Utensils, Dumbbell, BookOpen } from 'lucide-react';
 
 const areas = [
   { name: 'Rotina', icon: Sun },
@@ -36,10 +36,7 @@ export default function App() {
             <h1>{view === 'Hoje' ? 'Seu dia, no seu ritmo.' : view === 'Semana' ? 'Uma semana possível.' : 'Um dia de cada vez.'}</h1>
             <p className="subtitle">{view === 'Hoje' ? 'Espaço para o que importa hoje.' : view === 'Semana' ? 'Uma visão dos seus próximos dias.' : 'Reveja o que fez parte da sua rotina.'}</p>
           </header>
-          {view !== 'Histórico' ? <Planejamento key={view} semanal={view === 'Semana'} /> : <section className="initial-state" aria-live="polite">
-            <ListTodo size={26} aria-hidden="true" />
-            <h2>{view === 'Hoje' ? 'Sua rotina começa aqui' : view === 'Semana' ? 'Seu planejamento semanal' : 'Seu histórico de atividades'}</h2>
-          </section>}
+          <Planejamento key={view} semanal={view === 'Semana'} historico={view === 'Histórico'} />
         </main>
       </div>
     </div>

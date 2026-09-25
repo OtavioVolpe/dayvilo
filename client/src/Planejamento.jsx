@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import ListaHistorico from './ListaHistorico.jsx';
 import { deslocarData, formatarData } from './datas.js';
 import { Plus, Star, Clock, ListTodo, Pencil, Trash2 } from 'lucide-react';
 
@@ -11,7 +12,11 @@ async function solicitar(caminho, opcoes) {
   return dados;
 }
 
-export default function Planejamento({ semanal = false }) {
+export default function Planejamento({ semanal = false, historico = false }) {
+  const [periodo, definirPeriodo] = useState(null);
+  const [periodoConsultado, definirPeriodoConsultado] = useState(null);
+  const [situacao, definirSituacao] = useState('todas');
+  const [consultaValida, definirConsultaValida] = useState(false);
   const [dias, definirDias] = useState([]);
   const [hoje, definirHoje] = useState('');
   const [novaData, definirNovaData] = useState('');
@@ -33,18 +38,22 @@ export default function Planejamento({ semanal = false }) {
   useEffect(() => {
     let ativo = true;
     definirCarregando(true);
+    definirConsultaValida(false);
     definirErro('');
     (async () => {
       try {
         const perfil = await solicitar('/perfil');
         const dia = dataSelecionada || perfil.data_hoje;
-        const dados = await solicitar(`/tarefas${semanal ? "/semana" : ""}?data=${dia}`);
-        if (ativo) { definirData(dia); definirDias(dados.dias || []); definirHoje(perfil.data_hoje); definirTarefas(dados.tarefas); }
+        const caminho = historico
+          ? '/tarefas/historico' + (periodo ? '?' + new URLSearchParams(periodo) : '')
+          : `/tarefas${semanal ? '/semana' : ''}?data=${dia}`;
+        const dados = await solicitar(caminho);
+        if (ativo) { definirConsultaValida(true); if (historico) definirPeriodoConsultado({ inicio: dados.inicio, fim: dados.fim }); definirData(dia); definirDias(dados.dias || []); definirHoje(perfil.data_hoje); definirTarefas(dados.tarefas); }
       } catch (falha) { if (ativo) definirErro(falha.message); }
       finally { if (ativo) definirCarregando(false); }
     })();
     return () => { ativo = false; };
-  }, [tentativa, dataSelecionada, semanal]);
+  }, [tentativa, dataSelecionada, semanal, historico, periodo]);
 
   function abrirFormulario(tarefa = null, dia = data) {
     definirNovaData(dia);
@@ -78,13 +87,16 @@ export default function Planejamento({ semanal = false }) {
         body: JSON.stringify({ titulo: campos.get('titulo'), horario: campos.get('horario') || null,
           observacao: campos.get('observacao'), prioridade: campos.has('prioridade'), data_prevista: campos.get('data_prevista') }),
       });
-      if (semanal ? dias.includes(tarefa.data_prevista) : tarefa.data_prevista === data) {
+      if (historico) {
+        definirTarefas(anteriores => anteriores.map(item => item.id === tarefa.id ? tarefa : item)
+          .filter(item => item.data_prevista >= periodoConsultado.inicio && item.data_prevista <= periodoConsultado.fim));
+      } else if (semanal ? dias.includes(tarefa.data_prevista) : tarefa.data_prevista === data) {
         definirTarefas(anteriores => editando ? anteriores.map(item => item.id === tarefa.id ? tarefa : item) : [...anteriores, tarefa]);
       } else {
         definirCarregando(true);
         definirDataSelecionada(tarefa.data_prevista);
       }
-      definirAviso(editando ? 'Tarefa atualizada. O planejamento foi salvo.' : 'Tarefa criada. A lista mostra a data escolhida.');
+      definirAviso(historico ? 'Tarefa atualizada. Se saiu do período ou do filtro, consulte a nova data em Hoje ou Semana.' : editando ? 'Tarefa atualizada. O planejamento foi salvo.' : 'Tarefa criada. A lista mostra a data escolhida.');
       formulario.reset(); definirAberto(false); definirEditando(null);
     } catch (falha) { definirErro(falha.message); }
     finally { definirSalvando(false); }
@@ -115,7 +127,7 @@ export default function Planejamento({ semanal = false }) {
       <input type="checkbox" aria-label={`Concluir: ${tarefa.titulo}`} checked={tarefa.situacao === 'concluida'} disabled={salvando || atualizando.includes(tarefa.id)} onChange={() => alternar(tarefa)} />
       <div className="tarefa-conteudo"><span className="tarefa-titulo">{tarefa.titulo}</span>
         {tarefa.observacao && <p className="observacao">{tarefa.observacao}</p>}
-        <div className="detalhes"><span><Clock size={13} aria-hidden="true" />{tarefa.horario || 'Sem horário'}</span>
+        <div className="detalhes">{historico && <span>{({ pendente: "Pendente", concluida: "Concluída", pulada: "Pulada" })[tarefa.situacao]}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario || 'Sem horário'}</span>
           {tarefa.prioridade && <span className="prioridade"><Star size={13} aria-hidden="true" />Prioridade</span>}</div>
       </div>
       <div className="acoes-tarefa">
@@ -130,18 +142,31 @@ export default function Planejamento({ semanal = false }) {
     </li>
   );
 
-  return <section aria-label={semanal ? "Tarefas da semana" : "Tarefas do dia"} aria-busy={carregando}>
-    <div className="lista-cabecalho"><h2>{semanal ? "Minha semana" : "Minha rotina"}</h2><button className="botao-principal" disabled={salvando || carregando || !data} onClick={() => abrirFormulario()} aria-expanded={aberto}><Plus size={17} aria-hidden="true" />Nova tarefa</button></div>
+  return <section aria-label={historico ? "Histórico de tarefas" : semanal ? "Tarefas da semana" : "Tarefas do dia"} aria-busy={carregando}>
+    <div className="lista-cabecalho"><h2>{historico ? "Meu histórico" : semanal ? "Minha semana" : "Minha rotina"}</h2>{!historico && <button className="botao-principal" disabled={salvando || carregando || !data} onClick={() => abrirFormulario()} aria-expanded={aberto}><Plus size={17} aria-hidden="true" />Nova tarefa</button>}</div>
     {semanal && dias.length > 0 && <div className="navegacao-semana">
       <button className="botao-secundario" disabled={aberto || carregando || atualizando.length > 0} onClick={() => mudarSemana(-7)}>← Semana anterior</button>
       <p>{formatarData(dias[0])} a {formatarData(dias[6], { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
       <button className="botao-secundario" disabled={aberto || carregando || atualizando.length > 0} onClick={() => mudarSemana(7)}>Próxima semana →</button>
     </div>}
-    <form className="seletor-dia" key={data} onSubmit={evento => {
+    {historico && periodoConsultado && <>
+      <p className="explicacao-historico">Atividades organizadas pela data planejada, incluindo hoje. Consulte até 366 dias por vez.</p>
+      <form className="seletor-dia" key={periodoConsultado.inicio + periodoConsultado.fim + tentativa} onSubmit={evento => {
+        evento.preventDefault(); const campos = new FormData(evento.currentTarget);
+        definirCarregando(true); definirExcluindo(null); definirAviso('');
+        definirPeriodo({ inicio: campos.get('inicio'), fim: campos.get('fim') });
+      }}>
+        <label>De<input type="date" name="inicio" defaultValue={periodoConsultado.inicio} min="1000-01-01" max={hoje} required disabled={aberto || carregando || atualizando.length > 0} /></label>
+        <label>Até<input type="date" name="fim" defaultValue={periodoConsultado.fim} min="1000-01-01" max={hoje} required disabled={aberto || carregando || atualizando.length > 0} /></label>
+        <button className="botao-secundario" disabled={aberto || carregando || atualizando.length > 0}>Consultar período</button>
+        <button type="button" className="botao-secundario" disabled={aberto || carregando || atualizando.length > 0} onClick={() => { definirCarregando(true); definirPeriodo(null); definirTentativa(valor => valor + 1); definirAviso(''); }}>Últimos 30 dias</button>
+      </form>
+    </>}
+    {!historico && <form className="seletor-dia" key={data} onSubmit={evento => {
       evento.preventDefault();
       const dia = new FormData(evento.currentTarget).get('dia');
       definirCarregando(true); definirExcluindo(null); definirAviso(''); definirDataSelecionada(dia); definirTentativa(valor => valor + 1);
-    }}><label>{semanal ? "Semana que inclui" : "Ver tarefas de"}<input aria-label="Data da lista" name="dia" type="date" required min="1000-01-01" max="9999-12-31" defaultValue={data} disabled={aberto || salvando || atualizando.length > 0} /></label><button type="submit" className="botao-secundario" disabled={!data || aberto || salvando || atualizando.length > 0}>{semanal ? "Ver semana" : "Ver dia"}</button><button type="button" className="botao-secundario" disabled={aberto || salvando || atualizando.length > 0} onClick={() => { definirCarregando(true); definirDataSelecionada(''); definirTentativa(valor => valor + 1); definirAviso(''); definirExcluindo(null); }}>{semanal ? "Semana atual" : "Voltar para hoje"}</button></form>
+    }}><label>{semanal ? "Semana que inclui" : "Ver tarefas de"}<input aria-label="Data da lista" name="dia" type="date" required min="1000-01-01" max="9999-12-31" defaultValue={data} disabled={aberto || salvando || atualizando.length > 0} /></label><button type="submit" className="botao-secundario" disabled={!data || aberto || salvando || atualizando.length > 0}>{semanal ? "Ver semana" : "Ver dia"}</button><button type="button" className="botao-secundario" disabled={aberto || salvando || atualizando.length > 0} onClick={() => { definirCarregando(true); definirDataSelecionada(''); definirTentativa(valor => valor + 1); definirAviso(''); definirExcluindo(null); }}>{semanal ? "Semana atual" : "Voltar para hoje"}</button></form>}
     {aviso && <p className="aviso-tarefa" role="status">{aviso}</p>}
     {erro && <div className="mensagem-erro" role="alert">{erro} <button type="button" onClick={() => definirTentativa(valor => valor + 1)}>Recarregar lista</button></div>}
     <form key={editando?.id ?? `nova-${novaData || data}`} ref={formularioRef} onSubmit={adicionar} className="formulario-tarefa" hidden={!aberto}>
@@ -152,9 +177,9 @@ export default function Planejamento({ semanal = false }) {
         <div className="acoes-formulario"><button type="button" className="botao-secundario" onClick={() => { definirAberto(false); definirEditando(null); }}>Cancelar</button><button className="botao-principal" type="submit">{salvando ? 'Salvando…' : 'Salvar tarefa'}</button></div>
       </fieldset>
     </form>
-    {carregando ? <p role="status" className="estado-lista">Carregando sua rotina…</p> : data && <>
-      {tarefas.length > 0 && <div className="progresso"><div><span>{concluidas.length} de {tarefas.length} concluídas</span><span>{Math.round(concluidas.length / tarefas.length * 100)}%</span></div><progress aria-label={semanal ? "Progresso da semana" : "Progresso do dia"} value={concluidas.length} max={tarefas.length} /></div>}
-      {semanal ? <div className="grade-semana">{dias.map(dia => {
+    {carregando ? <p role="status" className="estado-lista">Carregando sua rotina…</p> : data && consultaValida && <>
+      {!historico && tarefas.length > 0 && <div className="progresso"><div><span>{concluidas.length} de {tarefas.length} concluídas</span><span>{Math.round(concluidas.length / tarefas.length * 100)}%</span></div><progress aria-label={semanal ? "Progresso da semana" : "Progresso do dia"} value={concluidas.length} max={tarefas.length} /></div>}
+      {historico ? <ListaHistorico tarefas={tarefas} situacao={situacao} definirSituacao={definirSituacao} bloqueado={aberto || salvando || atualizando.length > 0} renderizarTarefa={linha} /> : semanal ? <div className="grade-semana">{dias.map(dia => {
         const itens = tarefas.filter(tarefa => tarefa.data_prevista === dia).sort((a, b) => Number(a.situacao === 'concluida') - Number(b.situacao === 'concluida') || (a.horario || '99').localeCompare(b.horario || '99') || a.id - b.id);
         return <section className={dia === hoje ? 'dia-semana dia-atual' : 'dia-semana'} key={dia} aria-label={formatarData(dia, { weekday: 'long', day: 'numeric', month: 'long' })}>
           <header><h3>{formatarData(dia, { weekday: 'short' })} <span>{formatarData(dia)}</span>{dia === hoje && <small>Hoje</small>}</h3>
