@@ -1,16 +1,8 @@
+import { solicitar } from './api.js';
 import { useEffect, useRef, useState } from 'react';
 import ListaHistorico from './ListaHistorico.jsx';
 import { deslocarData, formatarData } from './datas.js';
 import { Plus, Star, Clock, ListTodo, Pencil, Trash2 } from 'lucide-react';
-
-async function solicitar(caminho, opcoes) {
-  let resposta;
-  try { resposta = await fetch(`/api${caminho}`, opcoes); }
-  catch { throw new Error('Não foi possível conectar. Verifique a conexão e tente novamente.'); }
-  const dados = await resposta.json().catch(() => ({}));
-  if (!resposta.ok) throw new Error(dados.erro || 'Não foi possível completar a ação.');
-  return dados;
-}
 
 export default function Planejamento({ semanal = false, historico = false }) {
   const [modoSerie, definirModoSerie] = useState(false);

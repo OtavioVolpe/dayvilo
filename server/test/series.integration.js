@@ -1,3 +1,4 @@
+import { prepararSessaoTeste } from './sessao-fixture.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
@@ -14,9 +15,10 @@ test('séries preservam passado, concluídas, puladas e outros perfis; falha rev
     const [outro]=await banco.execute('INSERT INTO usuarios (nome) VALUES (?)',['Outro']);
     const hoje=obterDataHoje('America/Sao_Paulo');
     const dia=n=>{const d=new Date(hoje+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
-    servidor=criarAplicacao({banco,usuario:{id:u.insertId,nome:'Teste',fuso_horario:'America/Sao_Paulo'}}).listen(0,'127.0.0.1'); await once(servidor,'listening');
+    const headers = await prepararSessaoTeste(banco, u.insertId);
+    servidor = criarAplicacao({ banco }).listen(0,'127.0.0.1'); await once(servidor,'listening');
     const url=`http://127.0.0.1:${servidor.address().port}/api`;
-    const chamar=async(rota,method='GET',body)=>{const r=await fetch(url+rota,{method,headers:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});return {status:r.status,dados:await r.json()};};
+    const chamar=async(rota,method='GET',body)=>{const r=await fetch(url+rota,{method,headers,body:body===undefined?undefined:JSON.stringify(body)});return {status:r.status,dados:await r.json()};};
     const criado=await chamar('/tarefas/repetidas','POST',{tarefa:{titulo:'Original',data_prevista:dia(-1)},repeticao:{tipo:'diaria',ate:dia(4)}});
     assert.equal(criado.status,201);assert.equal(criado.dados.quantidade,6);assert.ok(criado.dados.tarefa.serie_id);
     const repo=criarRepositorioTarefas(banco);

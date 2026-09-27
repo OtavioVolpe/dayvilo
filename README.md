@@ -18,7 +18,6 @@ Requisitos: Node.js 24 ou superior, npm e MySQL 8.0.16 ou superior.
 git clone https://github.com/OtavioVolpe/dayvilo.git
 cd dayvilo
 npm install
-npm run dev
 ```
 
 - Interface: http://127.0.0.1:5173
@@ -46,13 +45,21 @@ Não edite uma migração já aplicada; adicione outro arquivo numerado para mud
 
 As tabelas `usuarios` e `tarefas` guardam os dados da aplicação. A conta MySQL usada na conexão é independente dos registros de `usuarios`.
 
-### Perfil local
+### Contas e acesso
 
-Depois das migrações, execute `npm run db:perfil`. O comando cria um perfil pessoal e registra seu identificador em `server/.env`. Se já estiver configurado, mantém o perfil existente.
+Depois das migrações, inicie com `npm run dev` e abra a interface. Crie uma conta com nome, e-mail e senha; cada conta acessa apenas sua própria rotina. E-mails são tratados sem distinção entre maiúsculas e minúsculas. A senha aceita de 15 a 128 caracteres, incluindo espaços.
 
-Inicie com `npm run dev`. A tela Hoje permite criar e editar tarefas com horário opcional, observação e prioridade, organizar por horário, marcar ou desmarcar conclusões e excluir tarefas com confirmação. É possível escolher a data no cadastro ou na edição, consultar as tarefas de cada dia e reagendar sem perder o estado de conclusão. Os dados ficam salvos no MySQL.
+As senhas são protegidas com scrypt e sal individual. A sessão dura até sete dias e usa um cookie HttpOnly/SameSite=Strict; sair invalida a sessão no servidor. Alterações exigem proteção contra CSRF. Cadastro e entrada têm limite de tentativas. O e-mail é usado como identificador; não há envio de mensagens, verificação de e-mail ou recuperação de senha.
 
-A execução usa um único perfil local, sem autenticação, e a API aceita apenas acesso pelo próprio computador. Não exponha esse modo na internet.
+Para trazer uma rotina criada com o antigo perfil local, mantenha `USUARIO_LOCAL_ID` no `server/.env` e execute, **antes de cadastrar sua conta**:
+
+```sh
+npm run conta:codigo
+```
+
+No cadastro, marque **Trazer minha rotina anterior** e cole o código no campo de vinculação. Ele vale por 30 minutos, pode ser usado uma vez e não deve ser compartilhado. Um novo código invalida o anterior. A vinculação preserva as tarefas, as séries, os estados de conclusão e o fuso do perfil. Contas novas não precisam desse código nem de `db:perfil`.
+
+A API permanece restrita ao próprio computador. Os cookies locais funcionam por HTTP; publicação exige configurar HTTPS, cookies Secure e as origens de acesso. Este comando de inicialização não aceita execução em produção.
 
 ### Comandos
 
@@ -63,9 +70,10 @@ A execução usa um único perfil local, sem autenticação, e a API aceita apen
 | `npm start` | Inicia somente a API. |
 | `npm run db:check` | Verifica a conexão com MySQL. |
 | `npm run db:migrate` | Aplica as migrações pendentes à base configurada. |
-| `npm run db:perfil` | Configura o perfil local. |
-| `npm test` | Verifica migrações e validações de tarefas. |
-| `npm run test:integracao` | Testa a API com MySQL e reverte os dados de teste. |
+| `npm run conta:codigo` | Gera um código para vincular a rotina local a uma conta no cadastro. |
+| `npm run db:perfil` | Configura um perfil legado; desnecessário para contas novas. |
+| `npm test` | Verifica migrações, validações e proteção das senhas. |
+| `npm run test:integracao` | Testa contas, sessões e tarefas com MySQL; reverte os dados de teste. |
 
 ## Estrutura
 

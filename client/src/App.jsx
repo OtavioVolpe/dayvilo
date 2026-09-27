@@ -1,3 +1,5 @@
+import Acesso from './Acesso.jsx';
+import { useSessao } from './useSessao.js';
 import { useState } from 'react';
 import Planejamento from './Planejamento.jsx';
 import { Sprout, Sun, Utensils, Dumbbell, BookOpen } from 'lucide-react';
@@ -10,6 +12,7 @@ const areas = [
 ];
 
 export default function App() {
+  const { sessao, erro, aviso, saindo, entrar, sair, atualizar } = useSessao();
   const [view, setView] = useState('Hoje');
   const date = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
 
@@ -17,8 +20,10 @@ export default function App() {
     <div className="app-shell">
       <header className="app-header">
         <span className="brand"><span className="brand-mark"><Sprout size={22} aria-hidden="true" /></span>Dayvilo</span>
+        {sessao && <div className="conta-atual"><span title={sessao.email}>{sessao.nome}</span><button className="botao-secundario" disabled={saindo} onClick={sair}>{saindo ? 'Saindo…' : 'Sair'}</button></div>}
       </header>
-      <div className="app-layout">
+      {sessao === undefined ? <main><p className="estado-lista" role="status">{erro || 'Abrindo seu espaço…'}</p>{erro && <button className="botao-secundario" onClick={atualizar}>Tentar novamente</button>}</main>
+        : !sessao ? <Acesso aoEntrar={dados => { setView('Hoje'); entrar(dados); }} aviso={aviso} /> : <div className="app-layout">
         <nav className="areas" aria-label="Áreas pessoais">
           <p className="areas-label">Seu espaço</p>
           {areas.map(({ name, icon: Icon }) => (
@@ -36,9 +41,10 @@ export default function App() {
             <h1>{view === 'Hoje' ? 'Seu dia, no seu ritmo.' : view === 'Semana' ? 'Uma semana possível.' : 'Um dia de cada vez.'}</h1>
             <p className="subtitle">{view === 'Hoje' ? 'Espaço para o que importa hoje.' : view === 'Semana' ? 'Uma visão dos seus próximos dias.' : 'Reveja o que fez parte da sua rotina.'}</p>
           </header>
-          <Planejamento key={view} semanal={view === 'Semana'} historico={view === 'Histórico'} />
+          {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
+          <Planejamento key={`${sessao.id}-${view}`} semanal={view === 'Semana'} historico={view === 'Histórico'} />
         </main>
-      </div>
+      </div>}
     </div>
   );
 }

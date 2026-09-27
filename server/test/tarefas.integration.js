@@ -1,3 +1,4 @@
+import { prepararSessaoTeste } from './sessao-fixture.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
@@ -12,11 +13,12 @@ test('MySQL: criar, listar, concluir e isolar tarefas por usuário', async () =>
     await banco.beginTransaction();
     const [perfil] = await banco.execute('INSERT INTO usuarios (nome) VALUES (?)', ['Teste transacional']);
     const [outro] = await banco.execute('INSERT INTO usuarios (nome) VALUES (?)', ['Outro teste']);
-    servidor = criarAplicacao({ banco, usuario: { id: perfil.insertId, nome: 'Teste', fuso_horario: 'America/Sao_Paulo' } }).listen(0, '127.0.0.1');
+    const headers = await prepararSessaoTeste(banco, perfil.insertId);
+    servidor = criarAplicacao({ banco }).listen(0, '127.0.0.1');
     await once(servidor, 'listening');
     const endereco = `http://127.0.0.1:${servidor.address().port}/api`;
     const chamar = async (rota, method = 'GET', body) => {
-      const resposta = await fetch(endereco + rota, { method, headers: { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
+      const resposta = await fetch(endereco + rota, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
       return { status: resposta.status, dados: await resposta.json() };
     };
     const criada = await chamar('/tarefas', 'POST', { titulo: ' Ler ', data_prevista: '2026-09-24', horario: '09:30', prioridade: true });

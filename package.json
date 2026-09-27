@@ -11,6 +11,7 @@
     "start": "npm run start -w server",
     "db:check": "node --env-file-if-exists=server/.env server/scripts/check-db.js",
     "db:migrate": "node --env-file-if-exists=server/.env server/scripts/migrate.js",
+    "conta:codigo": "node --env-file-if-exists=server/.env server/scripts/codigo-vinculo.js",
     "db:perfil": "node --env-file-if-exists=server/.env server/scripts/preparar-perfil.js",
     "test:integracao": "node --env-file-if-exists=server/.env --test --test-isolation=none server/test/*.integration.js",
     "test": "node --test --test-isolation=none server/test/*.test.js"

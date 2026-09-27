@@ -1,3 +1,4 @@
+import { prepararSessaoTeste } from './sessao-fixture.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
@@ -11,11 +12,12 @@ test('atrasadas, pular, restaurar e reagendar preservam dados e isolamento', asy
     await banco.beginTransaction();
     const [u] = await banco.execute('INSERT INTO usuarios (nome) VALUES (?)', ['Teste atrasadas']);
     const [outro] = await banco.execute('INSERT INTO usuarios (nome) VALUES (?)', ['Outro perfil']);
-    servidor = criarAplicacao({ banco, usuario: {id:u.insertId,nome:'Teste',fuso_horario:'America/Sao_Paulo'} }).listen(0,'127.0.0.1');
+    const headers = await prepararSessaoTeste(banco, u.insertId);
+    servidor = criarAplicacao({ banco }).listen(0,'127.0.0.1');
     await once(servidor,'listening');
     const url = `http://127.0.0.1:${servidor.address().port}/api`;
     const chamar = async (rota, method='GET', body) => {
-      const r = await fetch(url+rota,{method,headers:{'Content-Type':'application/json'},body:body === undefined ? undefined : JSON.stringify(body)});
+      const r = await fetch(url+rota,{method,headers,body:body === undefined ? undefined : JSON.stringify(body)});
       return {status:r.status,dados:await r.json()};
     };
     const hoje = obterDataHoje('America/Sao_Paulo');
