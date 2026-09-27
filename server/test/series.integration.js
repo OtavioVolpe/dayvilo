@@ -32,9 +32,10 @@ test('séries preservam passado, concluídas, puladas e outros perfis; falha rev
     assert.deepEqual(tarefas.map(t=>t.data_prevista),[-1,0,1,2,3,4].map(dia));
     const fim=await chamar('/tarefas/'+tarefas[4].id+'/serie/encerramento','PATCH',{});
     assert.equal(fim.dados.quantidade,2);
-    const repetido=await chamar('/tarefas/'+tarefas[4].id+'/serie/encerramento','PATCH',{});assert.equal(repetido.dados.quantidade,0);
+    const repetido=await chamar('/tarefas/'+tarefas[4].id+'/serie/encerramento','PATCH',{});assert.equal(repetido.status,404);
     tarefas=await repo.listarPeriodo(u.insertId,dia(-1),dia(4));
-    assert.deepEqual(tarefas.map(t=>t.situacao),['pendente','pendente','concluida','pulada','pulada','pulada']);
+    assert.deepEqual(tarefas.map(t=>t.situacao),['pendente','pendente','concluida','pulada']);
+    assert.equal((await chamar('/tarefas/'+tarefas[3].id+'/serie/encerramento','PATCH',{})).dados.quantidade,0);
     const [[depois]]=await banco.execute('SELECT concluida_em FROM tarefas WHERE id=?',[concluidaId]);assert.equal(depois.concluida_em,antes.concluida_em);
     const antiga=await repo.criar(u.insertId,{titulo:'Sem vínculo',observacao:null,data_prevista:hoje,horario:null,prioridade:false});assert.equal(antiga.serie_id,null);
     assert.equal((await chamar('/tarefas/'+antiga.id+'/serie','PUT',{titulo:'Não'})).status,404);

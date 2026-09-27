@@ -137,7 +137,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
       const resultado = await solicitar('/tarefas/' + tarefa.id + '/serie/encerramento', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}',
       });
-      definirAviso(resultado.quantidade + ' ocorrência(s) pendentes marcadas como puladas. As demais foram preservadas.');
+      definirAviso(resultado.quantidade ? resultado.quantidade + ' ocorrência(s) pendentes removidas. Concluídas, puladas e datas anteriores foram preservadas.' : 'Não há ocorrências pendentes para encerrar a partir dessa data. Tarefas anteriores a hoje continuam como estavam.');
       definirEncerrando(null); definirCarregando(true); definirTentativa(valor => valor + 1);
     } catch (falha) { definirErro(falha.message); }
     finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
@@ -178,7 +178,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
         body: JSON.stringify(reagendar ? { data_prevista: hoje } : { situacao: acao }),
       });
       atualizarTarefa(dados.tarefa);
-      definirAviso(reagendar ? 'Tarefa reagendada para hoje.' : acao === 'pulada' ? 'Tarefa pulada. Ela continua disponível no Histórico.' : 'Tarefa voltou para as pendentes.');
+      definirAviso(reagendar ? 'Tarefa reagendada para hoje.' : acao === 'pulada' ? 'Tarefa pulada. Consulte a seção Puladas ou o Histórico para restaurar.' : 'Tarefa voltou para as pendentes.');
     } catch (falha) { definirErro(falha.message); }
     finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
   }
@@ -212,7 +212,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
         <button type="button" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Excluir: ${tarefa.titulo}`} onClick={() => definirExcluindo(tarefa.id)}><Trash2 size={17} aria-hidden="true" /></button>
       </div>
       {encerrando === tarefa.id && <div className="confirmacao-exclusao" role="group" aria-label="Confirmar encerramento">
-        <p>Marcar como puladas as ocorrências pendentes desta repetição a partir de {formatarData(tarefa.data_prevista > hoje ? tarefa.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}? Concluídas, puladas e datas anteriores serão preservadas.</p>
+        <p>Remover as ocorrências pendentes desta repetição a partir de {formatarData(tarefa.data_prevista > hoje ? tarefa.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}? Essas pendentes serão excluídas e não poderão ser restauradas. Concluídas, puladas e datas anteriores serão preservadas.</p>
         <button type="button" disabled={atualizando.length > 0} onClick={() => definirEncerrando(null)}>Cancelar</button>
         <button type="button" disabled={aberto || salvando || atualizando.length > 0} onClick={() => encerrarSerie(tarefa)}>Confirmar encerramento</button>
       </div>}
@@ -281,13 +281,14 @@ export default function Planejamento({ semanal = false, historico = false }) {
           <header><h3>{formatarData(dia, { weekday: 'short' })} <span>{formatarData(dia)}</span>{dia === hoje && <small>Hoje</small>}</h3>
           <button className="botao-secundario" disabled={salvando || atualizando.length > 0} aria-label={'Adicionar tarefa em ' + formatarData(dia)} onClick={() => abrirFormulario(null, dia)}><Plus size={16} aria-hidden="true" />Tarefa</button></header>
           <p className="resumo-dia">{itens.filter(tarefa => tarefa.situacao === 'concluida').length} de {itens.filter(tarefa => tarefa.situacao !== "pulada").length} concluídas · {itens.filter(tarefa => tarefa.situacao === "pulada").length} puladas</p>
-          {itens.length ? <ul className="lista-tarefas">{itens.map(tarefa => linha(tarefa))}</ul> : <p className="dia-vazio">Sem tarefas. Um pouco de espaço livre.</p>}
+          {itens.some(tarefa => tarefa.situacao !== 'pulada') ? <ul className="lista-tarefas">{itens.filter(tarefa => tarefa.situacao !== 'pulada').map(tarefa => linha(tarefa))}</ul> : <p className="dia-vazio">Nenhuma tarefa ativa neste dia.</p>}
+          {itens.some(tarefa => tarefa.situacao === 'pulada') && <details className="tarefas-concluidas"><summary>Puladas ({itens.filter(tarefa => tarefa.situacao === 'pulada').length})</summary><ul className="lista-tarefas">{itens.filter(tarefa => tarefa.situacao === 'pulada').map(tarefa => linha(tarefa))}</ul></details>}
         </section>;
       })}</div> : <>
       {pendentes.length > 0 && <><div className="ordenacao"><label>Organizar por <select value={ordem} onChange={evento => definirOrdem(evento.target.value)}><option value="criacao">Ordem de criação</option><option value="horario">Horário</option></select></label></div><ul className="lista-tarefas">{pendentes.map(tarefa => linha(tarefa))}</ul></>}
       {tarefas.length === 0 && <div className="initial-state"><ListTodo size={26} aria-hidden="true" /><h2>Um dia com espaço livre</h2><p>Nenhuma tarefa para esta data. Adicione o que fizer sentido para seu dia.</p></div>}
       {tarefas.length > 0 && pendentes.length === 0 && <p className="estado-lista">Nenhuma tarefa pendente nesta data. Aproveite seu tempo!</p>}
-      {puladas.length > 0 && <details className="tarefas-concluidas" open><summary>Puladas ({puladas.length})</summary><ul className="lista-tarefas">{puladas.map(tarefa => linha(tarefa))}</ul></details>}
+      {puladas.length > 0 && <details className="tarefas-concluidas"><summary>Puladas ({puladas.length})</summary><ul className="lista-tarefas">{puladas.map(tarefa => linha(tarefa))}</ul></details>}
       {concluidas.length > 0 && <details className="tarefas-concluidas" open><summary>Concluídas ({concluidas.length})</summary><ul className="lista-tarefas">{concluidas.map(tarefa => linha(tarefa))}</ul></details>}
     </>}
     </>}

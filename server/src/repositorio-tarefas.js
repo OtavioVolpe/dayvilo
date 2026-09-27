@@ -83,7 +83,7 @@ export function criarRepositorioTarefas(banco) {
     },
     async encerrarProximas(usuarioId, serieId, inicio) {
       const [resultado] = await banco.execute(
-        "UPDATE tarefas JOIN ocorrencias_series ON tarefa_id = tarefas.id SET situacao = 'pulada', concluida_em = NULL WHERE usuario_id = ? AND serie_id = ? AND data_prevista >= ? AND situacao = 'pendente'",
+        "DELETE tarefas FROM tarefas JOIN ocorrencias_series ON tarefa_id = tarefas.id WHERE usuario_id = ? AND serie_id = ? AND data_prevista >= ? AND situacao = 'pendente'",
         [usuarioId, serieId, inicio],
       );
       return resultado.affectedRows;
