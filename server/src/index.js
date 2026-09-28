@@ -11,7 +11,7 @@ try {
   }
   banco = criarPoolBanco();
   await banco.execute('SELECT id FROM contas LIMIT 0');
-  const aplicacao = criarAplicacao({ banco, porta });
+  const aplicacao = criarAplicacao({ banco, porta, urlAplicacao: process.env.URL_APLICACAO || 'http://127.0.0.1:5173/' });
   const servidor = aplicacao.listen(porta, endereco, () => console.log(`Dayvilo API: http://${endereco}:${porta}`));
   servidor.on('error', async erro => { console.error(`Não foi possível iniciar a API (${erro.code}).`); await banco.end(); process.exitCode = 1; });
   for (const sinal of ['SIGINT', 'SIGTERM']) process.once(sinal, () => servidor.close(async () => { await banco.end(); process.exit(0); }));

@@ -1,6 +1,7 @@
 import Acesso from './Acesso.jsx';
 import { useSessao } from './useSessao.js';
-import { useState } from 'react';
+import RecuperarSenha from './RecuperarSenha.jsx';
+import { useEffect, useState } from 'react';
 import Planejamento from './Planejamento.jsx';
 import { Sprout, Sun, Utensils, Dumbbell, BookOpen } from 'lucide-react';
 
@@ -11,7 +12,20 @@ const areas = [
   { name: 'Leitura', icon: BookOpen },
 ];
 
+function lerRecuperacao() {
+  if (window.location.hash === '#recuperar-senha') return { token: null };
+  if (window.location.hash.startsWith('#redefinir-senha=')) return { token: window.location.hash.slice('#redefinir-senha='.length) };
+  return null;
+}
+
 export default function App() {
+  const [recuperacao, definirRecuperacao] = useState(lerRecuperacao);
+  useEffect(() => {
+    const atualizarRota = () => definirRecuperacao(lerRecuperacao());
+    window.addEventListener('hashchange', atualizarRota);
+    return () => window.removeEventListener('hashchange', atualizarRota);
+  }, []);
+  const solicitarRecuperacao = () => { window.location.hash = 'recuperar-senha'; };
   const { sessao, erro, aviso, saindo, entrar, sair, atualizar } = useSessao();
   const [view, setView] = useState('Hoje');
   const date = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
@@ -20,10 +34,10 @@ export default function App() {
     <div className="app-shell">
       <header className="app-header">
         <span className="brand"><span className="brand-mark"><Sprout size={22} aria-hidden="true" /></span>Dayvilo</span>
-        {sessao && <div className="conta-atual"><span title={sessao.email}>{sessao.nome}</span><button className="botao-secundario" disabled={saindo} onClick={sair}>{saindo ? 'Saindo…' : 'Sair'}</button></div>}
+        {sessao && !recuperacao && <div className="conta-atual"><span title={sessao.email}>{sessao.nome}</span><button className="botao-secundario" disabled={saindo} onClick={sair}>{saindo ? 'Saindo…' : 'Sair'}</button></div>}
       </header>
-      {sessao === undefined ? <main><p className="estado-lista" role="status">{erro || 'Abrindo seu espaço…'}</p>{erro && <button className="botao-secundario" onClick={atualizar}>Tentar novamente</button>}</main>
-        : !sessao ? <Acesso aoEntrar={dados => { setView('Hoje'); entrar(dados); }} aviso={aviso} /> : <div className="app-layout">
+      {recuperacao ? <RecuperarSenha key={recuperacao.token ?? 'pedido'} token={recuperacao.token} aoSolicitarNovo={solicitarRecuperacao} aoVoltar={() => { window.history.replaceState(null, '', window.location.pathname + window.location.search); definirRecuperacao(null); atualizar(); }} /> : sessao === undefined ? <main><p className="estado-lista" role="status">{erro || 'Abrindo seu espaço…'}</p>{erro && <button className="botao-secundario" onClick={atualizar}>Tentar novamente</button>}</main>
+        : !sessao ? <Acesso aoRecuperar={solicitarRecuperacao} aoEntrar={dados => { setView('Hoje'); entrar(dados); }} aviso={aviso} /> : <div className="app-layout">
         <nav className="areas" aria-label="Áreas pessoais">
           <p className="areas-label">Seu espaço</p>
           {areas.map(({ name, icon: Icon }) => (

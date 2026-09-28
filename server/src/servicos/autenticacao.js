@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { validarObjeto } from '../validacao-tarefas.js';
-import { protegerSenha, conferirSenha } from './senhas.js';
+import { protegerSenha, conferirSenha, validarSenhaNova } from './senhas.js';
 
 export class ErroConta extends Error {
   constructor(status, mensagem) { super(mensagem); this.status = status; }
@@ -8,15 +8,20 @@ export class ErroConta extends Error {
 export const resumoToken = valor => createHash('sha256').update(valor).digest('hex');
 export const gerarToken = () => randomBytes(32).toString('hex');
 
-function validarCredenciais(dados, cadastro) {
-  validarObjeto(dados, cadastro ? ['nome', 'email', 'senha', 'fuso_horario', 'codigo_vinculo'] : ['email', 'senha']);
-  if (typeof dados.email !== 'string' || dados.email.length > 254 || !/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$/.test(dados.email.trim())) {
+export function validarEmail(email) {
+  if (typeof email !== 'string' || email.length > 254 || !/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$/.test(email.trim())) {
     throw new ErroConta(400, 'Informe um e-mail válido.');
   }
-  if (typeof dados.senha !== 'string' || [...dados.senha].length > 128 || dados.senha.length === 0
-    || (cadastro && [...dados.senha].length < 15)) {
+  return email.trim().toLowerCase();
+}
+
+function validarCredenciais(dados, cadastro) {
+  validarObjeto(dados, cadastro ? ['nome', 'email', 'senha', 'fuso_horario', 'codigo_vinculo'] : ['email', 'senha']);
+  validarEmail(dados.email);
+  if (typeof dados.senha !== 'string' || [...dados.senha].length > 128 || dados.senha.length === 0) {
     throw new ErroConta(400, cadastro ? 'Use uma senha com 15 a 128 caracteres. Pode ser uma frase.' : 'Informe sua senha (até 128 caracteres).');
   }
+  if (cadastro) validarSenhaNova(dados.senha);
   if (!cadastro) return { email: dados.email.trim().toLowerCase(), senha: dados.senha };
   if (typeof dados.nome !== 'string' || !dados.nome.trim() || [...dados.nome.trim()].length > 100) throw new ErroConta(400, 'Informe seu nome (até 100 caracteres).');
   const fuso = dados.fuso_horario ?? 'America/Sao_Paulo';
@@ -30,7 +35,7 @@ function validarCredenciais(dados, cadastro) {
 }
 
 // Conexões recebidas nos testes já têm uma transação; o SAVEPOINT a preserva.
-async function transacionar(banco, executar) {
+export async function transacionar(banco, executar) {
   const propria = typeof banco.getConnection === 'function';
   const conexao = propria ? await banco.getConnection() : banco;
   try {
@@ -83,7 +88,11 @@ export function criarServicoAutenticacao(banco) {
       const [[conta]] = await banco.execute('SELECT id, senha_hash FROM contas WHERE email = ?', [validos.email]);
       const confere = await conferirSenha(validos.senha, conta?.senha_hash);
       if (!conta || !confere) throw new ErroConta(401, 'E-mail ou senha incorretos.');
-      return criarSessao(banco, conta.id);
+      return transacionar(banco, async conexao => {
+        const [[atual]] = await conexao.execute('SELECT senha_hash FROM contas WHERE id = ? FOR UPDATE', [conta.id]);
+        if (!atual || atual.senha_hash !== conta.senha_hash) throw new ErroConta(401, 'E-mail ou senha incorretos.');
+        return criarSessao(conexao, conta.id);
+      });
     },
     async consultar(token) {
       if (!token || !/^[a-f0-9]{64}$/.test(token)) return null;

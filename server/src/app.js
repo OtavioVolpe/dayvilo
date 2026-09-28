@@ -1,3 +1,4 @@
+import { criarEntregaLocal } from './servicos/email-local.js';
 import { instalarContas } from './rotas-contas.js';
 import { ErroConta } from './servicos/autenticacao.js';
 import express from 'express';
@@ -7,7 +8,7 @@ import { obterSemana } from './semana.js';
 import { criarRepositorioTarefas } from './repositorio-tarefas.js';
 import { ErroValidacao, obterDataHoje, validarData, validarId, validarNovaTarefa, validarObjeto } from './validacao-tarefas.js';
 
-export function criarAplicacao({ banco, porta = 3001 }) {
+export function criarAplicacao({ banco, porta = 3001, enviarEmail = criarEntregaLocal(), urlAplicacao = 'http://127.0.0.1:5173/' }) {
   const aplicacao = express();
   const tarefas = criarRepositorioTarefas(banco);
   const origens = new Set([`http://127.0.0.1:${porta}`, `http://localhost:${porta}`, 'http://127.0.0.1:5173', 'http://localhost:5173']);
@@ -22,7 +23,7 @@ export function criarAplicacao({ banco, porta = 3001 }) {
   });
   aplicacao.use(express.json({ limit: '32kb' }));
   aplicacao.get('/api/health', (requisicao, resposta) => resposta.json({ status: 'ok', service: 'dayvilo-api' }));
-  instalarContas(aplicacao, banco);
+  instalarContas(aplicacao, banco, { enviarEmail, urlAplicacao });
   aplicacao.get('/api/perfil', (requisicao, resposta) => resposta.json({
     nome: requisicao.usuario.nome, fuso_horario: requisicao.usuario.fuso_horario, data_hoje: obterDataHoje(requisicao.usuario.fuso_horario),
   }));

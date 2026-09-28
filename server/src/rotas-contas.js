@@ -1,3 +1,5 @@
+import { setTimeout as aguardar } from 'node:timers/promises';
+import { criarServicoRecuperacao } from './servicos/recuperacao-senha.js';
 import { Router } from 'express';
 import { timingSafeEqual } from 'node:crypto';
 import { criarServicoAutenticacao, ErroConta } from './servicos/autenticacao.js';
@@ -8,8 +10,9 @@ const lerCookie = requisicao => (requisicao.headers.cookie ?? '').split(';').map
 const limparCookie = resposta => resposta.clearCookie(nomeCookie, opcoesCookie);
 let operacoesSenha = 0;
 
-export function instalarContas(aplicacao, banco) {
+export function instalarContas(aplicacao, banco, entrega) {
   const contas = criarServicoAutenticacao(banco);
+  const recuperacao = criarServicoRecuperacao({ banco, ...entrega });
   aplicacao.use('/api', async (requisicao, resposta, proximo) => {
     resposta.set('Cache-Control', 'no-store');
     requisicao.tokenSessao = lerCookie(requisicao);
@@ -23,19 +26,25 @@ export function instalarContas(aplicacao, banco) {
   });
 
   const rotas = Router();
-  const tentativas = new Map();
-  function limitar(requisicao, resposta, proximo) {
-    const agora = Date.now();
-    for (const [chave, valor] of tentativas) if (valor.ate <= agora) tentativas.delete(chave);
-    const chave = requisicao.ip;
-    const registro = tentativas.get(chave) ?? { quantidade: 0, ate: agora + 15 * 60 * 1000 };
-    if (registro.quantidade >= 10) {
-      resposta.set('Retry-After', String(Math.ceil((registro.ate - agora) / 1000)));
-      return resposta.status(429).json({ erro: 'Muitas tentativas. Aguarde 15 minutos antes de tentar novamente.' });
-    }
-    registro.quantidade++; tentativas.set(chave, registro);
-    proximo();
+  function criarLimitador(maximo) {
+    const tentativas = new Map();
+    return function limitar(requisicao, resposta, proximo) {
+      const agora = Date.now();
+      for (const [chave, valor] of tentativas) if (valor.ate <= agora) tentativas.delete(chave);
+      const chave = requisicao.ip;
+      const registro = tentativas.get(chave) ?? { quantidade: 0, ate: agora + 15 * 60 * 1000 };
+      if (registro.quantidade >= maximo) {
+        resposta.set('Retry-After', String(Math.ceil((registro.ate - agora) / 1000)));
+        return resposta.status(429).json({ erro: 'Muitas tentativas. Aguarde 15 minutos antes de tentar novamente.' });
+      }
+      registro.quantidade++; tentativas.set(chave, registro);
+      proximo();
+    };
   }
+  const limitar = criarLimitador(10);
+  const limitarPedidos = criarLimitador(5);
+  const limitarLinks = criarLimitador(30);
+  const limitarRedefinicoes = criarLimitador(10);
   function autenticar(acao, status) {
     return async (requisicao, resposta) => {
       if (requisicao.usuario) throw new ErroConta(409, 'Saia da conta atual antes de entrar em outra.');
@@ -53,6 +62,30 @@ export function instalarContas(aplicacao, banco) {
   }
   rotas.post('/cadastro', limitar, autenticar('cadastrar', 201));
   rotas.post('/entrada', limitar, autenticar('entrar', 200));
+  rotas.post('/recuperacao', limitarPedidos, async (requisicao, resposta) => {
+    if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });
+    const inicio = performance.now();
+    try { await recuperacao.solicitar(requisicao.body); }
+    catch (erro) {
+      if (erro.status === 400) throw erro;
+      // A resposta não revela se o endereço existe nem se houve falha na entrega.
+      console.error('Falha ao preparar recuperação de senha (' + (erro.code || 'erro interno') + ').');
+    } finally { await aguardar(Math.max(0, 500 - (performance.now() - inicio))); }
+    resposta.status(202).json({ mensagem: 'Se houver uma conta com esse e-mail, uma mensagem de teste ficará disponível neste computador. Aguarde um minuto antes de solicitar novamente.', entrega: 'local' });
+  });
+  rotas.post('/recuperacao/validar', limitarLinks, async (requisicao, resposta) => {
+    if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });
+    resposta.json(await recuperacao.validar(requisicao.body));
+  });
+  rotas.post('/recuperacao/redefinir', limitarRedefinicoes, async (requisicao, resposta) => {
+    if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });
+    if (operacoesSenha >= 2) throw new ErroConta(503, 'Servidor ocupado. Tente novamente em alguns segundos.');
+    operacoesSenha++;
+    try {
+      await recuperacao.redefinir(requisicao.body);
+      resposta.json({ mensagem: 'Senha atualizada. Entre novamente com sua nova senha.' });
+    } finally { operacoesSenha--; }
+  });
   rotas.get('/sessao', (requisicao, resposta) => {
     if (!requisicao.usuario) { limparCookie(resposta); return resposta.json({ usuario: null }); }
     const { csrf, ...usuario } = requisicao.usuario;
