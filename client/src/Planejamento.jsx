@@ -1,9 +1,10 @@
+import MenuTarefa from './MenuTarefa.jsx';
 import { solicitar } from './api.js';
 import { useEffect, useRef, useState } from 'react';
 import SeloSituacao from './SeloSituacao.jsx';
 import ListaHistorico from './ListaHistorico.jsx';
 import { deslocarData, formatarData } from './datas.js';
-import { Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight } from 'lucide-react';
+import { Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, ListRestart, CircleStop } from 'lucide-react';
 
 export default function Planejamento({ semanal = false, historico = false }) {
   const [puladasAbertas, definirPuladasAbertas] = useState({});
@@ -215,20 +216,23 @@ export default function Planejamento({ semanal = false, historico = false }) {
   const linha = (tarefa, atrasada = false) => (
     <li className={`tarefa tarefa-${tarefa.situacao} ${tarefa.situacao === 'concluida' ? 'concluida' : ''}`} key={tarefa.id} tabIndex={-1} aria-labelledby={`titulo-tarefa-${tarefa.id} situacao-tarefa-${tarefa.id}`} ref={elemento => { if (elemento) cartoesRef.current.set(tarefa.id, elemento); else cartoesRef.current.delete(tarefa.id); }}>
       <input type="checkbox" aria-label={`Concluir: ${tarefa.titulo}`} checked={tarefa.situacao === 'concluida'} disabled={aberto || salvando || atualizando.includes(tarefa.id)} onChange={() => alternar(tarefa)} />
-      <div className="tarefa-conteudo"><div className="tarefa-cabecalho"><span className="tarefa-titulo" id={`titulo-tarefa-${tarefa.id}`}>{tarefa.titulo}</span><SeloSituacao situacao={tarefa.situacao} id={`situacao-tarefa-${tarefa.id}`} /></div>
+      <div className="tarefa-conteudo"><div className="tarefa-cabecalho"><span className="tarefa-titulo" id={`titulo-tarefa-${tarefa.id}`}>{tarefa.titulo}</span></div>
         {tarefa.observacao && <p className="observacao">{tarefa.observacao}</p>}
         <div className="detalhes">{tarefa.serie_id && <span>Repetição</span>}{atrasada === true && <span>Prevista para {formatarData(tarefa.data_prevista, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario || 'Sem horário'}</span>
           {tarefa.prioridade && <span className="prioridade"><Star size={13} aria-hidden="true" />Prioridade</span>}</div>
       </div>
       <div className="acoes-tarefa">
-        {tarefa.serie_id && <>
-          <button className="acao-texto" type="button" disabled={aberto || salvando || atualizando.length > 0} aria-label={'Editar próximas: ' + tarefa.titulo} onClick={() => abrirFormulario(tarefa, data, true)}>Editar próximas</button>
-          <button className="acao-texto" type="button" disabled={aberto || salvando || atualizando.length > 0} aria-label={'Encerrar repetição: ' + tarefa.titulo} onClick={() => { definirEncerrando(tarefa.id); definirExcluindo(null); }}>Encerrar repetição</button>
-        </>}
-        {atrasada === true && <button className="acao-texto" type="button" disabled={aberto || salvando || atualizando.includes(tarefa.id)} onClick={() => alterarTarefa(tarefa, 'hoje')}>Trazer para hoje</button>}
-        {tarefa.situacao !== 'concluida' && <button className={tarefa.situacao === 'pulada' ? 'acao-texto acao-restaurar' : 'acao-texto'} type="button" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={(tarefa.situacao === 'pulada' ? 'Restaurar: ' : 'Pular: ') + tarefa.titulo} onClick={() => alterarTarefa(tarefa, tarefa.situacao === 'pulada' ? 'pendente' : 'pulada')}>{tarefa.situacao === 'pulada' ? 'Restaurar' : 'Pular'}</button>}
-        <button type="button" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Editar: ${tarefa.titulo}`} onClick={() => abrirFormulario(tarefa)}><Pencil size={17} aria-hidden="true" /></button>
-        <button type="button" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Excluir: ${tarefa.titulo}`} onClick={() => definirExcluindo(tarefa.id)}><Trash2 size={17} aria-hidden="true" /></button>
+        <SeloSituacao situacao={tarefa.situacao} id={`situacao-tarefa-${tarefa.id}`} />
+        <button type="button" title="Editar tarefa" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Editar: ${tarefa.titulo}`} onClick={() => abrirFormulario(tarefa)}><Pencil size={17} aria-hidden="true" /></button>
+        <button type="button" title="Excluir tarefa" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Excluir: ${tarefa.titulo}`} onClick={() => definirExcluindo(tarefa.id)}><Trash2 size={17} aria-hidden="true" /></button>
+        <MenuTarefa titulo={tarefa.titulo} bloqueado={aberto || salvando || atualizando.includes(tarefa.id)} opcoes={[
+          ...(atrasada === true ? [{ texto: 'Trazer para hoje', Icone: CalendarArrowUp, executar: () => alterarTarefa(tarefa, 'hoje') }] : []),
+          ...(tarefa.situacao !== 'concluida' ? [{ texto: tarefa.situacao === 'pulada' ? 'Restaurar tarefa' : 'Pular tarefa', Icone: tarefa.situacao === 'pulada' ? RotateCcw : SkipForward, executar: () => alterarTarefa(tarefa, tarefa.situacao === 'pulada' ? 'pendente' : 'pulada') }] : []),
+          ...(tarefa.serie_id ? [
+            { texto: 'Editar próximas', Icone: ListRestart, separador: tarefa.situacao !== 'concluida' || atrasada === true, desabilitada: atualizando.length > 0, executar: () => abrirFormulario(tarefa, data, true) },
+            { texto: 'Encerrar repetição', Icone: CircleStop, desabilitada: atualizando.length > 0, executar: () => { definirEncerrando(tarefa.id); definirExcluindo(null); } },
+          ] : []),
+        ]} />
       </div>
       {encerrando === tarefa.id && <div className="confirmacao-exclusao" role="group" aria-label="Confirmar encerramento">
         <p>Remover as ocorrências pendentes desta repetição a partir de {formatarData(tarefa.data_prevista > hoje ? tarefa.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}? Essas pendentes serão excluídas e não poderão ser restauradas. Concluídas, puladas e datas anteriores serão preservadas.</p>
