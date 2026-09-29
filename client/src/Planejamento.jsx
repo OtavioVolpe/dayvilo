@@ -1,3 +1,5 @@
+import AlcaOrdenacao from './AlcaOrdenacao.jsx';
+import { compararOrdemManual, compararTarefas } from './ordenacao.js';
 import MenuTarefa from './MenuTarefa.jsx';
 import { solicitar } from './api.js';
 import { useEffect, useRef, useState } from 'react';
@@ -7,6 +9,7 @@ import { deslocarData, formatarData } from './datas.js';
 import { Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, ListRestart, CircleStop } from 'lucide-react';
 
 export default function Planejamento({ semanal = false, historico = false }) {
+  const [arrasto, definirArrasto] = useState(null);
   const [puladasAbertas, definirPuladasAbertas] = useState({});
   const [tarefaMovida, definirTarefaMovida] = useState(null);
   const cartoesRef = useRef(new Map());
@@ -33,7 +36,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
   const [aberto, definirAberto] = useState(false);
   const [salvando, definirSalvando] = useState(false);
   const [atualizando, definirAtualizando] = useState([]);
-  const [ordem, definirOrdem] = useState('criacao');
+  const [ordem, definirOrdem] = useState('manual');
   const [tentativa, definirTentativa] = useState(0);
 
   useEffect(() => {
@@ -64,7 +67,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
     const quadro = requestAnimationFrame(() => {
       const cartao = cartoesRef.current.get(tarefaMovida.id);
       if (!cartao) return;
-      cartao.focus({ preventScroll: true });
+      (tarefaMovida.ordenacao ? cartao.querySelector('.alca-ordenacao') || cartao : cartao).focus({ preventScroll: true });
       const limites = cartao.getBoundingClientRect();
       if (limites.top < 0 || limites.bottom > window.innerHeight - 90) {
         cartao.scrollIntoView({ block: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
@@ -212,9 +215,28 @@ export default function Planejamento({ semanal = false, historico = false }) {
   const pendentes = tarefas.filter(tarefa => tarefa.situacao === 'pendente');
   const puladas = tarefas.filter(tarefa => tarefa.situacao === 'pulada');
   const totalAtivas = tarefas.length - puladas.length;
-  if (ordem === 'horario') pendentes.sort((a, b) => (a.horario || '99').localeCompare(b.horario || '99') || a.id - b.id);
+  pendentes.sort(compararTarefas(ordem));
+  const pendentesDoDia = tarefa => tarefas.filter(item => item.situacao === 'pendente' && item.data_prevista === tarefa.data_prevista).sort(compararOrdemManual);
+  async function mover(tarefa, deslocamento) {
+    if (salvando || atualizando.length || aberto) return;
+    const lista = pendentesDoDia(tarefa); const indice = lista.findIndex(item => item.id === tarefa.id);
+    if (!lista[indice + deslocamento]) return;
+    const anteriores = lista.map(item => item.id); const ids = [...anteriores];
+    ids.splice(indice, 1);
+    ids.splice(indice + deslocamento, 0, tarefa.id);
+    definirSalvando(true); definirErro(''); definirAviso('');
+    try {
+      const dados = await solicitar('/tarefas/ordem', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: tarefa.data_prevista, ids, anteriores }) });
+      const ordens = new Map(dados.tarefas.map(item => [item.id, item.ordem]));
+      definirTarefas(atuais => atuais.map(item => ordens.has(item.id) ? { ...item, ordem: ordens.get(item.id) } : item));
+      definirAviso('Ordem salva. ' + tarefa.titulo + ' está na posição ' + (indice + deslocamento + 1) + ' das pendentes deste dia.');
+      definirTarefaMovida({ id: tarefa.id, ordenacao: true });
+    } catch (falha) { definirErro(falha.message); }
+    finally { definirSalvando(false); }
+  }
   const linha = (tarefa, atrasada = false) => (
-    <li className={`tarefa tarefa-${tarefa.situacao} ${tarefa.situacao === 'concluida' ? 'concluida' : ''}`} key={tarefa.id} tabIndex={-1} aria-labelledby={`titulo-tarefa-${tarefa.id} situacao-tarefa-${tarefa.id}`} ref={elemento => { if (elemento) cartoesRef.current.set(tarefa.id, elemento); else cartoesRef.current.delete(tarefa.id); }}>
+    <li className={`tarefa tarefa-${tarefa.situacao} ${tarefa.situacao === 'concluida' ? 'concluida' : ''} ${arrasto?.origem === tarefa.id ? 'tarefa-arrastando' : ''} ${arrasto?.destino === tarefa.id && arrasto.origem !== tarefa.id ? (arrasto.depois ? 'destino-depois' : 'destino-antes') : ''}`} key={tarefa.id} tabIndex={-1} aria-labelledby={`titulo-tarefa-${tarefa.id} situacao-tarefa-${tarefa.id}`} ref={elemento => { if (elemento) cartoesRef.current.set(tarefa.id, elemento); else cartoesRef.current.delete(tarefa.id); }}>
+      {!historico && !atrasada && ordem === 'manual' && tarefa.situacao === 'pendente' && <AlcaOrdenacao tarefa={tarefa} lista={pendentesDoDia(tarefa)} cartoes={cartoesRef} bloqueado={aberto || salvando || atualizando.length > 0 || carregando || Boolean(excluindo || encerrando)} mover={mover} indicar={definirArrasto} />}
       <input type="checkbox" aria-label={`Concluir: ${tarefa.titulo}`} checked={tarefa.situacao === 'concluida'} disabled={aberto || salvando || atualizando.includes(tarefa.id)} onChange={() => alternar(tarefa)} />
       <div className="tarefa-conteudo"><div className="tarefa-cabecalho"><span className="tarefa-titulo" id={`titulo-tarefa-${tarefa.id}`}>{tarefa.titulo}</span></div>
         {tarefa.observacao && <p className="observacao">{tarefa.observacao}</p>}
@@ -306,8 +328,9 @@ export default function Planejamento({ semanal = false, historico = false }) {
         <h3>Pendências anteriores ({atrasadas.length})</h3><p>Você decide o que ainda faz sentido: concluir, reagendar ou pular.</p>
         <ul className="lista-tarefas">{atrasadas.map(tarefa => linha(tarefa, true))}</ul>
       </section>}
+      {!historico && pendentes.length > 0 && <div className="ordenacao"><label>Organizar por <select value={ordem} disabled={salvando || aberto || atualizando.length > 0} onChange={evento => definirOrdem(evento.target.value)}><option value="manual">Minha ordem</option><option value="criacao">Ordem de criação</option><option value="horario">Horário</option></select></label>{ordem === 'manual' && <p id="ajuda-ordenacao" className="explicacao-historico">Arraste pelos seis pontos para organizar dentro do dia. No teclado, use as setas ↑ e ↓ na alça.</p>}</div>}
       {historico ? <ListaHistorico periodo={periodoConsultado} tarefas={tarefas} situacao={situacao} definirSituacao={definirSituacao} bloqueado={aberto || salvando || atualizando.length > 0} renderizarTarefa={tarefa => linha(tarefa)} /> : semanal ? <div className="grade-semana">{dias.map(dia => {
-        const itens = tarefas.filter(tarefa => tarefa.data_prevista === dia).sort((a, b) => Number(a.situacao === 'concluida') - Number(b.situacao === 'concluida') || (a.horario || '99').localeCompare(b.horario || '99') || a.id - b.id);
+        const itens = tarefas.filter(tarefa => tarefa.data_prevista === dia).sort((a, b) => Number(a.situacao === 'concluida') - Number(b.situacao === 'concluida') || compararTarefas(ordem)(a, b));
         return <section className={dia === hoje ? 'dia-semana dia-atual' : 'dia-semana'} key={dia} aria-label={formatarData(dia, { weekday: 'long', day: 'numeric', month: 'long' })}>
           <header><h3>{formatarData(dia, { weekday: 'short' })} <span>{formatarData(dia)}</span>{dia === hoje && <small>Hoje</small>}</h3>
           <button className="botao-secundario" disabled={salvando || atualizando.length > 0} aria-label={'Adicionar tarefa em ' + formatarData(dia)} onClick={() => abrirFormulario(null, dia)}><Plus size={16} aria-hidden="true" />Tarefa</button></header>
@@ -316,7 +339,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
           {grupoPuladas(itens.filter(tarefa => tarefa.situacao === 'pulada'), dia)}
         </section>;
       })}</div> : <>
-      {pendentes.length > 0 && <><div className="ordenacao"><label>Organizar por <select value={ordem} onChange={evento => definirOrdem(evento.target.value)}><option value="criacao">Ordem de criação</option><option value="horario">Horário</option></select></label></div><ul className="lista-tarefas">{pendentes.map(tarefa => linha(tarefa))}</ul></>}
+      {pendentes.length > 0 && <><ul className="lista-tarefas">{pendentes.map(tarefa => linha(tarefa))}</ul></>}
       {tarefas.length === 0 && <div className="initial-state"><ListTodo size={26} aria-hidden="true" /><h2>Um dia com espaço livre</h2><p>Nenhuma tarefa para esta data. Adicione o que fizer sentido para seu dia.</p></div>}
       {tarefas.length > 0 && pendentes.length === 0 && <p className="estado-lista">Nenhuma tarefa pendente nesta data. Aproveite seu tempo!</p>}
       {grupoPuladas(puladas, data)}

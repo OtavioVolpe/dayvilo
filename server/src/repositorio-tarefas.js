@@ -10,7 +10,7 @@ export function criarRepositorioTarefas(banco) {
   return {
     async listar(usuarioId, data) {
       const [tarefas] = await banco.execute(
-        `SELECT ${colunas} FROM tarefas WHERE usuario_id = ? AND data_prevista <=> ? ORDER BY ordem, id`,
+        `SELECT ${colunas} FROM tarefas WHERE usuario_id = ? AND data_prevista <=> ? ORDER BY ordem = 0, ordem, id`,
         [usuarioId, data],
       );
       return tarefas.map(apresentarTarefa);
@@ -23,7 +23,7 @@ export function criarRepositorioTarefas(banco) {
       return tarefas.map(apresentarTarefa);
     },
     async reagendar(usuarioId, id, data) {
-      await banco.execute('UPDATE tarefas SET data_prevista = ? WHERE usuario_id = ? AND id = ?', [data, usuarioId, id]);
+      await banco.execute('UPDATE tarefas SET ordem = IF(data_prevista <=> ?, ordem, 0), data_prevista = ? WHERE usuario_id = ? AND id = ?', [data, data, usuarioId, id]);
       return this.buscar(usuarioId, id);
     },
     async definirSituacao(usuarioId, id, situacao) {
@@ -89,8 +89,8 @@ export function criarRepositorioTarefas(banco) {
       return resultado.affectedRows;
     },
     async editar(usuarioId, id, dados) {
-      await banco.execute('UPDATE tarefas SET titulo = ?, observacao = ?, horario = ?, prioridade = ?, data_prevista = COALESCE(?, data_prevista) WHERE usuario_id = ? AND id = ?',
-        [dados.titulo, dados.observacao, dados.horario, dados.prioridade, dados.data_prevista, usuarioId, id]);
+      await banco.execute('UPDATE tarefas SET titulo = ?, observacao = ?, horario = ?, prioridade = ?, ordem = IF(? IS NULL OR data_prevista <=> ?, ordem, 0), data_prevista = COALESCE(?, data_prevista) WHERE usuario_id = ? AND id = ?',
+        [dados.titulo, dados.observacao, dados.horario, dados.prioridade, dados.data_prevista, dados.data_prevista, dados.data_prevista, usuarioId, id]);
       return this.buscar(usuarioId, id);
     },
     async excluir(usuarioId, id) {

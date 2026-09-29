@@ -1,3 +1,4 @@
+import { ordenarTarefas } from './servicos/ordenacao.js';
 import { criarEntregaLocal } from './servicos/email-local.js';
 import { instalarContas } from './rotas-contas.js';
 import { ErroConta } from './servicos/autenticacao.js';
@@ -58,6 +59,10 @@ export function criarAplicacao({ banco, porta = 3001, modoEmail = 'local', envia
     const data = requisicao.query.data === undefined
       ? obterDataHoje(requisicao.usuario.fuso_horario) : validarData(requisicao.query.data);
     resposta.json({ tarefas: await tarefas.listar(requisicao.usuario.id, data) });
+  });
+  aplicacao.patch('/api/tarefas/ordem', async (requisicao, resposta) => {
+    if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });
+    resposta.json(await ordenarTarefas(banco, requisicao.usuario.id, requisicao.body));
   });
   aplicacao.post('/api/tarefas/repetidas', async (requisicao, resposta) => {
     if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });

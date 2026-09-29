@@ -43,3 +43,11 @@
 
 .filtro-historico>.botao-secundario{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-left:auto}.filtro-historico+.explicacao-historico{margin-bottom:18px}
 @media(max-width:650px){.filtro-historico>.botao-secundario{margin-left:0}}
+
+.alca-ordenacao{display:flex;align-items:center;justify-content:center;align-self:center;flex:0 0 32px;width:32px;min-height:44px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:grab;touch-action:none;user-select:none}
+.alca-ordenacao:hover:not(:disabled){background:var(--line);color:var(--accent)}
+.alca-ordenacao:active{cursor:grabbing}.alca-ordenacao:disabled{cursor:default}
+.alca-ordenacao:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tarefa-arrastando{opacity:.6;outline:1px dashed var(--accent)}
+.tarefa.destino-antes{box-shadow:0 -4px 0 var(--accent)}
+.tarefa.destino-depois{box-shadow:0 4px 0 var(--accent)}
