@@ -49,7 +49,7 @@ As tabelas `usuarios` e `tarefas` guardam os dados da aplicação. A conta MySQL
 
 Depois das migrações, inicie com `npm run dev` e abra a interface. Crie uma conta com nome, e-mail e senha; cada conta acessa apenas sua própria rotina. E-mails são tratados sem distinção entre maiúsculas e minúsculas. A senha aceita de 15 a 128 caracteres, incluindo espaços.
 
-As senhas são protegidas com scrypt e sal individual. A sessão dura até sete dias e usa um cookie HttpOnly/SameSite=Strict; sair invalida a sessão no servidor. Alterações exigem proteção contra CSRF. Cadastro e entrada têm limite de tentativas. O e-mail é usado como identificador; ainda não há verificação de e-mail nem envio pela internet.
+As senhas são protegidas com scrypt e sal individual. A sessão dura até sete dias e usa um cookie HttpOnly/SameSite=Strict; sair invalida a sessão no servidor. Alterações exigem proteção contra CSRF. Cadastro e entrada têm limite de tentativas. O e-mail é usado como identificador; ainda não há verificação de e-mail. A recuperação aceita entrega local ou envio pelo Resend.
 
 Para trazer uma rotina criada com o antigo perfil local, mantenha `USUARIO_LOCAL_ID` no `server/.env` e execute, **antes de cadastrar sua conta**:
 
@@ -61,7 +61,11 @@ No cadastro, marque **Trazer minha rotina anterior** e cole o código no campo d
 
 A API permanece restrita ao próprio computador. Os cookies locais funcionam por HTTP; publicação exige configurar HTTPS, cookies Secure e as origens de acesso. Este comando de inicialização não aceita execução em produção.
 
-### Recuperação de senha local
+### Recuperação de senha
+
+O modo padrão é local. Para enviar pela internet, configure o Resend conforme a seção abaixo.
+
+#### Mensagens locais
 
 Na tela de entrada, selecione **Esqueci minha senha** e informe o e-mail cadastrado. As mensagens de teste são salvas em `server/.emails/`, pasta ignorada pelo Git. Nada é enviado à caixa de e-mail.
 
@@ -72,6 +76,23 @@ npm run emails:listar
 Abra o arquivo mais recente no editor e copie o link para o navegador. Ele vale por 30 minutos, só pode ser usado uma vez e permite definir uma senha de 15 a 128 caracteres. Um novo pedido, após o intervalo mínimo de um minuto, substitui o link anterior. Há limite de cinco pedidos por IP a cada 15 minutos. Após a troca, todas as sessões da conta são invalidadas; tarefas e histórico permanecem intactos. Entre novamente com a nova senha.
 
 `URL_APLICACAO` define o endereço usado nos links; o padrão é `http://127.0.0.1:5173/`. Se alterar a porta da interface, ajuste essa variável. Mensagens locais contêm links privados: não as publique ou compartilhe.
+
+#### Envio pelo Resend
+
+Crie uma conta no [Resend](https://resend.com) e uma chave de API com permissão de envio. No arquivo privado `server/.env`, adicione:
+
+```dotenv
+EMAIL_MODO=resend
+RESEND_API_KEY=sua_chave_aqui
+EMAIL_REMETENTE="Dayvilo <onboarding@resend.dev>"
+RESEND_DESTINATARIO_TESTE=seu_email_cadastrado_no_resend
+```
+
+Reinicie a API após alterar o arquivo. Com o remetente de teste, use no Dayvilo o mesmo e-mail da conta Resend. O destinatário configurado é uma restrição: links de outras contas nunca são redirecionados para ele. Para enviar a outros usuários, verifique um domínio próprio no Resend, altere o remetente e remova essa restrição quando estiver pronto.
+
+O servidor usa a API HTTPS do Resend, com limite de cinco segundos por envio e sem repetição automática. Uma falha não gera arquivo local como alternativa e reverte a alteração do link no banco. Em falhas de rede, o serviço externo pode ter aceitado uma mensagem sem confirmar a resposta; nesse caso, o link recebido pode ser inválido e será necessário solicitar outro. A resposta pública é genérica; o terminal registra somente um código de erro, sem chave ou link. Não coloque a chave em arquivos do cliente ou no GitHub.
+
+O link continua apontando para `URL_APLICACAO`: durante o desenvolvimento, abra-o no computador onde o Dayvilo está rodando. Enviar e-mail não publica o site na internet. Para voltar aos arquivos locais, use `EMAIL_MODO=local` e reinicie a API.
 
 ### Comandos
 

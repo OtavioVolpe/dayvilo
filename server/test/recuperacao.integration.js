@@ -74,3 +74,32 @@ test('recuperação: entrega, reenvio, expiração, uso único e revogação ape
     await banco.rollback(); banco.release(); await pool.end();
   }
 });
+
+test('recuperação via Resend: resposta genérica, contrato da API e token persistido sem envio real', async () => {
+  const { criarEntregaResend } = await import('../src/servicos/email-resend.js');
+  const pool = criarPoolBanco(); const banco = await pool.getConnection(); let servidor;
+  try {
+    await banco.beginTransaction();
+    const email = `${randomUUID()}@example.test`;
+    const [usuario] = await banco.execute('INSERT INTO usuarios (nome) VALUES (?)', ['Teste envio']);
+    await banco.execute('INSERT INTO contas (usuario_id, email, senha_hash) VALUES (?, ?, ?)', [usuario.insertId, email, 'sem-login']);
+    const chamadas = [];
+    const enviarEmail = criarEntregaResend({ chave: 're_ficticia', remetente: 'Dayvilo <onboarding@resend.dev>', destinatarioTeste: email,
+      requisitar: async (url, opcoes) => { chamadas.push(JSON.parse(opcoes.body)); return { ok: true, json: async () => ({ id: 'email-simulado' }) }; } });
+    servidor = criarAplicacao({ banco, enviarEmail, modoEmail: 'resend' }).listen(0, '127.0.0.1'); await once(servidor, 'listening');
+    const url = `http://127.0.0.1:${servidor.address().port}/api/contas/recuperacao`;
+    async function pedir(endereco) {
+      const resposta = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Dayvilo': '1' }, body: JSON.stringify({ email: endereco }) });
+      assert.equal(resposta.status, 202); return resposta.json();
+    }
+    const existente = await pedir(email); const inexistente = await pedir(`nao-${email}`);
+    assert.deepEqual(existente, inexistente); assert.equal(existente.entrega, 'resend'); assert.match(existente.mensagem, /receberá/);
+    assert.equal(chamadas.length, 1); assert.deepEqual(chamadas[0].to, [email]);
+    const token = chamadas[0].text.match(/#redefinir-senha=([a-f0-9]{64})/)[1];
+    const [[registro]] = await banco.execute('SELECT token_hash FROM recuperacoes_senha WHERE token_hash = ?', [resumoToken(token)]);
+    assert.ok(registro); assert.equal(JSON.stringify(existente).includes(token), false);
+  } finally {
+    if (servidor) { servidor.closeAllConnections(); await new Promise(resolve => servidor.close(resolve)); }
+    await banco.rollback(); banco.release(); await pool.end();
+  }
+});

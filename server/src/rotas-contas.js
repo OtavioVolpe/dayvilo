@@ -70,8 +70,13 @@ export function instalarContas(aplicacao, banco, entrega) {
       if (erro.status === 400) throw erro;
       // A resposta não revela se o endereço existe nem se houve falha na entrega.
       console.error('Falha ao preparar recuperação de senha (' + (erro.code || 'erro interno') + ').');
-    } finally { await aguardar(Math.max(0, 500 - (performance.now() - inicio))); }
-    resposta.status(202).json({ mensagem: 'Se houver uma conta com esse e-mail, uma mensagem de teste ficará disponível neste computador. Aguarde um minuto antes de solicitar novamente.', entrega: 'local' });
+    } finally { await aguardar(Math.max(0, (entrega.modoEmail === 'resend' ? 5500 : 500) - (performance.now() - inicio))); }
+    resposta.status(202).json({
+      mensagem: entrega.modoEmail === 'resend'
+        ? 'Se houver uma conta com esse e-mail, você receberá as instruções para redefinir sua senha. Aguarde um minuto antes de solicitar novamente.'
+        : 'Se houver uma conta com esse e-mail, uma mensagem de teste ficará disponível neste computador. Aguarde um minuto antes de solicitar novamente.',
+      entrega: entrega.modoEmail,
+    });
   });
   rotas.post('/recuperacao/validar', limitarLinks, async (requisicao, resposta) => {
     if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });

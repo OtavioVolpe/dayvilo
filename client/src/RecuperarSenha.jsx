@@ -13,6 +13,7 @@ export default function RecuperarSenha({ token, aoVoltar, aoSolicitarNovo }) {
   const [mostrar, definirMostrar] = useState(false);
   const [erro, definirErro] = useState('');
   const [mensagem, definirMensagem] = useState('');
+  const [entrega, definirEntrega] = useState('local');
 
   useEffect(() => {
     if (!redefinindo) return;
@@ -37,7 +38,7 @@ export default function RecuperarSenha({ token, aoVoltar, aoSolicitarNovo }) {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(redefinindo ? { token, senha } : { email: campos.get('email') }),
       });
-      definirMensagem(dados.mensagem); definirConcluido(true);
+      definirEntrega(dados.entrega); definirMensagem(dados.mensagem); definirConcluido(true);
       if (redefinindo) {
         // O link sai do histórico da aba; a tela de sucesso não inicia uma sessão.
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -68,7 +69,8 @@ export default function RecuperarSenha({ token, aoVoltar, aoSolicitarNovo }) {
       </div>}
       {concluido ? <>
         <p className="aviso-tarefa" role="status"><Check size={18} aria-hidden="true" /> {mensagem}</p>
-        {!redefinindo && <p className="recuperacao-nota">Neste ambiente de teste, a mensagem fica salva no seu computador e não é enviada à caixa de e-mail.</p>}
+        {!redefinindo && entrega === 'local' && <p className="recuperacao-nota">Neste ambiente de teste, a mensagem fica salva no seu computador e não é enviada à caixa de e-mail.</p>}
+        {!redefinindo && entrega === 'resend' && <p className="recuperacao-nota">Confira também a pasta de spam. O link vale por 30 minutos.</p>}
         <button className="botao-principal acesso-enviar" onClick={aoVoltar}>Voltar para entrar</button>
       </> : !validando && (!redefinindo || linkValido) && !falhaValidacao && <form onSubmit={enviar}>
         <fieldset disabled={enviando}>
