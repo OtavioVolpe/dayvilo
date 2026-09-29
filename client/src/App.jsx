@@ -1,3 +1,4 @@
+import ConfirmarEmail, { AvisoConfirmacao } from './ConfirmarEmail.jsx';
 import Acesso from './Acesso.jsx';
 import { useSessao } from './useSessao.js';
 import RecuperarSenha from './RecuperarSenha.jsx';
@@ -13,6 +14,7 @@ const areas = [
 ];
 
 function lerRecuperacao() {
+  if (window.location.hash.startsWith('#confirmar-email=')) return { confirmacao: true, token: window.location.hash.slice('#confirmar-email='.length) };
   if (window.location.hash === '#recuperar-senha') return { token: null };
   if (window.location.hash.startsWith('#redefinir-senha=')) return { token: window.location.hash.slice('#redefinir-senha='.length) };
   return null;
@@ -36,7 +38,7 @@ export default function App() {
         <span className="brand"><span className="brand-mark"><Sprout size={22} aria-hidden="true" /></span>Dayvilo</span>
         {sessao && !recuperacao && <div className="conta-atual"><span title={sessao.email}>{sessao.nome}</span><button className="botao-secundario" disabled={saindo} onClick={sair}>{saindo ? 'Saindo…' : 'Sair'}</button></div>}
       </header>
-      {recuperacao ? <RecuperarSenha key={recuperacao.token ?? 'pedido'} token={recuperacao.token} aoSolicitarNovo={solicitarRecuperacao} aoVoltar={() => { window.history.replaceState(null, '', window.location.pathname + window.location.search); definirRecuperacao(null); atualizar(); }} /> : sessao === undefined ? <main><p className="estado-lista" role="status">{erro || 'Abrindo seu espaço…'}</p>{erro && <button className="botao-secundario" onClick={atualizar}>Tentar novamente</button>}</main>
+      {recuperacao?.confirmacao ? <ConfirmarEmail key={recuperacao.token} token={recuperacao.token} atualizar={atualizar} aoVoltar={() => { window.history.replaceState(null, '', window.location.pathname + window.location.search); definirRecuperacao(null); atualizar(); }} /> : recuperacao ? <RecuperarSenha key={recuperacao.token ?? 'pedido'} token={recuperacao.token} aoSolicitarNovo={solicitarRecuperacao} aoVoltar={() => { window.history.replaceState(null, '', window.location.pathname + window.location.search); definirRecuperacao(null); atualizar(); }} /> : sessao === undefined ? <main><p className="estado-lista" role="status">{erro || 'Abrindo seu espaço…'}</p>{erro && <button className="botao-secundario" onClick={atualizar}>Tentar novamente</button>}</main>
         : !sessao ? <Acesso aoRecuperar={solicitarRecuperacao} aoEntrar={dados => { setView('Hoje'); entrar(dados); }} aviso={aviso} /> : <div className="app-layout">
         <nav className="areas" aria-label="Áreas pessoais">
           <p className="areas-label">Seu espaço</p>
@@ -47,6 +49,7 @@ export default function App() {
           ))}
         </nav>
         <main>
+          <AvisoConfirmacao key={sessao.id} sessao={sessao} atualizar={atualizar} aviso={aviso} />
           <nav className="routine-tabs" aria-label="Visualizações da rotina">
             {['Hoje', 'Semana', 'Histórico'].map(item => <button key={item} aria-pressed={view === item} onClick={() => setView(item)}>{item}</button>)}
           </nav>

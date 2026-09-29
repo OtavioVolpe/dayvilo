@@ -1,3 +1,4 @@
+import { criarServicoConfirmacao } from './servicos/confirmacao-email.js';
 import { setTimeout as aguardar } from 'node:timers/promises';
 import { criarServicoRecuperacao } from './servicos/recuperacao-senha.js';
 import { Router } from 'express';
@@ -12,6 +13,7 @@ let operacoesSenha = 0;
 
 export function instalarContas(aplicacao, banco, entrega) {
   const contas = criarServicoAutenticacao(banco);
+  const confirmacao = criarServicoConfirmacao({ banco, ...entrega });
   const recuperacao = criarServicoRecuperacao({ banco, ...entrega });
   aplicacao.use('/api', async (requisicao, resposta, proximo) => {
     resposta.set('Cache-Control', 'no-store');
@@ -43,6 +45,8 @@ export function instalarContas(aplicacao, banco, entrega) {
   }
   const limitar = criarLimitador(10);
   const limitarPedidos = criarLimitador(5);
+  const limitarConfirmacoes = criarLimitador(5);
+  const limitarTokensConfirmacao = criarLimitador(30);
   const limitarLinks = criarLimitador(30);
   const limitarRedefinicoes = criarLimitador(10);
   function autenticar(acao, status) {
@@ -56,7 +60,12 @@ export function instalarContas(aplicacao, banco, entrega) {
         resposta.cookie(nomeCookie, sessao.token, { ...opcoesCookie, maxAge: 7 * 24 * 60 * 60 * 1000 });
         // A resposta da sessão é a única fonte do perfil e do token CSRF para a interface.
         const { csrf, ...usuario } = await contas.consultar(sessao.token);
-        resposta.status(status).json({ usuario, csrf });
+        let aviso_confirmacao;
+        if (acao === 'cadastrar') {
+          try { await confirmacao.solicitar(usuario.id); }
+          catch { aviso_confirmacao = 'Sua conta foi criada, mas não conseguimos enviar a confirmação. Você pode solicitar outro link na sua rotina.'; }
+        }
+        resposta.status(status).json({ usuario, csrf, aviso_confirmacao });
       } finally { operacoesSenha--; }
     };
   }
@@ -90,6 +99,14 @@ export function instalarContas(aplicacao, banco, entrega) {
       await recuperacao.redefinir(requisicao.body);
       resposta.json({ mensagem: 'Senha atualizada. Entre novamente com sua nova senha.' });
     } finally { operacoesSenha--; }
+  });
+  rotas.post('/confirmacao', exigirConta, conferirCsrf, limitarConfirmacoes, async (requisicao, resposta) => {
+    const resultado = await confirmacao.solicitar(requisicao.usuario.id);
+    resposta.json({ ...resultado, entrega: entrega.modoEmail, mensagem: resultado.confirmado ? 'Seu e-mail já está confirmado.' : entrega.modoEmail === 'resend' ? 'Confira seu e-mail e a pasta de spam. O link vale por 30 minutos.' : 'A mensagem de confirmação foi salva neste computador. O link vale por 30 minutos.' });
+  });
+  rotas.post('/confirmacao/confirmar', limitarTokensConfirmacao, async (requisicao, resposta) => {
+    if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });
+    resposta.json(await confirmacao.confirmar(requisicao.body));
   });
   rotas.get('/sessao', (requisicao, resposta) => {
     if (!requisicao.usuario) { limparCookie(resposta); return resposta.json({ usuario: null }); }

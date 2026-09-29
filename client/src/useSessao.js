@@ -44,7 +44,7 @@ export function useSessao() {
 
   function entrar(dados) {
     versao.current++; definirCsrf(dados.csrf); definirSessao(dados.usuario);
-    definirAviso(''); definirErro(''); canal.current?.postMessage('atualizar');
+    definirAviso(dados.aviso_confirmacao || ''); definirErro(''); canal.current?.postMessage('atualizar');
   }
   async function sair() {
     if (saindo) return;

@@ -18,7 +18,7 @@ test('contas: vinculação, senha, sessão, isolamento, CSRF, expiração e saí
       (?, 'Concluída anterior', '2024-01-01', 'concluida', UTC_TIMESTAMP()),
       (?, 'Pulada anterior', '2024-01-01', 'pulada', NULL)`, [local.insertId, local.insertId, local.insertId]);
     const [antes] = await banco.execute('SELECT * FROM tarefas WHERE usuario_id = ? ORDER BY id', [local.insertId]);
-    servidor = criarAplicacao({ banco }).listen(0, '127.0.0.1'); await once(servidor, 'listening');
+    servidor = criarAplicacao({ banco, enviarEmail: async () => {} }).listen(0, '127.0.0.1'); await once(servidor, 'listening');
     const url = `http://127.0.0.1:${servidor.address().port}/api`;
     async function chamar(rota, method = 'GET', body, sessao, extras = {}) {
       const resposta = await fetch(url + rota, {
@@ -87,7 +87,7 @@ test('contas: vinculação, senha, sessão, isolamento, CSRF, expiração e saí
 
 test('contas: limite de tentativas antes de consultar credenciais', async () => {
   const banco = { execute() { throw new Error('Não deveria consultar o banco.'); } };
-  const servidor = criarAplicacao({ banco }).listen(0, '127.0.0.1'); await once(servidor, 'listening');
+  const servidor = criarAplicacao({ banco, enviarEmail: async () => {} }).listen(0, '127.0.0.1'); await once(servidor, 'listening');
   try {
     const url = `http://127.0.0.1:${servidor.address().port}/api/contas/entrada`;
     for (let indice = 0; indice < 11; indice++) {

@@ -96,10 +96,10 @@ export function criarServicoAutenticacao(banco) {
     },
     async consultar(token) {
       if (!token || !/^[a-f0-9]{64}$/.test(token)) return null;
-      const [[sessao]] = await banco.execute(`SELECT u.id, u.nome, u.fuso_horario, c.email, s.csrf
+      const [[sessao]] = await banco.execute(`SELECT u.id, u.nome, u.fuso_horario, c.email, s.csrf, EXISTS(SELECT 1 FROM confirmacoes_email ce WHERE ce.conta_id = c.id AND ce.confirmado_em IS NOT NULL) AS email_confirmado
         FROM sessoes s JOIN contas c ON c.id = s.conta_id JOIN usuarios u ON u.id = c.usuario_id
         WHERE s.token_hash = ? AND s.expira_em > UTC_TIMESTAMP()`, [resumoToken(token)]);
-      return sessao ?? null;
+      return sessao ? { ...sessao, email_confirmado: Boolean(sessao.email_confirmado) } : null;
     },
     async sair(token) {
       if (token) await banco.execute('DELETE FROM sessoes WHERE token_hash = ?', [resumoToken(token)]);

@@ -49,7 +49,7 @@ As tabelas `usuarios` e `tarefas` guardam os dados da aplicação. A conta MySQL
 
 Depois das migrações, inicie com `npm run dev` e abra a interface. Crie uma conta com nome, e-mail e senha; cada conta acessa apenas sua própria rotina. E-mails são tratados sem distinção entre maiúsculas e minúsculas. A senha aceita de 15 a 128 caracteres, incluindo espaços.
 
-As senhas são protegidas com scrypt e sal individual. A sessão dura até sete dias e usa um cookie HttpOnly/SameSite=Strict; sair invalida a sessão no servidor. Alterações exigem proteção contra CSRF. Cadastro e entrada têm limite de tentativas. O e-mail é usado como identificador; ainda não há verificação de e-mail. A recuperação aceita entrega local ou envio pelo Resend.
+As senhas são protegidas com scrypt e sal individual. A sessão dura até sete dias e usa um cookie HttpOnly/SameSite=Strict; sair invalida a sessão no servidor. Alterações exigem proteção contra CSRF. Cadastro e entrada têm limite de tentativas. O e-mail é usado como identificador; a confirmação de e-mail e a recuperação de senha aceitam entrega local ou envio pelo Resend.
 
 Para trazer uma rotina criada com o antigo perfil local, mantenha `USUARIO_LOCAL_ID` no `server/.env` e execute, **antes de cadastrar sua conta**:
 
@@ -60,6 +60,14 @@ npm run conta:codigo
 No cadastro, marque **Trazer minha rotina anterior** e cole o código no campo de vinculação. Ele vale por 30 minutos, pode ser usado uma vez e não deve ser compartilhado. Um novo código invalida o anterior. A vinculação preserva as tarefas, as séries, os estados de conclusão e o fuso do perfil. Contas novas não precisam desse código nem de `db:perfil`.
 
 A API permanece restrita ao próprio computador. Os cookies locais funcionam por HTTP; publicação exige configurar HTTPS, cookies Secure e as origens de acesso. Este comando de inicialização não aceita execução em produção.
+
+### Confirmação de e-mail
+
+Novos cadastros tentam enviar automaticamente um link de confirmação. Para contas existentes ou para reenviar, entre na rotina e selecione **Enviar link de confirmação**. O link vale por 30 minutos e exige clicar em **Confirmar meu e-mail** na página aberta. Abrir a página não consome o link.
+
+O reenvio exige intervalo mínimo de um minuto e substitui o link anterior. Depois da confirmação, o aviso desaparece da rotina. Senha, sessões, tarefas e histórico são preservados. A confirmação é informativa nesta versão e não bloqueia o uso da rotina. Se o envio falhar durante o cadastro, a conta continua criada e permite solicitar outro link.
+
+A tabela `confirmacoes_email` registra a confirmação e guarda somente o resumo do token temporário. Os links de confirmação e de recuperação de senha são independentes. Em modo local, use `npm run emails:listar` para localizar a mensagem; em modo Resend, consulte a caixa de e-mail.
 
 ### Recuperação de senha
 
