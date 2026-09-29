@@ -1,6 +1,10 @@
+import { useState } from 'react';
+import { Download } from 'lucide-react';
+import { baixarHistorico } from './exportar-historico.js';
 import { formatarData } from './datas.js';
 
-export default function ListaHistorico({ tarefas, situacao, definirSituacao, bloqueado, renderizarTarefa }) {
+export default function ListaHistorico({ tarefas, periodo, situacao, definirSituacao, bloqueado, renderizarTarefa }) {
+  const [erroExportacao, definirErroExportacao] = useState('');
   const concluidas = tarefas.filter(tarefa => tarefa.situacao === 'concluida').length;
   const pendentes = tarefas.filter(tarefa => tarefa.situacao === 'pendente').length;
   const filtradas = tarefas.filter(tarefa => situacao === 'todas' || tarefa.situacao === situacao);
@@ -14,7 +18,13 @@ export default function ListaHistorico({ tarefas, situacao, definirSituacao, blo
     </div>
     <div className="filtro-historico"><label>Situação <select value={situacao} disabled={bloqueado} onChange={evento => definirSituacao(evento.target.value)}>
       <option value="todas">Todas</option><option value="concluida">Concluídas</option><option value="pendente">Pendentes</option><option value="pulada">Puladas</option>
-    </select></label><p>{filtradas.length} tarefa(s) encontradas</p></div>
+    </select></label><p>{filtradas.length} tarefa(s) encontradas</p><button className="botao-secundario" disabled={bloqueado || !filtradas.length} onClick={() => {
+      definirErroExportacao('');
+      try { baixarHistorico(filtradas, periodo, situacao); }
+      catch { definirErroExportacao('Não foi possível preparar o arquivo. Tente novamente.'); }
+    }}><Download size={17} aria-hidden="true" /> Exportar CSV</button></div>
+    <p className="explicacao-historico">A exportação inclui apenas as tarefas do período consultado e da situação selecionada.</p>
+    {erroExportacao && <p className="mensagem-erro" role="alert">{erroExportacao}</p>}
     {dias.length === 0 && <div className="initial-state"><h2>Nenhuma atividade encontrada</h2><p>Experimente outro período ou outra situação.</p></div>}
     <div className="lista-historico">{dias.map(dia => <section key={dia} aria-label={formatarData(dia, { day: 'numeric', month: 'long', year: 'numeric' })}>
       <h3>{formatarData(dia, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</h3>
