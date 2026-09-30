@@ -51,3 +51,5 @@
 .tarefa-arrastando{opacity:.6;outline:1px dashed var(--accent)}
 .tarefa.destino-antes{box-shadow:0 -4px 0 var(--accent)}
 .tarefa.destino-depois{box-shadow:0 4px 0 var(--accent)}
+
+.campos-opcionais{align-items:flex-end}.formulario-tarefa .prioridade-horarios{min-height:44px;align-items:center}.dica-horarios{color:var(--muted);font-size:.8rem;line-height:1.5;margin:-4px 0 18px}

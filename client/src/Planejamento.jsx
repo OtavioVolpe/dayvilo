@@ -106,7 +106,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
     const campos = new FormData(formulario);
     definirSalvando(true); definirErro('');
     try {
-      const dadosTarefa = { titulo: campos.get('titulo'), horario: campos.get('horario') || null,
+      const dadosTarefa = { titulo: campos.get('titulo'), horario: campos.get('horario') || null, horario_final: campos.get('horario_final') || null,
         observacao: campos.get('observacao'), prioridade: campos.has('prioridade'), data_prevista: campos.get('data_prevista') };
       if (modoSerie && editando) {
         const { data_prevista, ...dadosSerie } = dadosTarefa;
@@ -240,7 +240,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
       <input type="checkbox" aria-label={`Concluir: ${tarefa.titulo}`} checked={tarefa.situacao === 'concluida'} disabled={aberto || salvando || atualizando.includes(tarefa.id)} onChange={() => alternar(tarefa)} />
       <div className="tarefa-conteudo"><div className="tarefa-cabecalho"><span className="tarefa-titulo" id={`titulo-tarefa-${tarefa.id}`}>{tarefa.titulo}</span></div>
         {tarefa.observacao && <p className="observacao">{tarefa.observacao}</p>}
-        <div className="detalhes">{tarefa.serie_id && <span>Repetição</span>}{atrasada === true && <span>Prevista para {formatarData(tarefa.data_prevista, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario || 'Sem horário'}</span>
+        <div className="detalhes">{tarefa.serie_id && <span>Repetição</span>}{atrasada === true && <span>Prevista para {formatarData(tarefa.data_prevista, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario ? tarefa.horario + (tarefa.horario_final ? ' às ' + tarefa.horario_final + (tarefa.horario_final < tarefa.horario ? ' (dia seguinte)' : '') : '') : 'Sem horário'}</span>
           {tarefa.prioridade && <span className="prioridade"><Star size={13} aria-hidden="true" />Prioridade</span>}</div>
       </div>
       <div className="acoes-tarefa">
@@ -307,7 +307,8 @@ export default function Planejamento({ semanal = false, historico = false }) {
     <form key={(editando?.id ?? `nova-${novaData || data}`) + String(modoSerie)} ref={formularioRef} onSubmit={adicionar} className="formulario-tarefa" hidden={!aberto}>
       <fieldset disabled={salvando || carregando}><legend>{modoSerie ? "Editar próximas ocorrências" : editando ? "Editar tarefa" : "Nova tarefa"}</legend>
         <label>O que você quer fazer?<input defaultValue={editando?.titulo ?? ""} name="titulo" required maxLength={200} placeholder="Ex.: ler algumas páginas" /></label>
-        <div className="campos-opcionais"><label>Data<input defaultValue={editando?.data_prevista ?? (novaData || data)} name="data_prevista" type="date" disabled={modoSerie} required min="1000-01-01" max="9999-12-31" /></label><label>Horário (opcional)<input defaultValue={editando?.horario ?? ""} name="horario" type="time" /></label><label className="campo-prioridade"><input defaultChecked={editando?.prioridade ?? false} name="prioridade" type="checkbox" />Marcar como prioridade</label></div>
+        <div className="campos-opcionais"><label>Data<input defaultValue={editando?.data_prevista ?? (novaData || data)} name="data_prevista" type="date" disabled={modoSerie} required min="1000-01-01" max="9999-12-31" /></label><label>Horário inicial (opcional)<input defaultValue={editando?.horario ?? ""} name="horario" type="time" /></label><label>Horário final (opcional)<input defaultValue={editando?.horario_final ?? ""} name="horario_final" type="time" /></label><label className="campo-prioridade prioridade-horarios"><input defaultChecked={editando?.prioridade ?? false} name="prioridade" type="checkbox" />Marcar como prioridade</label></div>
+        <p className="dica-horarios">Se o horário final for anterior ao inicial, o término será no dia seguinte.</p>
         {!editando && <div className="configuracao-repeticao">
           <label>Repetir<select value={repeticao} onChange={evento => definirRepeticao(evento.target.value)}><option value="nenhuma">Não repetir</option><option value="diaria">Todos os dias</option><option value="semanal">Dias da semana</option></select></label>
           {repeticao !== 'nenhuma' && <>
@@ -316,7 +317,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
             <p>As ocorrências serão criadas até a data final, em um período de até 366 dias. As ocorrências ficam vinculadas e você poderá editar ou encerrar as próximas em conjunto.</p>
           </>}
         </div>}
-        {modoSerie && editando && <div className="configuracao-repeticao"><p>Altera título, horário, prioridade e observação de todas as ocorrências pendentes desta repetição a partir de {formatarData(editando.data_prevista > hoje ? editando.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}, inclusive as editadas individualmente. As datas, as concluídas e as puladas serão preservadas.</p><label className="campo-prioridade"><input type="checkbox" required />Confirmo a alteração nas próximas ocorrências pendentes</label></div>}
+        {modoSerie && editando && <div className="configuracao-repeticao"><p>Altera título, horários, prioridade e observação de todas as ocorrências pendentes desta repetição a partir de {formatarData(editando.data_prevista > hoje ? editando.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}, inclusive as editadas individualmente. As datas, as concluídas e as puladas serão preservadas.</p><label className="campo-prioridade"><input type="checkbox" required />Confirmo a alteração nas próximas ocorrências pendentes</label></div>}
         {editando && !modoSerie && <p className="explicacao-historico">Esta edição altera apenas esta tarefa, mesmo que ela tenha sido criada com repetição.</p>}
         <label>Observação (opcional)<textarea defaultValue={editando?.observacao ?? ""} name="observacao" maxLength={4000} rows={2} /></label>
         <div className="acoes-formulario"><button type="button" className="botao-secundario" onClick={() => { definirAberto(false); definirEditando(null); }}>Cancelar</button><button className="botao-principal" type="submit">{salvando ? 'Salvando…' : 'Salvar tarefa'}</button></div>

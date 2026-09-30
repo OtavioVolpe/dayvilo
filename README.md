@@ -4,6 +4,12 @@ Aplicação web de organização pessoal, com foco em uma rotina flexível e uma
 
 A área de rotina reúne três visões: **Hoje**, **Semana** e **Histórico**. A visão semanal organiza as tarefas de segunda a domingo, permite navegar entre semanas e adicionar, editar ou concluir tarefas de cada dia. O Histórico consulta as tarefas pela data planejada, com filtros de situação e períodos de até 366 dias. Mostra o estado atual das tarefas; alterações de data e exclusões também afetam essa consulta. No cadastro, tarefas podem se repetir diariamente ou nos dias da semana escolhidos, com data final e período de até 366 dias. As ocorrências são criadas de uma vez e as novas repetições ficam vinculadas a uma série. Cada ocorrência pode ser concluída, editada ou excluída individualmente. Editar próximas altera título, horário, observação e prioridade das pendentes a partir da data da ocorrência selecionada ou de hoje, o que vier depois. Encerrar repetição exclui esse mesmo conjunto de pendentes após confirmação; essas ocorrências não podem ser restauradas. Datas anteriores, concluídas e puladas são preservadas. Repetições anteriores à criação dos vínculos continuam independentes. Na tela Hoje, pendências de datas anteriores aparecem separadamente e podem ser concluídas, reagendadas para hoje ou puladas. Pular preserva a tarefa no Histórico, pode ser desfeito com Restaurar e retira a ocorrência do total usado no progresso. Em Hoje e Semana, as puladas ficam em seções recolhidas inicialmente; ao pular uma tarefa da lista, a seção do dia abre e mostra o card movido. Pendentes, concluídas e puladas têm selos com texto e ícone, com cores distintas, também no Histórico. O design privilegia clareza e navegação entre as áreas da vida pessoal.
 
+## Horários das tarefas
+
+O horário inicial e o final são opcionais. Para informar o final, preencha também o início; os dois horários devem ser diferentes. Um final anterior ao início representa o dia seguinte e recebe essa indicação no card. As tarefas continuam agrupadas pela data de início planejada. Horários sobrepostos são permitidos.
+
+Os horários são mantidos na edição, nas repetições, no Histórico e no CSV. Tarefas existentes continuam sem horário final até que ele seja informado.
+
 ## Organizar tarefas
 
 Em Hoje e Semana, selecione **Minha ordem** e segure a alça de seis pontos à esquerda de uma tarefa pendente para arrastá-la dentro do mesmo dia. Uma linha indica a posição de destino; soltar salva a sequência. Escape cancela o arraste. Pelo teclado, coloque o foco na alça e use as setas para cima ou para baixo.
@@ -12,7 +18,7 @@ A sequência fica salva no banco. Também é possível visualizar por horário o
 
 ## Exportar histórico
 
-Em **Histórico**, consulte um período, selecione a situação e clique em **Exportar CSV**. O arquivo contém apenas as tarefas correspondentes à consulta e ao filtro, com data planejada, título, horário, situação, prioridade, observação e indicação de série vinculada. Não inclui tarefas futuras ou sem data que não aparecem nessa consulta. O botão fica desabilitado quando não há resultados.
+Em **Histórico**, consulte um período, selecione a situação e clique em **Exportar CSV**. O arquivo contém apenas as tarefas correspondentes à consulta e ao filtro, com data planejada, título, horários inicial e final, indicação de término no dia seguinte, situação, prioridade, observação e indicação de série vinculada. Não inclui tarefas futuras ou sem data que não aparecem nessa consulta. O botão fica desabilitado quando não há resultados.
 
 O CSV usa UTF-8 com BOM, ponto e vírgula como separador e datas no formato AAAA-MM-DD. Pode ser aberto em uma planilha; se necessário, escolha UTF-8 e ponto e vírgula na importação. Textos que poderiam ser interpretados como fórmulas recebem um apóstrofo inicial. A exportação não altera os dados e não substitui um backup completo do banco.
 
@@ -51,7 +57,7 @@ Para criar as tabelas na base configurada, execute:
 npm run db:migrate
 ```
 
-O usuário da conexão precisa de permissões de leitura/escrita, `CREATE` e `REFERENCES` nessa base. As migrações são arquivos SQL numerados em `server/migrations`. Execute-as em ordem pelo comando: ele registra as aplicadas em `migracoes_aplicadas` e não as repete. Cada arquivo contém uma única instrução SQL.
+O usuário da conexão precisa de permissões de leitura/escrita, `CREATE`, `REFERENCES` e `ALTER` nessa base. As migrações são arquivos SQL numerados em `server/migrations`. Execute-as em ordem pelo comando: ele registra as aplicadas em `migracoes_aplicadas` e não as repete. Cada arquivo contém uma única instrução SQL.
 
 Não edite uma migração já aplicada; adicione outro arquivo numerado para mudanças de estrutura. Se uma execução falhar, inspecione o banco antes de corrigir o registro marcado como `iniciada`: comandos de estrutura no MySQL podem ser confirmados mesmo quando uma etapa posterior falha.
 

@@ -5,7 +5,7 @@ import { gerarCsvHistorico } from '../../client/src/exportar-historico.js';
 test('CSV do histórico: preserva acentos, aspas, separadores e observações multilinha', () => {
   const csv = gerarCsvHistorico([{ id: 1, data_prevista: '2026-09-28', titulo: 'Ler "ação"; depois', horario: '08:00:00', situacao: 'concluida', prioridade: true, observacao: 'Primeira linha\nSegunda linha', serie_id: 'serie' }]);
   assert.ok(csv.startsWith('\uFEFF"Data planejada";'));
-  assert.ok(csv.includes('"Ler ""ação""; depois";"08:00:00";"Concluída";"Sim";"Primeira linha\nSegunda linha";"Sim"\r\n'));
+  assert.ok(csv.includes('"Ler ""ação""; depois";"08:00:00";"";"Não";"Concluída";"Sim";"Primeira linha\nSegunda linha";"Sim"\r\n'));
 });
 
 test('CSV: neutraliza fórmulas inclusive com espaços e controles antes do conteúdo', () => {

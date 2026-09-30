@@ -76,7 +76,7 @@ export function criarAplicacao({ banco, porta = 3001, modoEmail = 'local', envia
   });
   aplicacao.put('/api/tarefas/:id/serie', async (requisicao, resposta) => {
     const id = validarId(requisicao.params.id);
-    validarObjeto(requisicao.body, ['titulo', 'observacao', 'horario', 'prioridade']);
+    validarObjeto(requisicao.body, ['titulo', 'observacao', 'horario', 'horario_final', 'prioridade']);
     const dados = validarNovaTarefa(requisicao.body);
     const referencia = await tarefas.buscar(requisicao.usuario.id, id);
     if (!referencia?.serie_id) return resposta.status(404).json({ erro: 'Série não encontrada para esta tarefa.' });
@@ -97,7 +97,7 @@ export function criarAplicacao({ banco, porta = 3001, modoEmail = 'local', envia
   });
   aplicacao.put('/api/tarefas/:id', async (requisicao, resposta) => {
     const id = validarId(requisicao.params.id);
-    validarObjeto(requisicao.body, ['titulo', 'observacao', 'horario', 'prioridade', 'data_prevista']);
+    validarObjeto(requisicao.body, ['titulo', 'observacao', 'horario', 'horario_final', 'prioridade', 'data_prevista']);
     if (Object.hasOwn(requisicao.body, 'data_prevista')) validarData(requisicao.body.data_prevista);
     const tarefa = await tarefas.editar(requisicao.usuario.id, id, validarNovaTarefa(requisicao.body));
     if (!tarefa) return resposta.status(404).json({ erro: 'Tarefa não encontrada.' });

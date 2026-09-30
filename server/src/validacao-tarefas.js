@@ -26,7 +26,7 @@ export function validarObjeto(valor, campos) {
 }
 
 export function validarNovaTarefa(dados) {
-  validarObjeto(dados, ['titulo', 'observacao', 'data_prevista', 'horario', 'prioridade']);
+  validarObjeto(dados, ['titulo', 'observacao', 'data_prevista', 'horario', 'horario_final', 'prioridade']);
   if (typeof dados.titulo !== 'string' || !dados.titulo.trim() || [...dados.titulo.trim()].length > 200) {
     throw new ErroValidacao('O título precisa ter entre 1 e 200 caracteres.');
   }
@@ -39,11 +39,17 @@ export function validarNovaTarefa(dados) {
   if (dados.horario != null && (typeof dados.horario !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(dados.horario))) {
     throw new ErroValidacao('Informe um horário válido no formato HH:MM.');
   }
+  if (dados.horario_final != null && (typeof dados.horario_final !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(dados.horario_final))) {
+    throw new ErroValidacao('Informe um horário final válido no formato HH:MM.');
+  }
+  if (dados.horario_final != null && !dados.horario) throw new ErroValidacao('Informe o horário inicial antes do horário final.');
+  if (dados.horario_final != null && dados.horario_final === dados.horario) throw new ErroValidacao('Os horários inicial e final devem ser diferentes.');
   return {
     titulo: dados.titulo.trim(),
     observacao: dados.observacao?.trim() || null,
     data_prevista: dados.data_prevista == null ? null : validarData(dados.data_prevista),
     horario: dados.horario || null,
+    horario_final: dados.horario_final || null,
     prioridade: dados.prioridade ?? false,
   };
 }

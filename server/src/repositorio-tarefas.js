@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
-const colunas = 'id, titulo, observacao, data_prevista, horario, prioridade, situacao, ordem, (SELECT serie_id FROM ocorrencias_series WHERE tarefa_id = tarefas.id) AS serie_id';
+const colunas = 'id, titulo, observacao, data_prevista, horario, horario_final, prioridade, situacao, ordem, (SELECT serie_id FROM ocorrencias_series WHERE tarefa_id = tarefas.id) AS serie_id';
 
 function apresentarTarefa(tarefa) {
-  return { ...tarefa, prioridade: Boolean(tarefa.prioridade), horario: tarefa.horario?.slice(0, 5) ?? null };
+  return { ...tarefa, prioridade: Boolean(tarefa.prioridade), horario: tarefa.horario?.slice(0, 5) ?? null, horario_final: tarefa.horario_final?.slice(0, 5) ?? null };
 }
 
 export function criarRepositorioTarefas(banco) {
@@ -43,8 +43,8 @@ export function criarRepositorioTarefas(banco) {
     },
     async criar(usuarioId, dados) {
       const [resultado] = await banco.execute(
-        'INSERT INTO tarefas (usuario_id, titulo, observacao, data_prevista, horario, prioridade) VALUES (?, ?, ?, ?, ?, ?)',
-        [usuarioId, dados.titulo, dados.observacao, dados.data_prevista, dados.horario, dados.prioridade],
+        'INSERT INTO tarefas (usuario_id, titulo, observacao, data_prevista, horario, horario_final, prioridade) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [usuarioId, dados.titulo, dados.observacao, dados.data_prevista, dados.horario, dados.horario_final ?? null, dados.prioridade],
       );
       return this.buscar(usuarioId, resultado.insertId);
     },
@@ -58,8 +58,8 @@ export function criarRepositorioTarefas(banco) {
         else await conexao.query('SAVEPOINT criar_serie');
         for (const data of datas) {
           const [resultado] = await conexao.execute(
-            'INSERT INTO tarefas (usuario_id, titulo, observacao, data_prevista, horario, prioridade) VALUES (?, ?, ?, ?, ?, ?)',
-            [usuarioId, dados.titulo, dados.observacao, data, dados.horario, dados.prioridade],
+            'INSERT INTO tarefas (usuario_id, titulo, observacao, data_prevista, horario, horario_final, prioridade) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [usuarioId, dados.titulo, dados.observacao, data, dados.horario, dados.horario_final ?? null, dados.prioridade],
           );
           primeira ??= resultado.insertId;
           await conexao.execute('INSERT INTO ocorrencias_series (tarefa_id, serie_id) VALUES (?, ?)', [resultado.insertId, serieId]);
@@ -76,8 +76,8 @@ export function criarRepositorioTarefas(banco) {
     },
     async editarProximas(usuarioId, serieId, inicio, dados) {
       const [resultado] = await banco.execute(
-        "UPDATE tarefas JOIN ocorrencias_series ON tarefa_id = tarefas.id SET titulo = ?, observacao = ?, horario = ?, prioridade = ? WHERE usuario_id = ? AND serie_id = ? AND data_prevista >= ? AND situacao = 'pendente'",
-        [dados.titulo, dados.observacao, dados.horario, dados.prioridade, usuarioId, serieId, inicio],
+        "UPDATE tarefas JOIN ocorrencias_series ON tarefa_id = tarefas.id SET titulo = ?, observacao = ?, horario = ?, horario_final = ?, prioridade = ? WHERE usuario_id = ? AND serie_id = ? AND data_prevista >= ? AND situacao = 'pendente'",
+        [dados.titulo, dados.observacao, dados.horario, dados.horario_final ?? null, dados.prioridade, usuarioId, serieId, inicio],
       );
       return resultado.affectedRows;
     },
@@ -89,8 +89,8 @@ export function criarRepositorioTarefas(banco) {
       return resultado.affectedRows;
     },
     async editar(usuarioId, id, dados) {
-      await banco.execute('UPDATE tarefas SET titulo = ?, observacao = ?, horario = ?, prioridade = ?, ordem = IF(? IS NULL OR data_prevista <=> ?, ordem, 0), data_prevista = COALESCE(?, data_prevista) WHERE usuario_id = ? AND id = ?',
-        [dados.titulo, dados.observacao, dados.horario, dados.prioridade, dados.data_prevista, dados.data_prevista, dados.data_prevista, usuarioId, id]);
+      await banco.execute('UPDATE tarefas SET titulo = ?, observacao = ?, horario = ?, horario_final = ?, prioridade = ?, ordem = IF(? IS NULL OR data_prevista <=> ?, ordem, 0), data_prevista = COALESCE(?, data_prevista) WHERE usuario_id = ? AND id = ?',
+        [dados.titulo, dados.observacao, dados.horario, dados.horario_final ?? null, dados.prioridade, dados.data_prevista, dados.data_prevista, dados.data_prevista, usuarioId, id]);
       return this.buscar(usuarioId, id);
     },
     async excluir(usuarioId, id) {

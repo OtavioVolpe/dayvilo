@@ -6,10 +6,10 @@ function celula(valor) {
 }
 const situacoes = { pendente: 'Pendente', concluida: 'Concluída', pulada: 'Pulada' };
 export function gerarCsvHistorico(tarefas) {
-  const linhas = [['Data planejada', 'Título', 'Horário', 'Situação', 'Prioridade', 'Observação', 'Repetição']];
+  const linhas = [['Data planejada', 'Título', 'Horário inicial', 'Horário final', 'Término no dia seguinte', 'Situação', 'Prioridade', 'Observação', 'Repetição']];
   const ordenadas = [...tarefas].sort((a, b) => (b.data_prevista || '').localeCompare(a.data_prevista || '') || (a.horario || '99').localeCompare(b.horario || '99') || a.id - b.id);
   for (const tarefa of ordenadas) linhas.push([
-    tarefa.data_prevista, tarefa.titulo, tarefa.horario || '', situacoes[tarefa.situacao] || tarefa.situacao,
+    tarefa.data_prevista, tarefa.titulo, tarefa.horario || '', tarefa.horario_final || '', tarefa.horario_final && tarefa.horario_final < tarefa.horario ? 'Sim' : 'Não', situacoes[tarefa.situacao] || tarefa.situacao,
     tarefa.prioridade ? 'Sim' : 'Não', tarefa.observacao, tarefa.serie_id ? 'Sim' : 'Não',
   ]);
   return '\uFEFF' + linhas.map(linha => linha.map(celula).join(';')).join('\r\n') + '\r\n';
