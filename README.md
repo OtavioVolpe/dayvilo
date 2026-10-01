@@ -181,3 +181,15 @@ Em produção, a aplicação exige a origem configurada, usa cookies Secure/Http
 Com cadastro fechado, a interface oculta Criar conta e a API também recusa tentativas diretas. Contas já existentes continuam acessíveis. Portanto, restaure os dados da conta no banco de destino antes do primeiro uso com essa opção. O fechamento dos cadastros não bloqueia contas já existentes.
 
 Prepare o banco com backup/restauração e migrações antes de iniciar o servidor. Migrações não são executadas automaticamente pelo build ou pelo início da aplicação. Nunca faça o build depender de uma migração sobre seus dados pessoais. Depois de transferir o banco, confirme o envio dos links com a URL pública e faça um teste de restauração do backup.
+
+## Backup local no Windows
+
+Com MySQL 8 e PowerShell, execute na raiz do projeto:
+
+```powershell
+./server/scripts/backup-local.ps1
+```
+
+O script exporta apenas o banco local chamado dayvilo, configurado em server/.env, para a pasta irmã dayvilo-backups. Para outro caminho do cliente MySQL, use o parâmetro -Mysqldump. A exportação usa snapshot consistente para tabelas InnoDB; não execute alterações de estrutura durante o backup.
+
+O arquivo final .sql e seu SHA-256 só são produzidos após sucesso. Arquivos .partial indicam exportação incompleta. O backup contém dados privados e deve ficar fora do GitHub. Guarde uma cópia separada e teste a restauração em um banco vazio antes de depender desse backup. O script não exporta contas administrativas do servidor MySQL; exporta as tabelas da aplicação.
