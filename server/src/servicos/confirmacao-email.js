@@ -1,4 +1,4 @@
-import { validarObjeto } from '../validacao-tarefas.js';
+import { validarObjeto } from '../validacoes/tarefas.js';
 import { ErroConta, gerarToken, resumoToken, transacionar } from './autenticacao.js';
 
 export function criarServicoConfirmacao({ banco, enviarEmail, urlAplicacao }) {

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validarNovaTarefa, validarData, obterDataHoje } from '../src/validacao-tarefas.js';
+import { validarNovaTarefa, validarData, obterDataHoje } from '../src/validacoes/tarefas.js';
 
 test('valida calendário, horário e campos da tarefa', () => {
   assert.equal(validarData('2024-02-29'), '2024-02-29');

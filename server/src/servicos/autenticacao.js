@@ -1,10 +1,9 @@
+import { ErroAplicacao } from '../erros/aplicacao.js';
 import { createHash, randomBytes } from 'node:crypto';
-import { validarObjeto } from '../validacao-tarefas.js';
+import { validarObjeto } from '../validacoes/tarefas.js';
 import { protegerSenha, conferirSenha, validarSenhaNova } from './senhas.js';
 
-export class ErroConta extends Error {
-  constructor(status, mensagem) { super(mensagem); this.status = status; }
-}
+export class ErroConta extends ErroAplicacao {}
 export const resumoToken = valor => createHash('sha256').update(valor).digest('hex');
 export const gerarToken = () => randomBytes(32).toString('hex');
 

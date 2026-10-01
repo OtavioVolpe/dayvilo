@@ -1,4 +1,4 @@
-import { ErroValidacao, validarData, validarNovaTarefa, validarObjeto } from '../validacao-tarefas.js';
+import { ErroValidacao, validarData, validarNovaTarefa, validarObjeto } from '../validacoes/tarefas.js';
 
 export function prepararRepeticao(entrada) {
   validarObjeto(entrada, ['tarefa', 'repeticao']);

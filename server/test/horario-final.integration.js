@@ -4,7 +4,7 @@ import {once} from 'node:events';
 import {criarPoolBanco} from '../src/db.js';
 import {criarAplicacao} from '../src/app.js';
 import {prepararSessaoTeste} from './sessao-fixture.js';
-import {obterDataHoje} from '../src/validacao-tarefas.js';
+import {obterDataHoje} from '../src/validacoes/tarefas.js';
 import {deslocarData} from '../../client/src/datas.js';
 test('horário final: API persiste, edita, limpa e replica somente pendentes da série',async()=>{
   const pool=criarPoolBanco(), banco=await pool.getConnection();let servidor;

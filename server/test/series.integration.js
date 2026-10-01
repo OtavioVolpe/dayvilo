@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { criarAplicacao } from '../src/app.js';
 import { criarPoolBanco } from '../src/db.js';
-import { criarRepositorioTarefas } from '../src/repositorio-tarefas.js';
-import { obterDataHoje } from '../src/validacao-tarefas.js';
+import { criarRepositorioTarefas } from '../src/repositorios/tarefas.js';
+import { obterDataHoje } from '../src/validacoes/tarefas.js';
 
 test('séries preservam passado, concluídas, puladas e outros perfis; falha reverte criação', async () => {
   const pool=criarPoolBanco(); const banco=await pool.getConnection(); let servidor;

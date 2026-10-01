@@ -1,4 +1,4 @@
-import { validarData, ErroValidacao } from './validacao-tarefas.js';
+import { validarData, ErroValidacao } from '../validacoes/tarefas.js';
 
 export function obterSemana(valor) {
   validarData(valor);

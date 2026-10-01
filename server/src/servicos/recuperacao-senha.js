@@ -1,4 +1,4 @@
-import { validarObjeto } from '../validacao-tarefas.js';
+import { validarObjeto } from '../validacoes/tarefas.js';
 import { ErroConta, gerarToken, resumoToken, transacionar, validarEmail } from './autenticacao.js';
 import { protegerSenha, validarSenhaNova } from './senhas.js';
 

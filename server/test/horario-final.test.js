@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validarNovaTarefa } from '../src/validacao-tarefas.js';
+import { validarNovaTarefa } from '../src/validacoes/tarefas.js';
 import { gerarCsvHistorico } from '../../client/src/exportar-historico.js';
 test('horário final: opcional, início obrigatório, formato, limites e passagem de dia',()=>{
   const validar=dados=>validarNovaTarefa({titulo:'Estudar',...dados});

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { obterSemana } from '../src/semana.js';
+import { obterSemana } from '../src/servicos/semana.js';
 
 test('semana começa na segunda e inclui domingo', () => {
   const semana = obterSemana('2026-09-27');

@@ -1,5 +1,5 @@
 import { ErroConta, transacionar } from './autenticacao.js';
-import { validarObjeto, validarData, ErroValidacao } from '../validacao-tarefas.js';
+import { validarObjeto, validarData, ErroValidacao } from '../validacoes/tarefas.js';
 
 export async function ordenarTarefas(banco, usuarioId, dados) {
   validarObjeto(dados, ['data', 'ids', 'anteriores']);

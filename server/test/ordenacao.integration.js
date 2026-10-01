@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { criarPoolBanco } from '../src/db.js';
 import { criarAplicacao } from '../src/app.js';
-import { criarRepositorioTarefas } from '../src/repositorio-tarefas.js';
+import { criarRepositorioTarefas } from '../src/repositorios/tarefas.js';
 import { ordenarTarefas } from '../src/servicos/ordenacao.js';
 import { prepararSessaoTeste } from './sessao-fixture.js';
 

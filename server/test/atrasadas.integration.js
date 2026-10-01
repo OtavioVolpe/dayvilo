@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { criarAplicacao } from '../src/app.js';
 import { criarPoolBanco } from '../src/db.js';
-import { obterDataHoje } from '../src/validacao-tarefas.js';
+import { obterDataHoje } from '../src/validacoes/tarefas.js';
 
 test('atrasadas, pular, restaurar e reagendar preservam dados e isolamento', async () => {
   const pool = criarPoolBanco(); const banco = await pool.getConnection(); let servidor;

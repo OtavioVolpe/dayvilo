@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validarPeriodoHistorico } from '../src/historico.js';
+import { validarPeriodoHistorico } from '../src/validacoes/historico.js';
 
 test('histórico usa últimos 30 dias incluindo hoje e aceita ano bissexto', () => {
   assert.deepEqual(validarPeriodoHistorico(undefined, undefined, '2026-01-10'), { inicio: '2025-12-12', fim: '2026-01-10' });

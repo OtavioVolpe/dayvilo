@@ -1,4 +1,4 @@
-import { validarData, ErroValidacao } from './validacao-tarefas.js';
+import { validarData, ErroValidacao } from './tarefas.js';
 
 export function validarPeriodoHistorico(inicio, fim, hoje) {
   if (inicio === undefined && fim === undefined) {

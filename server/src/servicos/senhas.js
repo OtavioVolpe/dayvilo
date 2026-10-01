@@ -1,4 +1,4 @@
-import { ErroValidacao } from '../validacao-tarefas.js';
+import { ErroValidacao } from '../validacoes/tarefas.js';
 import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 
