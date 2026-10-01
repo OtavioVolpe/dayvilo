@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Eye, EyeOff, Sprout } from 'lucide-react';
 import { solicitar } from './api.js';
 
-export default function Acesso({ aoEntrar, aviso, aoRecuperar }) {
-  const [cadastro, definirCadastro] = useState(false);
+export default function Acesso({ aoEntrar, aviso, aoRecuperar, cadastroAberto = false }) {
+  const [criandoConta, definirCadastro] = useState(false);
+  const cadastro = criandoConta && cadastroAberto;
   const [vincular, definirVincular] = useState(false);
   const [mostrarSenha, definirMostrarSenha] = useState(false);
   const [enviando, definirEnviando] = useState(false);
@@ -57,7 +58,7 @@ export default function Acesso({ aoEntrar, aviso, aoRecuperar }) {
         </fieldset>
       </form>
       {!cadastro && <p className="acesso-alternar acesso-recuperar"><button type="button" disabled={enviando} onClick={aoRecuperar}>Esqueci minha senha</button></p>}
-      <p className="acesso-alternar">{cadastro ? 'Já tem uma conta?' : 'Primeira vez aqui?'} <button type="button" disabled={enviando} onClick={() => { definirCadastro(!cadastro); definirErro(''); definirMostrarSenha(false); definirVincular(false); }}>{cadastro ? 'Entrar' : 'Criar conta'}</button></p>
+      {cadastroAberto && <p className="acesso-alternar">{cadastro ? 'Já tem uma conta?' : 'Primeira vez aqui?'} <button type="button" disabled={enviando} onClick={() => { definirCadastro(!cadastro); definirErro(''); definirMostrarSenha(false); definirVincular(false); }}>{cadastro ? 'Entrar' : 'Criar conta'}</button></p>}
     </section>
   </main>;
 }

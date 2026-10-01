@@ -3,7 +3,7 @@ import { timingSafeEqual } from 'node:crypto';
 export const nomeCookie = 'dayvilo_sessao';
 export const opcoesCookie = { httpOnly: true, sameSite: 'strict', path: '/api' };
 export const lerCookie = requisicao => (requisicao.headers.cookie ?? '').split(';').map(parte => parte.trim()).find(parte => parte.startsWith(`${nomeCookie}=`))?.slice(nomeCookie.length + 1);
-export const limparCookie = resposta => resposta.clearCookie(nomeCookie, opcoesCookie);
+export const limparCookie = resposta => resposta.clearCookie(nomeCookie, { ...opcoesCookie, secure: resposta.locals.cookieSeguro === true });
 
 export function exigirConta(requisicao, resposta, proximo) {
   if (!requisicao.usuario) {

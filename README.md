@@ -77,7 +77,7 @@ npm run conta:codigo
 
 No cadastro, marque **Trazer minha rotina anterior** e cole o código no campo de vinculação. Ele vale por 30 minutos, pode ser usado uma vez e não deve ser compartilhado. Um novo código invalida o anterior. A vinculação preserva as tarefas, as séries, os estados de conclusão e o fuso do perfil. Contas novas não precisam desse código nem de `db:perfil`.
 
-A API permanece restrita ao próprio computador. Os cookies locais funcionam por HTTP; publicação exige configurar HTTPS, cookies Secure e as origens de acesso. Este comando de inicialização não aceita execução em produção.
+No modo local, a API fica restrita ao próprio computador e os cookies funcionam por HTTP. O modo de produção exige configuração explícita de HTTPS, proxy e TLS do banco, conforme a seção abaixo.
 
 ### Confirmação de e-mail
 
@@ -144,3 +144,40 @@ dayvilo/
 └── package.json
 ```
 
+
+## Executar em produção
+
+A interface compilada e a API são servidas pelo mesmo processo Node, no mesmo endereço. Não é necessário executar o Vite em produção.
+
+- Build na raiz: `npm ci --include=dev && npm run build`.
+- Inicialização na raiz: `npm start`.
+- Health check: `/api/health` (disponibilidade do processo; não consulta o banco).
+- Node.js: versão 24. O servidor deve receber tráfego por um proxy com HTTPS.
+
+Configure as variáveis no painel da hospedagem, preservando senhas e chaves fora do Git:
+
+| Variável | Uso |
+| --- | --- |
+| NODE_ENV | production |
+| HOST | 0.0.0.0; aceita conexões encaminhadas pela hospedagem |
+| PORT | Porta fornecida pela hospedagem |
+| URL_APLICACAO | URL HTTPS completa, na raiz, sem parâmetros; usada também nos e-mails |
+| PROXY_SALTOS | 1 somente quando há exatamente um proxy confiável entre o cliente e o Node; padrão 0 |
+| CADASTRO_ABERTO | false para impedir novos cadastros; padrão em produção |
+| MYSQL_HOST / PORT / USER / PASSWORD / DATABASE | Dados privados fornecidos pelo serviço MySQL |
+| MYSQL_SSL | true; obrigatório em produção |
+| MYSQL_SSL_CA | Conteúdo PEM do certificado CA fornecido pelo banco, quando necessário |
+| MYSQL_SSL_CA_FILE | Alternativa à variável anterior: caminho absoluto de arquivo privado com a CA |
+| EMAIL_MODO | resend; entrega local não é aceita em produção |
+| RESEND_API_KEY / EMAIL_REMETENTE | Configuração privada do envio de e-mail |
+| RESEND_DESTINATARIO_TESTE | Obrigatório quando o remetente usa resend.dev |
+
+Não configure as duas opções de CA simultaneamente. A conexão verifica o certificado e a identidade do servidor; use o hostname fornecido pelo banco. Certificados emitidos por autoridades já reconhecidas pelo Node podem dispensar uma CA adicional. Não desative a verificação de certificados para contornar falhas de conexão.
+
+O proxy deve encaminhar Host corretamente e sobrescrever os headers de encaminhamento de protocolo/IP. Com PROXY_SALTOS=1, a porta do Node não pode ter uma rota de acesso público que contorne esse proxy. O HTTPS termina na hospedagem; o Node pode receber HTTP do proxy confiável. Revise essa configuração ao trocar de provedor. Referências: [Express e proxies](https://expressjs.com/en/guide/behind-proxies/), [serviços web do Render](https://render.com/docs/web-services) e [TLS no mysql2](https://sidorares.github.io/node-mysql2/docs/documentation/ssl).
+
+Em produção, a aplicação exige a origem configurada, usa cookies Secure/HttpOnly/SameSite=Strict e aplica cabeçalhos de proteção do navegador. Os limites de tentativas são mantidos na memória de uma instância e reiniciam com o processo; múltiplas instâncias exigem um armazenamento compartilhado desses limites.
+
+Com cadastro fechado, a interface oculta Criar conta e a API também recusa tentativas diretas. Contas já existentes continuam acessíveis. Portanto, restaure os dados da conta no banco de destino antes do primeiro uso com essa opção. O fechamento dos cadastros não bloqueia contas já existentes.
+
+Prepare o banco com backup/restauração e migrações antes de iniciar o servidor. Migrações não são executadas automaticamente pelo build ou pelo início da aplicação. Nunca faça o build depender de uma migração sobre seus dados pessoais. Depois de transferir o banco, confirme o envio dos links com a URL pública e faça um teste de restauração do backup.

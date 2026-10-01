@@ -7,13 +7,14 @@ let operacoesSenha = 0;
 export function criarControladorContas({ contas, confirmacao, recuperacao, entrega }) {
   function autenticar(acao, status) {
     return async (requisicao, resposta) => {
+      if (acao === 'cadastrar' && entrega.cadastroAberto === false) throw new ErroConta(403, 'Novos cadastros estão fechados no momento.');
       if (requisicao.usuario) throw new ErroConta(409, 'Saia da conta atual antes de entrar em outra.');
       if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });
       if (operacoesSenha >= 2) throw new ErroConta(503, 'Servidor ocupado. Tente novamente em alguns segundos.');
       operacoesSenha++;
       try {
         const sessao = await contas[acao](requisicao.body);
-        resposta.cookie(nomeCookie, sessao.token, { ...opcoesCookie, maxAge: 7 * 24 * 60 * 60 * 1000 });
+        resposta.cookie(nomeCookie, sessao.token, { ...opcoesCookie, secure: resposta.locals.cookieSeguro === true, maxAge: 7 * 24 * 60 * 60 * 1000 });
         // A resposta da sessão é a única fonte do perfil e do token CSRF para a interface.
         const { csrf, ...usuario } = await contas.consultar(sessao.token);
         let aviso_confirmacao;
@@ -66,9 +67,9 @@ export function criarControladorContas({ contas, confirmacao, recuperacao, entre
       resposta.json(await confirmacao.confirmar(requisicao.body));
     },
     sessao(requisicao, resposta) {
-      if (!requisicao.usuario) { limparCookie(resposta); return resposta.json({ usuario: null }); }
+      if (!requisicao.usuario) { limparCookie(resposta); return resposta.json({ usuario: null, cadastro_aberto: entrega.cadastroAberto !== false }); }
       const { csrf, ...usuario } = requisicao.usuario;
-      resposta.json({ usuario, csrf });
+      resposta.json({ usuario, csrf, cadastro_aberto: entrega.cadastroAberto !== false });
     },
     async sair(requisicao, resposta) {
       await contas.sair(requisicao.tokenSessao);

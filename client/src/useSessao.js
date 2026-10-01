@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { definirCsrf, solicitar } from './api.js';
 
 export function useSessao() {
+  const [cadastroAberto, definirCadastroAberto] = useState(false);
   const [sessao, definirSessao] = useState(undefined);
   const [erro, definirErro] = useState('');
   const [aviso, definirAviso] = useState('');
@@ -15,6 +16,7 @@ export function useSessao() {
     try {
       const dados = await solicitar('/contas/sessao');
       if (consulta !== versao.current) return;
+      definirCadastroAberto(dados.cadastro_aberto === true);
       definirCsrf(dados.csrf); definirSessao(dados.usuario);
     } catch (falha) {
       if (consulta === versao.current) definirErro(falha.message);
@@ -56,5 +58,5 @@ export function useSessao() {
     } catch (falha) { definirErro(falha.message); }
     finally { definirSaindo(false); }
   }
-  return { sessao, erro, aviso, saindo, entrar, sair, atualizar };
+  return { sessao, cadastroAberto, erro, aviso, saindo, entrar, sair, atualizar };
 }
