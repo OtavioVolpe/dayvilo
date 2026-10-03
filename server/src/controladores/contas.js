@@ -40,8 +40,8 @@ export function criarControladorContas({ contas, confirmacao, recuperacao, entre
       } finally { await aguardar(Math.max(0, (entrega.modoEmail === 'resend' ? 5500 : 500) - (performance.now() - inicio))); }
       resposta.status(202).json({
         mensagem: entrega.modoEmail === 'resend'
-          ? 'Se houver uma conta com esse e-mail, você receberá as instruções para redefinir sua senha. Aguarde um minuto antes de solicitar novamente.'
-          : 'Se houver uma conta com esse e-mail, uma mensagem de teste ficará disponível neste computador. Aguarde um minuto antes de solicitar novamente.',
+          ? 'Se o e-mail estiver cadastrado, enviaremos um link. Aguarde 1 minuto para pedir outro.'
+          : 'Se o e-mail estiver cadastrado, a mensagem ficará neste computador. Aguarde 1 minuto para pedir outra.',
         entrega: entrega.modoEmail,
       });
     },

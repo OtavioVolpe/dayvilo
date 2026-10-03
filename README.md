@@ -45,6 +45,10 @@ A ordenação escolhida vale para Pendentes, Puladas e Concluídas, dentro de ca
 
 A sequência fica salva no banco. Também é possível visualizar por horário ou ordem de criação sem apagar a organização manual. Novas tarefas e tarefas transferidas de outra data entram depois das posições já definidas. Pendências anteriores e tarefas na visão Histórico não são arrastadas. Se a lista tiver mudado em outra aba, recarregue antes de tentar novamente.
 
+## Consultar histórico
+
+Use **Últimos 7 dias**, **Últimos 30 dias** ou escolha **De/Até**. Os atalhos incluem hoje; para um dia específico, informe a mesma data nos dois campos.
+
 ## Exportar histórico
 
 Em **Histórico**, consulte um período, selecione a situação e clique em **Exportar CSV**. O arquivo contém apenas as tarefas correspondentes à consulta e ao filtro, com data planejada, título, horários inicial e final, indicação de término no dia seguinte, situação, prioridade, observação e indicação de série vinculada. Não inclui tarefas futuras ou sem data que não aparecem nessa consulta. O botão fica desabilitado quando não há resultados.

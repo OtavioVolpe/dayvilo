@@ -17,7 +17,7 @@ export function AvisoConfirmacao({ sessao, atualizar, aviso }) {
   }
   if (sessao.email_confirmado) return null;
   return <section className="confirmacao-aviso" aria-label="Confirmação de e-mail">
-    <div><strong><Mail size={18} aria-hidden="true" /> Confirme seu e-mail</strong><p>Confirme {sessao.email} para identificar sua conta. Você pode continuar usando sua rotina.</p></div>
+    <div><strong><Mail size={18} aria-hidden="true" /> Confirme seu e-mail</strong><p>Confirme {sessao.email} sem interromper sua rotina.</p></div>
     <button className="botao-secundario" disabled={enviando} onClick={enviar}>{enviando ? 'Enviando…' : 'Enviar link de confirmação'}</button>
     {aviso && !mensagem && <p role="status">{aviso}</p>}
     {mensagem && <p role="status">{mensagem}</p>}
@@ -44,7 +44,7 @@ export default function ConfirmarEmail({ token, aoVoltar, atualizar }) {
     <div className="acesso-apresentacao"><span className="acesso-simbolo"><Mail size={32} aria-hidden="true" /></span><p className="date-label">Seu espaço, sua conta</p><h1>Vamos confirmar seu e-mail.</h1><p className="subtitle">Sua senha, tarefas e histórico continuam iguais.</p></div>
     <section className="acesso-cartao" aria-labelledby="titulo-confirmacao" aria-busy={enviando}>
       <h2 id="titulo-confirmacao">{concluido ? 'E-mail confirmado!' : 'Confirme seu endereço'}</h2>
-      <p className="subtitle">{concluido ? 'O endereço associado a este link foi confirmado com sucesso.' : 'Selecione o botão abaixo para confirmar o e-mail que recebeu esta mensagem.'}</p>
+      <p className="subtitle">{concluido ? 'E-mail confirmado.' : 'Clique abaixo para confirmar seu e-mail.'}</p>
       {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
       {!concluido && <button className="botao-principal acesso-enviar" disabled={enviando} onClick={confirmar}>{enviando ? 'Confirmando…' : 'Confirmar meu e-mail'}</button>}
       <p className="acesso-alternar"><button disabled={enviando} onClick={aoVoltar}>{concluido ? 'Continuar no Dayvilo' : 'Voltar ao Dayvilo'}</button></p>

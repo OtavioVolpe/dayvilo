@@ -36,7 +36,7 @@ export default function Acesso({ aoEntrar, aviso, aoRecuperar, cadastroAberto = 
       <span className="acesso-simbolo"><Sprout size={32} aria-hidden="true" /></span>
       <p className="date-label">Um espaço para você</p>
       <h1>Seu dia, <br />no seu ritmo.</h1>
-      <p className="subtitle">Organize o que importa e construa uma rotina que faça sentido para a sua vida.</p>
+      <p className="subtitle">Organize sua rotina, no seu ritmo.</p>
     </div>
     <section className="acesso-cartao" aria-labelledby="titulo-acesso">
       <h2 id="titulo-acesso">{cadastro ? 'Crie seu espaço' : 'Bom ter você por aqui'}</h2>
@@ -48,10 +48,10 @@ export default function Acesso({ aoEntrar, aviso, aoRecuperar, cadastroAberto = 
           <label>E-mail<input name="email" type="email" autoComplete="username" autoCapitalize="none" spellCheck={false} maxLength={254} required /></label>
           <label>Senha<span className="campo-senha"><input name="senha" type={mostrarSenha ? 'text' : 'password'} autoComplete={cadastro ? 'new-password' : 'current-password'} minLength={cadastro ? 15 : 1} maxLength={128} aria-describedby={cadastro ? 'dica-senha' : undefined} required /><button type="button" onClick={() => definirMostrarSenha(!mostrarSenha)} aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={mostrarSenha}>{mostrarSenha ? <EyeOff size={19} /> : <Eye size={19} />}</button></span></label>
           {cadastro && <>
-            <p className="acesso-dica" id="dica-senha">Use de 15 a 128 caracteres. Uma frase longa e fácil de lembrar também funciona.</p>
+            <p className="acesso-dica" id="dica-senha">Use de 15 a 128 caracteres. Pode ser uma frase.</p>
             <label>Confirme sua senha<input name="confirmacao" type={mostrarSenha ? 'text' : 'password'} autoComplete="new-password" maxLength={128} required /></label>
             <label className="acesso-vinculo"><input type="checkbox" checked={vincular} onChange={evento => definirVincular(evento.target.checked)} />Trazer minha rotina anterior</label>
-            {vincular && <div className="acesso-codigo"><label>Código de vinculação<input name="codigo" autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={64} required aria-describedby="dica-vinculo" /></label><p className="acesso-dica" id="dica-vinculo">Use o código gerado no computador em que você já usava o Dayvilo. Suas tarefas e seu histórico serão preservados.</p></div>}
+            {vincular && <div className="acesso-codigo"><label>Código de vinculação<input name="codigo" autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={64} required aria-describedby="dica-vinculo" /></label><p className="acesso-dica" id="dica-vinculo">Use o código do seu computador para manter suas tarefas e histórico.</p></div>}
           </>}
           {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
           <button className="botao-principal acesso-enviar" type="submit">{enviando ? 'Só um instante…' : cadastro ? 'Criar minha conta' : 'Entrar'}</button>

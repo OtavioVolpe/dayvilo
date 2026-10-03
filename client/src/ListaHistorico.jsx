@@ -23,7 +23,7 @@ export default function ListaHistorico({ tarefas, periodo, situacao, definirSitu
       try { baixarHistorico(filtradas, periodo, situacao); }
       catch { definirErroExportacao('Não foi possível preparar o arquivo. Tente novamente.'); }
     }}><Download size={17} aria-hidden="true" /> Exportar CSV</button></div>
-    <p className="explicacao-historico">A exportação inclui apenas as tarefas do período consultado e da situação selecionada.</p>
+    <p className="explicacao-historico">O CSV inclui apenas os resultados filtrados.</p>
     {erroExportacao && <p className="mensagem-erro" role="alert">{erroExportacao}</p>}
     {dias.length === 0 && <div className="initial-state"><h2>Nenhuma atividade encontrada</h2><p>Experimente outro período ou outra situação.</p></div>}
     <div className="lista-historico">{dias.map(dia => <section key={dia} aria-label={formatarData(dia, { day: 'numeric', month: 'long', year: 'numeric' })}>

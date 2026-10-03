@@ -93,7 +93,7 @@ test('recuperação via Resend: resposta genérica, contrato da API e token pers
       assert.equal(resposta.status, 202); return resposta.json();
     }
     const existente = await pedir(email); const inexistente = await pedir(`nao-${email}`);
-    assert.deepEqual(existente, inexistente); assert.equal(existente.entrega, 'resend'); assert.match(existente.mensagem, /receberá/);
+    assert.deepEqual(existente, inexistente); assert.equal(existente.entrega, 'resend'); assert.match(existente.mensagem, /Se o e-mail estiver cadastrado, enviaremos um link/);
     assert.equal(chamadas.length, 1); assert.deepEqual(chamadas[0].to, [email]);
     const token = chamadas[0].text.match(/#redefinir-senha=([a-f0-9]{64})/)[1];
     const [[registro]] = await banco.execute('SELECT token_hash FROM recuperacoes_senha WHERE token_hash = ?', [resumoToken(token)]);

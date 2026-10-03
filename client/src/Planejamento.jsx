@@ -129,7 +129,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
         const resultado = await solicitar('/tarefas/' + editando.id + '/serie', {
           method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dadosSerie),
         });
-        definirAviso(resultado.quantidade + ' ocorrência(s) atualizadas; ' + (resultado.criadas || 0) + ' criadas e ' + (resultado.removidas || 0) + ' removidas. Registros preservados continuam como estavam.');
+        definirAviso(resultado.quantidade + ' ocorrência(s) atualizadas; ' + (resultado.criadas || 0) + ' criadas e ' + (resultado.removidas || 0) + ' removidas. Demais tarefas mantidas.');
         definirAberto(false); definirEditando(null); definirModoSerie(false);
         definirCarregando(true); definirTentativa(valor => valor + 1);
         return;
@@ -152,7 +152,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
       }
       definirAviso(historico ? 'Tarefa atualizada. Se saiu do período ou do filtro, consulte a nova data em Hoje ou Semana.' : editando ? 'Tarefa atualizada. O planejamento foi salvo.' : 'Tarefa criada. A lista mostra a data escolhida.');
       if (repetir) {
-        definirAviso(quantidade + ' ocorrência(s) criadas. Cada uma pode ser concluída ou editada separadamente.');
+        definirAviso(quantidade + ' tarefa(s) criadas.');
         definirCarregando(true); definirTentativa(valor => valor + 1);
       }
       definirCarregando(true); definirTentativa(valor => valor + 1);
@@ -167,7 +167,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
       const resultado = await solicitar('/tarefas/' + tarefa.id + '/serie/encerramento', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}',
       });
-      definirAviso(resultado.quantidade ? resultado.quantidade + ' ocorrência(s) removidas. Concluídas, datas anteriores e puladas de hoje foram preservadas.' : 'Não há ocorrências elegíveis para encerrar a partir dessa data. Registros preservados continuam como estavam.');
+      definirAviso(resultado.quantidade ? resultado.quantidade + ' tarefa(s) removidas. Histórico preservado.' : 'Não há ocorrências elegíveis para encerrar a partir dessa data. Demais tarefas mantidas.');
       definirEncerrando(null); definirCarregando(true); definirTentativa(valor => valor + 1);
     } catch (falha) { definirErro(falha.message); }
     finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
@@ -275,12 +275,12 @@ export default function Planejamento({ semanal = false, historico = false }) {
         ]} />
       </div>
       {encerrando === tarefa.id && <div className="confirmacao-exclusao" role="group" aria-label="Confirmar encerramento">
-        <p>Remover as ocorrências pendentes e as puladas futuras desta repetição a partir de {formatarData(tarefa.data_prevista > hoje ? tarefa.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}? Essas ocorrências serão excluídas e não poderão ser restauradas. Concluídas, datas anteriores e puladas de hoje serão preservadas.</p>
+        <p>Excluir pendentes e puladas futuras desta série a partir de {formatarData(tarefa.data_prevista > hoje ? tarefa.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}? Sem possibilidade de restaurar. Concluídas, dias anteriores e puladas de hoje ficam mantidos.</p>
         <button type="button" disabled={atualizando.length > 0} onClick={() => definirEncerrando(null)}>Cancelar</button>
         <button type="button" disabled={aberto || salvando || atualizando.length > 0} onClick={() => encerrarSerie(tarefa)}>Confirmar encerramento</button>
       </div>}
       {excluindo === tarefa.id && <div className="confirmacao-exclusao" role="group" aria-label="Confirmar exclusão">
-        <p>Excluir somente esta tarefa? Outras ocorrências não serão alteradas. Esta ação não pode ser desfeita.</p>
+        <p>Excluir só esta tarefa? Não pode ser desfeito.</p>
         <button type="button" disabled={atualizando.includes(tarefa.id)} onClick={() => definirExcluindo(null)}>Cancelar</button>
         <button type="button" disabled={aberto || salvando || atualizando.includes(tarefa.id)} onClick={() => excluir(tarefa)}>{atualizando.includes(tarefa.id) ? 'Excluindo…' : 'Confirmar exclusão'}</button>
       </div>}
@@ -308,7 +308,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
       <button className="botao-secundario" disabled={aberto || salvando || carregando || atualizando.length > 0 || data === '9999-12-31'} onClick={() => mudarData(1)}>Próximo dia →</button>
     </div>}
     {historico && periodoConsultado && <>
-      <p className="explicacao-historico">Atividades organizadas pela data planejada, incluindo hoje. Consulte até 366 dias por vez.</p>
+      <p className="explicacao-historico">Consulte pela data planejada, até 366 dias por vez.</p>
       <form className="seletor-dia" key={periodoConsultado.inicio + periodoConsultado.fim + tentativa} onSubmit={evento => {
         evento.preventDefault(); const campos = new FormData(evento.currentTarget);
         definirCarregando(true); definirExcluindo(null); definirAviso('');
@@ -317,7 +317,11 @@ export default function Planejamento({ semanal = false, historico = false }) {
         <label>De<input type="date" name="inicio" defaultValue={periodoConsultado.inicio} min="1000-01-01" max={hoje} required disabled={aberto || carregando || atualizando.length > 0} /></label>
         <label>Até<input type="date" name="fim" defaultValue={periodoConsultado.fim} min="1000-01-01" max={hoje} required disabled={aberto || carregando || atualizando.length > 0} /></label>
         <button className="botao-secundario" disabled={aberto || carregando || atualizando.length > 0}>Consultar período</button>
-        <button type="button" className="botao-secundario" disabled={aberto || carregando || atualizando.length > 0} onClick={() => { definirCarregando(true); definirPeriodo(null); definirTentativa(valor => valor + 1); definirAviso(''); }}>Últimos 30 dias</button>
+        {[7, 30].map(dias => <button key={dias} type="button" className="botao-secundario" disabled={!hoje || aberto || carregando || atualizando.length > 0} onClick={() => {
+          definirCarregando(true); definirExcluindo(null); definirAviso('');
+          definirPeriodo(dias === 30 ? null : { inicio: deslocarData(hoje, -6), fim: hoje });
+          definirTentativa(valor => valor + 1);
+        }}>Últimos {dias} dias</button>)}
       </form>
     </>}
     {!historico && <form className="seletor-dia" key={data} onSubmit={evento => {
@@ -331,25 +335,25 @@ export default function Planejamento({ semanal = false, historico = false }) {
       <fieldset disabled={salvando || carregando}><legend>{modoSerie ? "Editar próximas ocorrências" : editando ? "Editar tarefa" : "Nova tarefa"}</legend>
         <label>O que você quer fazer?<input defaultValue={editando?.titulo ?? ""} name="titulo" required maxLength={200} placeholder="Ex.: ler algumas páginas" /></label>
         <div className="campos-opcionais"><label>Data<input defaultValue={editando?.data_prevista ?? (novaData || data)} name="data_prevista" type="date" disabled={modoSerie} required min="1000-01-01" max="9999-12-31" /></label><label>Horário inicial (opcional)<input defaultValue={editando?.horario ?? ""} name="horario" type="time" /></label><label>Horário final (opcional)<input defaultValue={editando?.horario_final ?? ""} name="horario_final" type="time" /></label><label className="campo-prioridade prioridade-horarios"><input defaultChecked={editando?.prioridade ?? false} name="prioridade" type="checkbox" />Marcar como prioridade</label></div>
-        <p className="dica-horarios">Se o horário final for anterior ao inicial, o término será no dia seguinte.</p>
+        <p className="dica-horarios">Fim antes do início indica o dia seguinte.</p>
         {!editando && <div className="configuracao-repeticao">
           <label>Repetir<select value={repeticao} onChange={evento => definirRepeticao(evento.target.value)}><option value="nenhuma">Não repetir</option><option value="diaria">Todos os dias</option><option value="semanal">Dias da semana</option></select></label>
           {repeticao !== 'nenhuma' && <>
             <label>Repetir até<input name="repetir_ate" type="date" required min="1000-01-01" max="9999-12-31" defaultValue={deslocarData(novaData || data, 29)} /></label>
             {repeticao === 'semanal' && <fieldset className="dias-repeticao"><legend>Em quais dias?</legend>{[[1,'Seg'],[2,'Ter'],[3,'Qua'],[4,'Qui'],[5,'Sex'],[6,'Sáb'],[0,'Dom']].map(([dia,nome]) => <label key={dia}><input type="checkbox" name="dias_semana" value={dia} />{nome}</label>)}</fieldset>}
-            <p>As ocorrências serão criadas até a data final, em um período de até 366 dias. As ocorrências ficam vinculadas e você poderá editar ou encerrar as próximas em conjunto.</p>
+            <p>Repita por até 366 dias. Depois, edite ou encerre as próximas juntas.</p>
           </>}
         </div>}
         {modoSerie && editando && configuracaoSerie && <div className="configuracao-repeticao">
           <label>Data de término da repetição<input name="serie_ate" type="date" value={fimSerie} onChange={evento => definirFimSerie(evento.target.value)} required min="1000-01-01" max="9999-12-31" /></label>
-          <p>Prolongar cria novas ocorrências após o término anterior. Encurtar exclui definitivamente as pendentes e puladas futuras além da nova data. Concluídas e registros passados são preservados.</p>
+          <p>Prolongar cria novas tarefas. Encurtar exclui pendentes e puladas futuras após o término, sem restauração.</p>
           {!configuracaoSerie.tipo && fimSerie > configuracaoSerie.ate && <>
-            <p>Esta repetição antiga não guardava os dias escolhidos. Confirme quais dias usar nas novas ocorrências.</p>
+            <p>Confirme os dias para prolongar esta série antiga.</p>
             <label>Repetir nas novas datas<select required value={tipoSerieAntiga} onChange={evento => definirTipoSerieAntiga(evento.target.value)}><option value="">Selecione</option><option value="diaria">Todos os dias</option><option value="semanal">Dias da semana</option></select></label>
             {tipoSerieAntiga === 'semanal' && <fieldset className="dias-repeticao"><legend>Em quais dias?</legend>{[[1,'Seg'],[2,'Ter'],[3,'Qua'],[4,'Qui'],[5,'Sex'],[6,'Sáb'],[0,'Dom']].map(([dia,nome]) => <label key={dia}><input type="checkbox" name="dias_serie_antiga" value={dia} />{nome}</label>)}</fieldset>}
           </>}
-          <p>Altera título, horários, prioridade e observação das ocorrências pendentes e puladas futuras desta repetição a partir de {formatarData(editando.data_prevista > hoje ? editando.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}, inclusive as editadas individualmente. As datas das ocorrências mantidas, as concluídas e as puladas de hoje ou do passado serão preservadas. Puladas futuras recebem os novos dados, mas continuam puladas.</p><label className="campo-prioridade"><input type="checkbox" required />Confirmo as alterações e a exclusão das ocorrências abrangidas se encurtar o término</label></div>}
-        {editando && !modoSerie && <p className="explicacao-historico">Esta edição altera apenas esta tarefa, mesmo que ela tenha sido criada com repetição.</p>}
+          <p>Atualiza pendentes e puladas futuras a partir de {formatarData(editando.data_prevista > hoje ? editando.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}, incluindo edições individuais. Concluídas, passado e puladas de hoje ficam mantidos.</p><label className="campo-prioridade"><input type="checkbox" required />Confirmo as alterações e exclusões indicadas.</label></div>}
+        {editando && !modoSerie && <p className="explicacao-historico">Altera só esta tarefa.</p>}
         <label>Observação (opcional)<textarea defaultValue={editando?.observacao ?? ""} name="observacao" maxLength={4000} rows={2} /></label>
         <div className="acoes-formulario"><button type="button" className="botao-secundario" onClick={() => { definirAberto(false); definirEditando(null); }}>Cancelar</button><button className="botao-principal" type="submit">{salvando ? 'Salvando…' : 'Salvar tarefa'}</button></div>
       </fieldset>
@@ -357,10 +361,10 @@ export default function Planejamento({ semanal = false, historico = false }) {
     {carregando ? <p role="status" className="estado-lista">Carregando sua rotina…</p> : data && consultaValida && <>
       {!historico && tarefas.length > 0 && <div className="progresso"><div><span>{concluidas.length} de {totalAtivas} concluídas · {puladas.length} puladas</span><span>{totalAtivas ? Math.round(concluidas.length / totalAtivas * 100) : 0}%</span></div><progress aria-label={semanal ? "Progresso da semana" : "Progresso do dia"} value={concluidas.length} max={totalAtivas || 1} /></div>}
       {!historico && !semanal && data === hoje && atrasadas.length > 0 && <section className="tarefas-atrasadas" aria-label="Pendências anteriores">
-        <h3>Pendências anteriores ({atrasadas.length})</h3><p>Você decide o que ainda faz sentido: concluir, reagendar ou pular.</p>
+        <h3>Pendências anteriores ({atrasadas.length})</h3><p>Conclua, reagende ou pule.</p>
         <ul className="lista-tarefas">{atrasadas.map(tarefa => linha(tarefa, true))}</ul>
       </section>}
-      {!historico && tarefas.length > 0 && <div className="ordenacao"><label>Organizar por <select value={ordem} disabled={salvando || aberto || atualizando.length > 0} onChange={evento => definirOrdem(evento.target.value)}><option value="manual">Minha ordem</option><option value="criacao">Ordem de criação</option><option value="horario">Horário</option></select></label>{ordem === 'manual' && <p id="ajuda-ordenacao" className="explicacao-historico">Arraste pelos seis pontos para organizar dentro de cada grupo e do mesmo dia. No teclado, use as setas ↑ e ↓ na alça.</p>}</div>}
+      {!historico && tarefas.length > 0 && <div className="ordenacao"><label>Organizar por <select value={ordem} disabled={salvando || aberto || atualizando.length > 0} onChange={evento => definirOrdem(evento.target.value)}><option value="manual">Minha ordem</option><option value="criacao">Ordem de criação</option><option value="horario">Horário</option></select></label>{ordem === 'manual' && <p id="ajuda-ordenacao" className="explicacao-historico">Arraste pelos seis pontos ou use ↑ e ↓. Vale dentro do mesmo grupo e dia.</p>}</div>}
       {historico ? <ListaHistorico periodo={periodoConsultado} tarefas={tarefas} situacao={situacao} definirSituacao={definirSituacao} bloqueado={aberto || salvando || atualizando.length > 0} renderizarTarefa={tarefa => linha(tarefa)} /> : semanal ? <div className="grade-semana">{dias.map(dia => {
         const itens = tarefas.filter(tarefa => tarefa.data_prevista === dia).sort((a, b) => Number(a.situacao === 'concluida') - Number(b.situacao === 'concluida') || compararTarefas(ordem)(a, b));
         return <section className={dia === hoje ? 'dia-semana dia-atual' : 'dia-semana'} key={dia} aria-label={formatarData(dia, { weekday: 'long', day: 'numeric', month: 'long' })}>
@@ -372,8 +376,8 @@ export default function Planejamento({ semanal = false, historico = false }) {
         </section>;
       })}</div> : <>
       {pendentes.length > 0 && <><ul className="lista-tarefas">{pendentes.map(tarefa => linha(tarefa))}</ul></>}
-      {tarefas.length === 0 && <div className="initial-state"><ListTodo size={26} aria-hidden="true" /><h2>Um dia com espaço livre</h2><p>Nenhuma tarefa para esta data. Adicione o que fizer sentido para seu dia.</p></div>}
-      {tarefas.length > 0 && pendentes.length === 0 && <p className="estado-lista">Nenhuma tarefa pendente nesta data. Aproveite seu tempo!</p>}
+      {tarefas.length === 0 && <div className="initial-state"><ListTodo size={26} aria-hidden="true" /><h2>Um dia com espaço livre</h2><p>Nenhuma tarefa nesta data.</p></div>}
+      {tarefas.length > 0 && pendentes.length === 0 && <p className="estado-lista">Nenhuma tarefa pendente nesta data.</p>}
       {grupoPuladas(puladas, data)}
       {concluidas.length > 0 && <details className="tarefas-concluidas grupo-concluidas" open><summary><span className="grupo-titulo"><ChevronRight className="grupo-seta" size={17} aria-hidden="true" /><CircleCheck size={18} aria-hidden="true" />Concluídas<span className="grupo-contagem">{concluidas.length}</span></span></summary><ul className="lista-tarefas">{concluidas.map(tarefa => linha(tarefa))}</ul></details>}
     </>}
