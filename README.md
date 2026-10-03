@@ -2,7 +2,26 @@
 
 Aplicação web de organização pessoal, com foco em uma rotina flexível e uma interface simples para celular e computador.
 
-A área de rotina reúne três visões: **Hoje**, **Semana** e **Histórico**. A visão semanal organiza as tarefas de segunda a domingo, permite navegar entre semanas e adicionar, editar ou concluir tarefas de cada dia. O Histórico consulta as tarefas pela data planejada, com filtros de situação e períodos de até 366 dias. Mostra o estado atual das tarefas; alterações de data e exclusões também afetam essa consulta. No cadastro, tarefas podem se repetir diariamente ou nos dias da semana escolhidos, com data final e período de até 366 dias. As ocorrências são criadas de uma vez e as novas repetições ficam vinculadas a uma série. Cada ocorrência pode ser concluída, editada ou excluída individualmente. Editar próximas altera título, horário, observação e prioridade das pendentes a partir da data da ocorrência selecionada ou de hoje, o que vier depois. Encerrar repetição exclui esse mesmo conjunto de pendentes após confirmação; essas ocorrências não podem ser restauradas. Datas anteriores, concluídas e puladas são preservadas. Repetições anteriores à criação dos vínculos continuam independentes. Na tela Hoje, pendências de datas anteriores aparecem separadamente e podem ser concluídas, reagendadas para hoje ou puladas. Pular preserva a tarefa no Histórico, pode ser desfeito com Restaurar e retira a ocorrência do total usado no progresso. Em Hoje e Semana, as puladas ficam em seções recolhidas inicialmente; ao pular uma tarefa da lista, a seção do dia abre e mostra o card movido. Pendentes, concluídas e puladas têm selos com texto e ícone, com cores distintas, também no Histórico. O design privilegia clareza e navegação entre as áreas da vida pessoal.
+A área de rotina reúne três visões: **Hoje**, **Semana** e **Histórico**. A visão semanal organiza as tarefas de segunda a domingo, permite navegar entre semanas e adicionar, editar ou concluir tarefas de cada dia. O Histórico consulta as tarefas pela data planejada, com filtros de situação e períodos de até 366 dias. Mostra o estado atual das tarefas; alterações de data e exclusões também afetam essa consulta. No cadastro, tarefas podem se repetir diariamente ou nos dias da semana escolhidos, com data final e período de até 366 dias. As ocorrências são criadas de uma vez e as novas repetições ficam vinculadas a uma série. Cada ocorrência pendente pode ser concluída, editada ou pulada individualmente. Para editar uma pulada, restaure-a; para editar uma concluída, desfaça a conclusão. A exclusão individual está disponível em qualquer situação. Editar próximas e Encerrar repetição seguem as regras abaixo. Repetições anteriores à criação dos vínculos continuam independentes. Na tela Hoje, pendências de datas anteriores aparecem separadamente e podem ser concluídas, reagendadas para hoje ou puladas. Pular preserva a tarefa no Histórico, pode ser desfeito com Restaurar e retira a ocorrência do total usado no progresso. Em Hoje e Semana, as puladas ficam em seções recolhidas inicialmente; ao pular uma tarefa da lista, a seção do dia abre e mostra o card movido. Pendentes, concluídas e puladas têm selos com texto e ícone, com cores distintas, também no Histórico. O design privilegia clareza e navegação entre as áreas da vida pessoal.
+
+## Ações das tarefas
+
+Ações individuais afetam somente a ocorrência escolhida, mesmo quando ela pertence a uma repetição.
+
+| Opção | Efeito |
+| --- | --- |
+| Concluir / desfazer conclusão | Alterna entre pendente e concluída. Para concluir uma pulada, restaure primeiro. |
+| Editar esta tarefa | Altera somente a pendente escolhida, incluindo sua data. |
+| Pular esta tarefa | Mantém o registro como pulada e permite restaurar. Não pula outras repetições. |
+| Restaurar | Volta a pulada para pendente, mantendo os dados atuais dela. |
+| Trazer para hoje | Reagenda somente a pendência anterior escolhida. |
+| Excluir | Apaga somente a ocorrência escolhida, inclusive do Histórico, após confirmação. Não pode ser restaurada. |
+| Editar próximas | Disponível numa pendente vinculada a uma série. Atualiza título, observação, horários e prioridade das pendentes e das puladas futuras abrangidas. As puladas continuam puladas. |
+| Encerrar repetição | Disponível numa pendente vinculada a uma série. Exclui as pendentes e puladas futuras abrangidas, após confirmação. As excluídas não podem ser restauradas. |
+
+Nas duas ações de série, o início é a data da ocorrência selecionada ou hoje, o que vier depois. Concluídas, datas anteriores a esse início e puladas de hoje ou do passado são preservadas. Por exemplo, selecionando uma pendente de 23/10 antes dessa data, a ação abrange 23/10 em diante; selecionando uma pendência passada, começa hoje. Não existe opção de pular todas as próximas.
+
+O Histórico consulta o estado atual das tarefas, não um registro imutável de alterações. Reagendar muda onde a ocorrência aparece; excluir também a retira do Histórico.
 
 ## Horários das tarefas
 
@@ -12,9 +31,11 @@ Os horários são mantidos na edição, nas repetições, no Histórico e no CSV
 
 ## Organizar tarefas
 
-Em Hoje e Semana, selecione **Minha ordem** e segure a alça de seis pontos à esquerda de uma tarefa pendente para arrastá-la dentro do mesmo dia. Uma linha indica a posição de destino; soltar salva a sequência. Escape cancela o arraste. Pelo teclado, coloque o foco na alça e use as setas para cima ou para baixo.
+Em Hoje e Semana, selecione **Minha ordem** e segure a alça de seis pontos à esquerda de uma tarefa para arrastá-la dentro do mesmo grupo (Pendentes, Puladas ou Concluídas) e dia. Uma linha indica a posição de destino; soltar salva a sequência. Escape cancela o arraste. Pelo teclado, coloque o foco na alça e use as setas para cima ou para baixo.
 
-A sequência fica salva no banco. Também é possível visualizar por horário ou ordem de criação sem apagar a organização manual. Novas tarefas e tarefas transferidas de outra data entram depois das posições já definidas. Concluídas, puladas e pendências anteriores não são arrastadas. Se a lista tiver mudado em outra aba, recarregue antes de tentar novamente.
+A ordenação escolhida vale para Pendentes, Puladas e Concluídas, dentro de cada dia, em Hoje e Semana. Em Minha ordem, cada grupo pode ser reorganizado por arraste ou teclado, sem alterar a situação das tarefas.
+
+A sequência fica salva no banco. Também é possível visualizar por horário ou ordem de criação sem apagar a organização manual. Novas tarefas e tarefas transferidas de outra data entram depois das posições já definidas. Pendências anteriores e tarefas na visão Histórico não são arrastadas. Se a lista tiver mudado em outra aba, recarregue antes de tentar novamente.
 
 ## Exportar histórico
 

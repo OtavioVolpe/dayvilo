@@ -53,3 +53,26 @@
 .tarefa.destino-depois{box-shadow:0 4px 0 var(--accent)}
 
 .campos-opcionais{align-items:flex-end}.formulario-tarefa .prioridade-horarios{min-height:44px;align-items:center}.dica-horarios{color:var(--muted);font-size:.8rem;line-height:1.5;margin:-4px 0 18px}
+
+/* A seleção e as ações compartilham o mesmo alinhamento, inclusive nos cards estreitos. */
+.tarefa{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center}
+.tarefa>input{grid-column:1;grid-row:1;margin:0;align-self:center}
+.tarefa>.tarefa-conteudo{grid-column:2;grid-row:1}
+.tarefa>.acoes-tarefa{grid-column:3;grid-row:1;align-items:center;align-self:center}
+.tarefa-com-alca{grid-template-columns:auto 20px minmax(0,1fr) auto}
+.tarefa-com-alca>input{grid-column:2}.tarefa-com-alca>.tarefa-conteudo{grid-column:3}.tarefa-com-alca>.acoes-tarefa{grid-column:4}
+.tarefa>.confirmacao-exclusao{grid-column:1/-1;grid-row:2}
+.dia-semana .tarefa{grid-template-columns:20px minmax(0,1fr)}
+.dia-semana .tarefa>.tarefa-conteudo{grid-column:1/-1;grid-row:1}
+.dia-semana .tarefa-com-alca>.tarefa-conteudo{grid-column:2}
+.dia-semana .tarefa>input{grid-column:1;grid-row:2}
+.dia-semana .tarefa>.acoes-tarefa{grid-column:2;grid-row:2;justify-content:flex-end}
+.dia-semana .tarefa>.confirmacao-exclusao{grid-row:3}
+@media(max-width:650px){
+.tarefa{grid-template-columns:20px minmax(0,1fr)}
+.tarefa>.tarefa-conteudo{grid-column:1/-1;grid-row:1}.tarefa-com-alca>.tarefa-conteudo{grid-column:2}
+.tarefa>input{grid-column:1;grid-row:2}.tarefa>.acoes-tarefa{grid-column:2;grid-row:2;justify-content:flex-end}
+.tarefa>.confirmacao-exclusao{grid-row:3}
+}
+
+.tarefa>.alca-ordenacao{grid-column:1;grid-row:1;align-self:center}

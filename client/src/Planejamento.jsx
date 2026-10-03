@@ -113,7 +113,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
         const resultado = await solicitar('/tarefas/' + editando.id + '/serie', {
           method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dadosSerie),
         });
-        definirAviso(resultado.quantidade + ' ocorrência(s) pendentes atualizadas. As demais foram preservadas.');
+        definirAviso(resultado.quantidade + ' ocorrência(s) atualizadas: pendentes e puladas futuras. As demais foram preservadas.');
         definirAberto(false); definirEditando(null); definirModoSerie(false);
         definirCarregando(true); definirTentativa(valor => valor + 1);
         return;
@@ -151,7 +151,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
       const resultado = await solicitar('/tarefas/' + tarefa.id + '/serie/encerramento', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}',
       });
-      definirAviso(resultado.quantidade ? resultado.quantidade + ' ocorrência(s) pendentes removidas. Concluídas, puladas e datas anteriores foram preservadas.' : 'Não há ocorrências pendentes para encerrar a partir dessa data. Tarefas anteriores a hoje continuam como estavam.');
+      definirAviso(resultado.quantidade ? resultado.quantidade + ' ocorrência(s) removidas. Concluídas, datas anteriores e puladas de hoje foram preservadas.' : 'Não há ocorrências elegíveis para encerrar a partir dessa data. Registros preservados continuam como estavam.');
       definirEncerrando(null); definirCarregando(true); definirTentativa(valor => valor + 1);
     } catch (falha) { definirErro(falha.message); }
     finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
@@ -216,28 +216,30 @@ export default function Planejamento({ semanal = false, historico = false }) {
   const puladas = tarefas.filter(tarefa => tarefa.situacao === 'pulada');
   const totalAtivas = tarefas.length - puladas.length;
   pendentes.sort(compararTarefas(ordem));
-  const pendentesDoDia = tarefa => tarefas.filter(item => item.situacao === 'pendente' && item.data_prevista === tarefa.data_prevista).sort(compararOrdemManual);
+  puladas.sort(compararTarefas(ordem));
+  concluidas.sort(compararTarefas(ordem));
+  const grupoDoDia = tarefa => tarefas.filter(item => item.situacao === tarefa.situacao && item.data_prevista === tarefa.data_prevista).sort(compararOrdemManual);
   async function mover(tarefa, deslocamento) {
     if (salvando || atualizando.length || aberto) return;
-    const lista = pendentesDoDia(tarefa); const indice = lista.findIndex(item => item.id === tarefa.id);
+    const lista = grupoDoDia(tarefa); const indice = lista.findIndex(item => item.id === tarefa.id);
     if (!lista[indice + deslocamento]) return;
     const anteriores = lista.map(item => item.id); const ids = [...anteriores];
     ids.splice(indice, 1);
     ids.splice(indice + deslocamento, 0, tarefa.id);
     definirSalvando(true); definirErro(''); definirAviso('');
     try {
-      const dados = await solicitar('/tarefas/ordem', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: tarefa.data_prevista, ids, anteriores }) });
+      const dados = await solicitar('/tarefas/ordem', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: tarefa.data_prevista, situacao: tarefa.situacao, ids, anteriores }) });
       const ordens = new Map(dados.tarefas.map(item => [item.id, item.ordem]));
       definirTarefas(atuais => atuais.map(item => ordens.has(item.id) ? { ...item, ordem: ordens.get(item.id) } : item));
-      definirAviso('Ordem salva. ' + tarefa.titulo + ' está na posição ' + (indice + deslocamento + 1) + ' das pendentes deste dia.');
+      definirAviso('Ordem salva. ' + tarefa.titulo + ' está na posição ' + (indice + deslocamento + 1) + ' deste grupo no dia.');
       definirTarefaMovida({ id: tarefa.id, ordenacao: true });
     } catch (falha) { definirErro(falha.message); }
     finally { definirSalvando(false); }
   }
   const linha = (tarefa, atrasada = false) => (
-    <li className={`tarefa tarefa-${tarefa.situacao} ${tarefa.situacao === 'concluida' ? 'concluida' : ''} ${arrasto?.origem === tarefa.id ? 'tarefa-arrastando' : ''} ${arrasto?.destino === tarefa.id && arrasto.origem !== tarefa.id ? (arrasto.depois ? 'destino-depois' : 'destino-antes') : ''}`} key={tarefa.id} tabIndex={-1} aria-labelledby={`titulo-tarefa-${tarefa.id} situacao-tarefa-${tarefa.id}`} ref={elemento => { if (elemento) cartoesRef.current.set(tarefa.id, elemento); else cartoesRef.current.delete(tarefa.id); }}>
-      {!historico && !atrasada && ordem === 'manual' && tarefa.situacao === 'pendente' && <AlcaOrdenacao tarefa={tarefa} lista={pendentesDoDia(tarefa)} cartoes={cartoesRef} bloqueado={aberto || salvando || atualizando.length > 0 || carregando || Boolean(excluindo || encerrando)} mover={mover} indicar={definirArrasto} />}
-      <input type="checkbox" aria-label={`Concluir: ${tarefa.titulo}`} checked={tarefa.situacao === 'concluida'} disabled={aberto || salvando || atualizando.includes(tarefa.id)} onChange={() => alternar(tarefa)} />
+    <li className={`tarefa ${!historico && !atrasada && ordem === 'manual' ? 'tarefa-com-alca' : ''} tarefa-${tarefa.situacao} ${tarefa.situacao === 'concluida' ? 'concluida' : ''} ${arrasto?.origem === tarefa.id ? 'tarefa-arrastando' : ''} ${arrasto?.destino === tarefa.id && arrasto.origem !== tarefa.id ? (arrasto.depois ? 'destino-depois' : 'destino-antes') : ''}`} key={tarefa.id} tabIndex={-1} aria-labelledby={`titulo-tarefa-${tarefa.id} situacao-tarefa-${tarefa.id}`} ref={elemento => { if (elemento) cartoesRef.current.set(tarefa.id, elemento); else cartoesRef.current.delete(tarefa.id); }}>
+      {!historico && !atrasada && ordem === 'manual' && <AlcaOrdenacao tarefa={tarefa} lista={grupoDoDia(tarefa)} cartoes={cartoesRef} bloqueado={aberto || salvando || atualizando.length > 0 || carregando || Boolean(excluindo || encerrando)} mover={mover} indicar={definirArrasto} />}
+      {tarefa.situacao !== 'pulada' && <input type="checkbox" aria-label={`${tarefa.situacao === 'concluida' ? 'Desfazer conclusão' : 'Concluir'}: ${tarefa.titulo}`} checked={tarefa.situacao === 'concluida'} disabled={aberto || salvando || atualizando.includes(tarefa.id)} onChange={() => alternar(tarefa)} />}
       <div className="tarefa-conteudo"><div className="tarefa-cabecalho"><span className="tarefa-titulo" id={`titulo-tarefa-${tarefa.id}`}>{tarefa.titulo}</span></div>
         {tarefa.observacao && <p className="observacao">{tarefa.observacao}</p>}
         <div className="detalhes">{tarefa.serie_id && <span>Repetição</span>}{atrasada === true && <span>Prevista para {formatarData(tarefa.data_prevista, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario ? tarefa.horario + (tarefa.horario_final ? ' às ' + tarefa.horario_final + (tarefa.horario_final < tarefa.horario ? ' (dia seguinte)' : '') : '') : 'Sem horário'}</span>
@@ -245,24 +247,24 @@ export default function Planejamento({ semanal = false, historico = false }) {
       </div>
       <div className="acoes-tarefa">
         <SeloSituacao situacao={tarefa.situacao} id={`situacao-tarefa-${tarefa.id}`} />
-        <button type="button" title="Editar tarefa" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Editar: ${tarefa.titulo}`} onClick={() => abrirFormulario(tarefa)}><Pencil size={17} aria-hidden="true" /></button>
+        {tarefa.situacao === 'pendente' && <button type="button" title="Editar esta tarefa" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Editar: ${tarefa.titulo}`} onClick={() => abrirFormulario(tarefa)}><Pencil size={17} aria-hidden="true" /></button>}
         <button type="button" title="Excluir tarefa" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Excluir: ${tarefa.titulo}`} onClick={() => definirExcluindo(tarefa.id)}><Trash2 size={17} aria-hidden="true" /></button>
         <MenuTarefa titulo={tarefa.titulo} bloqueado={aberto || salvando || atualizando.includes(tarefa.id)} opcoes={[
           ...(atrasada === true ? [{ texto: 'Trazer para hoje', Icone: CalendarArrowUp, executar: () => alterarTarefa(tarefa, 'hoje') }] : []),
-          ...(tarefa.situacao !== 'concluida' ? [{ texto: tarefa.situacao === 'pulada' ? 'Restaurar tarefa' : 'Pular tarefa', Icone: tarefa.situacao === 'pulada' ? RotateCcw : SkipForward, executar: () => alterarTarefa(tarefa, tarefa.situacao === 'pulada' ? 'pendente' : 'pulada') }] : []),
-          ...(tarefa.serie_id ? [
+          ...(tarefa.situacao !== 'concluida' ? [{ texto: tarefa.situacao === 'pulada' ? 'Restaurar tarefa' : 'Pular esta tarefa', Icone: tarefa.situacao === 'pulada' ? RotateCcw : SkipForward, executar: () => alterarTarefa(tarefa, tarefa.situacao === 'pulada' ? 'pendente' : 'pulada') }] : []),
+          ...(tarefa.serie_id && tarefa.situacao === 'pendente' ? [
             { texto: 'Editar próximas', Icone: ListRestart, separador: tarefa.situacao !== 'concluida' || atrasada === true, desabilitada: atualizando.length > 0, executar: () => abrirFormulario(tarefa, data, true) },
             { texto: 'Encerrar repetição', Icone: CircleStop, desabilitada: atualizando.length > 0, executar: () => { definirEncerrando(tarefa.id); definirExcluindo(null); } },
           ] : []),
         ]} />
       </div>
       {encerrando === tarefa.id && <div className="confirmacao-exclusao" role="group" aria-label="Confirmar encerramento">
-        <p>Remover as ocorrências pendentes desta repetição a partir de {formatarData(tarefa.data_prevista > hoje ? tarefa.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}? Essas pendentes serão excluídas e não poderão ser restauradas. Concluídas, puladas e datas anteriores serão preservadas.</p>
+        <p>Remover as ocorrências pendentes e as puladas futuras desta repetição a partir de {formatarData(tarefa.data_prevista > hoje ? tarefa.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}? Essas ocorrências serão excluídas e não poderão ser restauradas. Concluídas, datas anteriores e puladas de hoje serão preservadas.</p>
         <button type="button" disabled={atualizando.length > 0} onClick={() => definirEncerrando(null)}>Cancelar</button>
         <button type="button" disabled={aberto || salvando || atualizando.length > 0} onClick={() => encerrarSerie(tarefa)}>Confirmar encerramento</button>
       </div>}
       {excluindo === tarefa.id && <div className="confirmacao-exclusao" role="group" aria-label="Confirmar exclusão">
-        <p>Excluir esta tarefa? Esta ação não pode ser desfeita.</p>
+        <p>Excluir somente esta tarefa? Outras ocorrências não serão alteradas. Esta ação não pode ser desfeita.</p>
         <button type="button" disabled={atualizando.includes(tarefa.id)} onClick={() => definirExcluindo(null)}>Cancelar</button>
         <button type="button" disabled={aberto || salvando || atualizando.includes(tarefa.id)} onClick={() => excluir(tarefa)}>{atualizando.includes(tarefa.id) ? 'Excluindo…' : 'Confirmar exclusão'}</button>
       </div>}
@@ -317,7 +319,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
             <p>As ocorrências serão criadas até a data final, em um período de até 366 dias. As ocorrências ficam vinculadas e você poderá editar ou encerrar as próximas em conjunto.</p>
           </>}
         </div>}
-        {modoSerie && editando && <div className="configuracao-repeticao"><p>Altera título, horários, prioridade e observação de todas as ocorrências pendentes desta repetição a partir de {formatarData(editando.data_prevista > hoje ? editando.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}, inclusive as editadas individualmente. As datas, as concluídas e as puladas serão preservadas.</p><label className="campo-prioridade"><input type="checkbox" required />Confirmo a alteração nas próximas ocorrências pendentes</label></div>}
+        {modoSerie && editando && <div className="configuracao-repeticao"><p>Altera título, horários, prioridade e observação das ocorrências pendentes e puladas futuras desta repetição a partir de {formatarData(editando.data_prevista > hoje ? editando.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}, inclusive as editadas individualmente. As datas, as concluídas e as puladas de hoje ou do passado serão preservadas. Puladas futuras recebem os novos dados, mas continuam puladas.</p><label className="campo-prioridade"><input type="checkbox" required />Confirmo a alteração nas pendentes e puladas futuras</label></div>}
         {editando && !modoSerie && <p className="explicacao-historico">Esta edição altera apenas esta tarefa, mesmo que ela tenha sido criada com repetição.</p>}
         <label>Observação (opcional)<textarea defaultValue={editando?.observacao ?? ""} name="observacao" maxLength={4000} rows={2} /></label>
         <div className="acoes-formulario"><button type="button" className="botao-secundario" onClick={() => { definirAberto(false); definirEditando(null); }}>Cancelar</button><button className="botao-principal" type="submit">{salvando ? 'Salvando…' : 'Salvar tarefa'}</button></div>
@@ -329,7 +331,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
         <h3>Pendências anteriores ({atrasadas.length})</h3><p>Você decide o que ainda faz sentido: concluir, reagendar ou pular.</p>
         <ul className="lista-tarefas">{atrasadas.map(tarefa => linha(tarefa, true))}</ul>
       </section>}
-      {!historico && pendentes.length > 0 && <div className="ordenacao"><label>Organizar por <select value={ordem} disabled={salvando || aberto || atualizando.length > 0} onChange={evento => definirOrdem(evento.target.value)}><option value="manual">Minha ordem</option><option value="criacao">Ordem de criação</option><option value="horario">Horário</option></select></label>{ordem === 'manual' && <p id="ajuda-ordenacao" className="explicacao-historico">Arraste pelos seis pontos para organizar dentro do dia. No teclado, use as setas ↑ e ↓ na alça.</p>}</div>}
+      {!historico && tarefas.length > 0 && <div className="ordenacao"><label>Organizar por <select value={ordem} disabled={salvando || aberto || atualizando.length > 0} onChange={evento => definirOrdem(evento.target.value)}><option value="manual">Minha ordem</option><option value="criacao">Ordem de criação</option><option value="horario">Horário</option></select></label>{ordem === 'manual' && <p id="ajuda-ordenacao" className="explicacao-historico">Arraste pelos seis pontos para organizar dentro de cada grupo e do mesmo dia. No teclado, use as setas ↑ e ↓ na alça.</p>}</div>}
       {historico ? <ListaHistorico periodo={periodoConsultado} tarefas={tarefas} situacao={situacao} definirSituacao={definirSituacao} bloqueado={aberto || salvando || atualizando.length > 0} renderizarTarefa={tarefa => linha(tarefa)} /> : semanal ? <div className="grade-semana">{dias.map(dia => {
         const itens = tarefas.filter(tarefa => tarefa.data_prevista === dia).sort((a, b) => Number(a.situacao === 'concluida') - Number(b.situacao === 'concluida') || compararTarefas(ordem)(a, b));
         return <section className={dia === hoje ? 'dia-semana dia-atual' : 'dia-semana'} key={dia} aria-label={formatarData(dia, { weekday: 'long', day: 'numeric', month: 'long' })}>

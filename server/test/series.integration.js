@@ -7,7 +7,7 @@ import { criarPoolBanco } from '../src/db.js';
 import { criarRepositorioTarefas } from '../src/repositorios/tarefas.js';
 import { obterDataHoje } from '../src/validacoes/tarefas.js';
 
-test('séries preservam passado, concluídas, puladas e outros perfis; falha reverte criação', async () => {
+test('séries preservam passado e concluídas, atualizam puladas futuras e isolam perfis; falha reverte criação', async () => {
   const pool=criarPoolBanco(); const banco=await pool.getConnection(); let servidor;
   try {
     await banco.beginTransaction();
@@ -28,16 +28,16 @@ test('séries preservam passado, concluídas, puladas e outros perfis; falha rev
     const concluidaId=tarefas[2].id;
     const [[antes]]=await banco.execute('SELECT concluida_em FROM tarefas WHERE id=?',[concluidaId]);
     const alterada=await chamar('/tarefas/'+tarefas[0].id+'/serie','PUT',{titulo:'Novo',horario:'07:00',prioridade:true});
-    assert.equal(alterada.status,200);assert.equal(alterada.dados.inicio,hoje);assert.equal(alterada.dados.quantidade,3);
+    assert.equal(alterada.status,200);assert.equal(alterada.dados.inicio,hoje);assert.equal(alterada.dados.quantidade,4);
     tarefas=await repo.listarPeriodo(u.insertId,dia(-1),dia(4));
-    assert.deepEqual(tarefas.map(t=>t.titulo),['Original','Novo','Original','Original','Novo','Novo']);
+    assert.deepEqual(tarefas.map(t=>t.titulo),['Original','Novo','Original','Novo','Novo','Novo']);
     assert.deepEqual(tarefas.map(t=>t.data_prevista),[-1,0,1,2,3,4].map(dia));
     const fim=await chamar('/tarefas/'+tarefas[4].id+'/serie/encerramento','PATCH',{});
     assert.equal(fim.dados.quantidade,2);
     const repetido=await chamar('/tarefas/'+tarefas[4].id+'/serie/encerramento','PATCH',{});assert.equal(repetido.status,404);
     tarefas=await repo.listarPeriodo(u.insertId,dia(-1),dia(4));
     assert.deepEqual(tarefas.map(t=>t.situacao),['pendente','pendente','concluida','pulada']);
-    assert.equal((await chamar('/tarefas/'+tarefas[3].id+'/serie/encerramento','PATCH',{})).dados.quantidade,0);
+    assert.equal((await chamar('/tarefas/'+tarefas[3].id+'/serie/encerramento','PATCH',{})).status,409);
     const [[depois]]=await banco.execute('SELECT concluida_em FROM tarefas WHERE id=?',[concluidaId]);assert.equal(depois.concluida_em,antes.concluida_em);
     const antiga=await repo.criar(u.insertId,{titulo:'Sem vínculo',observacao:null,data_prevista:hoje,horario:null,prioridade:false});assert.equal(antiga.serie_id,null);
     assert.equal((await chamar('/tarefas/'+antiga.id+'/serie','PUT',{titulo:'Não'})).status,404);

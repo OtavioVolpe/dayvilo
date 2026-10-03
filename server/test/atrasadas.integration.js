@@ -37,6 +37,8 @@ test('atrasadas, pular, restaurar e reagendar preservam dados e isolamento', asy
     assert.equal(movida.dados.tarefa.horario,'09:30'); assert.equal(movida.dados.tarefa.observacao,'Preservar'); assert.equal(movida.dados.tarefa.prioridade,true);
     assert.equal((await chamar('/tarefas/atrasadas')).dados.tarefas.length,0);
     assert.ok((await chamar('/tarefas?data='+hoje)).dados.tarefas.some(t=>t.id===antiga.id));
+    assert.equal((await chamar(`/tarefas/${concluida.id}/situacao`,'PATCH',{situacao:'pulada'})).status,409);
+    await chamar(`/tarefas/${concluida.id}/situacao`,'PATCH',{situacao:'pendente'});
     await chamar(`/tarefas/${concluida.id}/situacao`,'PATCH',{situacao:'pulada'});
     const [[registro]] = await banco.execute('SELECT concluida_em FROM tarefas WHERE id=?',[concluida.id]); assert.equal(registro.concluida_em,null);
     assert.equal((await chamar(`/tarefas/${privada.insertId}/situacao`,'PATCH',{situacao:'pulada'})).status,404);

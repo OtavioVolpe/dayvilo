@@ -37,8 +37,8 @@ export function criarRepositorioTarefas(banco) {
       );
       return tarefas.map(apresentarTarefa);
     },
-    async buscar(usuarioId, id) {
-      const [[tarefa]] = await banco.execute(`SELECT ${colunas} FROM tarefas WHERE usuario_id = ? AND id = ?`, [usuarioId, id]);
+    async buscar(usuarioId, id, bloquear = false) {
+      const [[tarefa]] = await banco.execute(`SELECT ${colunas} FROM tarefas WHERE usuario_id = ? AND id = ?${bloquear ? ' FOR UPDATE' : ''}`, [usuarioId, id]);
       return tarefa ? apresentarTarefa(tarefa) : null;
     },
     async criar(usuarioId, dados) {
@@ -74,17 +74,17 @@ export function criarRepositorioTarefas(banco) {
         throw erro;
       } finally { if (propria) conexao.release(); }
     },
-    async editarProximas(usuarioId, serieId, inicio, dados) {
+    async editarProximas(usuarioId, serieId, inicio, dados, hoje = inicio) {
       const [resultado] = await banco.execute(
-        "UPDATE tarefas JOIN ocorrencias_series ON tarefa_id = tarefas.id SET titulo = ?, observacao = ?, horario = ?, horario_final = ?, prioridade = ? WHERE usuario_id = ? AND serie_id = ? AND data_prevista >= ? AND situacao = 'pendente'",
-        [dados.titulo, dados.observacao, dados.horario, dados.horario_final ?? null, dados.prioridade, usuarioId, serieId, inicio],
+        "UPDATE tarefas JOIN ocorrencias_series ON tarefa_id = tarefas.id SET titulo = ?, observacao = ?, horario = ?, horario_final = ?, prioridade = ? WHERE usuario_id = ? AND serie_id = ? AND data_prevista >= ? AND (situacao = 'pendente' OR (situacao = 'pulada' AND data_prevista > ?))",
+        [dados.titulo, dados.observacao, dados.horario, dados.horario_final ?? null, dados.prioridade, usuarioId, serieId, inicio, hoje],
       );
       return resultado.affectedRows;
     },
-    async encerrarProximas(usuarioId, serieId, inicio) {
+    async encerrarProximas(usuarioId, serieId, inicio, hoje = inicio) {
       const [resultado] = await banco.execute(
-        "DELETE tarefas FROM tarefas JOIN ocorrencias_series ON tarefa_id = tarefas.id WHERE usuario_id = ? AND serie_id = ? AND data_prevista >= ? AND situacao = 'pendente'",
-        [usuarioId, serieId, inicio],
+        "DELETE tarefas FROM tarefas JOIN ocorrencias_series ON tarefa_id = tarefas.id WHERE usuario_id = ? AND serie_id = ? AND data_prevista >= ? AND (situacao = 'pendente' OR (situacao = 'pulada' AND data_prevista > ?))",
+        [usuarioId, serieId, inicio, hoje],
       );
       return resultado.affectedRows;
     },

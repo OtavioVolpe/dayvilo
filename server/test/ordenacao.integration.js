@@ -42,5 +42,23 @@ test('ordenação: persistência por dia, isolamento, conflitos, novas tarefas, 
     await repo.editar(u.insertId,b.id,{titulo:'B editada',observacao:null,horario:null,prioridade:false,data_prevista:data});assert.equal((await repo.buscar(u.insertId,b.id)).ordem,3);
     await repo.editar(u.insertId,b.id,{titulo:'B editada',observacao:null,horario:null,prioridade:false,data_prevista:'2026-09-29'});assert.equal((await repo.buscar(u.insertId,b.id)).ordem,0);
     assert.equal((await repo.buscar(outro.insertId,alheia.id)).ordem,0);
+    assert.equal((await enviar({data,situacao:'invalida',ids:[a.id,d.id],anteriores:[a.id,d.id]})).status,400);
+    for (const situacao of ['pulada','concluida']) {
+      const x=await criar('Grupo X'),y=await criar('Grupo Y');
+      await repo.definirSituacao(u.insertId,x.id,situacao);
+      await repo.definirSituacao(u.insertId,y.id,situacao);
+      const antesA=await repo.buscar(u.insertId,a.id);
+      const antesX=await repo.buscar(u.insertId,x.id);
+      assert.equal((await enviar({data,situacao,ids:[y.id,x.id],anteriores:[x.id,y.id]})).status,200);
+      const grupo=(await repo.listar(u.insertId,data)).filter(t=>t.situacao===situacao);
+      assert.deepEqual(grupo.map(t=>t.id),[y.id,x.id]);
+      assert.deepEqual(await repo.buscar(u.insertId,x.id),{...antesX,ordem:2});
+      assert.deepEqual(await repo.buscar(u.insertId,a.id),antesA);
+      assert.equal((await enviar({data,situacao,ids:[x.id,y.id],anteriores:[x.id,y.id]})).status,409);
+      assert.equal((await enviar({data,situacao,ids:[a.id,x.id],anteriores:[x.id,a.id]})).status,409);
+      await repo.definirSituacao(u.insertId,y.id,'pendente');
+      assert.equal((await enviar({data,situacao,ids:[x.id,y.id],anteriores:[y.id,x.id]})).status,409);
+    }
+
   } finally {if(servidor){servidor.closeAllConnections();await new Promise(r=>servidor.close(r));}await banco.rollback();banco.release();await pool.end();}
 });
