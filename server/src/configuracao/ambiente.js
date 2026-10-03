@@ -5,7 +5,7 @@ export function lerConfiguracao(ambiente = process.env) {
   const endereco = ambiente.HOST || (producao ? '0.0.0.0' : '127.0.0.1');
   if (!producao && !['127.0.0.1', 'localhost', '::1'].includes(endereco)) throw new Error('O modo local aceita apenas acesso pelo próprio computador.');
   let url;
-  try { url = new URL(ambiente.URL_APLICACAO || (producao ? '' : 'http://127.0.0.1:5173/')); }
+  try { url = new URL(ambiente.URL_APLICACAO || (producao ? ambiente.RENDER_EXTERNAL_URL || '' : 'http://127.0.0.1:5173/')); }
   catch { throw new Error('Configure URL_APLICACAO com o endereço completo do site.'); }
   if (url.username || url.password || url.search || url.hash || url.pathname !== '/' || !['http:', 'https:'].includes(url.protocol)
     || (producao && (url.protocol !== 'https:' || ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)))) {

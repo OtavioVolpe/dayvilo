@@ -29,6 +29,14 @@ function chamar(url, { method = 'GET', headers = {}, body } = {}) {
 const ambienteProducao = { NODE_ENV: 'production', URL_APLICACAO: 'https://dayvilo.example/', EMAIL_MODO: 'resend', PROXY_SALTOS: '1' };
 const bancoAmbiente = { MYSQL_HOST: 'mysql.example', MYSQL_USER: 'teste', MYSQL_PASSWORD: 'somente-fixture', MYSQL_DATABASE: 'teste' };
 
+test('Render: usa a URL fornecida pela hospedagem, preserva substituição explícita e exige HTTPS', () => {
+  const ambiente = { NODE_ENV: 'production', EMAIL_MODO: 'resend', RENDER_EXTERNAL_URL: 'https://dayvilo-teste.onrender.com' };
+  assert.equal(lerConfiguracao(ambiente).urlAplicacao, 'https://dayvilo-teste.onrender.com/');
+  assert.equal(lerConfiguracao({ ...ambiente, URL_APLICACAO: 'https://exemplo.com/' }).urlAplicacao, 'https://exemplo.com/');
+  assert.throws(() => lerConfiguracao({ ...ambiente, RENDER_EXTERNAL_URL: 'http://dayvilo-teste.onrender.com' }));
+  assert.equal(lerConfiguracao({ RENDER_EXTERNAL_URL: ambiente.RENDER_EXTERNAL_URL }).urlAplicacao, 'http://127.0.0.1:5173/');
+});
+
 async function iniciar(t, app) {
   const servidor = app.listen(0, '127.0.0.1');
   await once(servidor, 'listening');

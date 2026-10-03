@@ -161,7 +161,7 @@ Configure as variáveis no painel da hospedagem, preservando senhas e chaves for
 | NODE_ENV | production |
 | HOST | 0.0.0.0; aceita conexões encaminhadas pela hospedagem |
 | PORT | Porta fornecida pela hospedagem |
-| URL_APLICACAO | URL HTTPS completa, na raiz, sem parâmetros; usada também nos e-mails |
+| URL_APLICACAO | URL HTTPS completa, na raiz, sem parâmetros; usada também nos e-mails. No Render, pode ser omitida para usar RENDER_EXTERNAL_URL automaticamente |
 | PROXY_SALTOS | 1 somente quando há exatamente um proxy confiável entre o cliente e o Node; padrão 0 |
 | CADASTRO_ABERTO | false para impedir novos cadastros; padrão em produção |
 | MYSQL_HOST / PORT / USER / PASSWORD / DATABASE | Dados privados fornecidos pelo serviço MySQL |
