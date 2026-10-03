@@ -1,6 +1,6 @@
 import { transacionar } from './autenticacao.js';
 import { ordenarTarefas } from './ordenacao.js';
-import { criarTarefasRepetidas } from './repeticao.js';
+import { criarTarefasRepetidas, prepararRepeticao } from './repeticao.js';
 import { validarPeriodoHistorico } from '../validacoes/historico.js';
 import { obterSemana } from './semana.js';
 import { criarRepositorioTarefas } from '../repositorios/tarefas.js';
@@ -62,16 +62,44 @@ export function criarServicoTarefas(banco) {
       const tarefa = await tarefas.criar(usuario.id, dados);
       return { tarefa };
     },
+    async consultarSerie(usuario, entrada, parametroId) {
+      const referencia = await tarefas.buscar(usuario.id, validarId(parametroId));
+      if (!referencia?.serie_id) throw new ErroAplicacao(404, 'Série não encontrada para esta tarefa.');
+      return tarefas.configuracaoSerie(usuario.id, referencia.serie_id);
+    },
     async editarSerie(usuario, entrada, parametroId) {
       const id = validarId(parametroId);
-      validarObjeto(entrada, ['titulo', 'observacao', 'horario', 'horario_final', 'prioridade']);
-      const dados = validarNovaTarefa(entrada);
+      validarObjeto(entrada, ['titulo', 'observacao', 'horario', 'horario_final', 'prioridade', 'ate', 'regra']);
+      const { ate: fimSolicitado, regra: regraSolicitada, ...camposTarefa } = entrada;
+      const dados = validarNovaTarefa(camposTarefa);
       return alterar(usuario, id, ['pendente'], async (repositorio, referencia) => {
         if (!referencia.serie_id) throw new ErroAplicacao(404, 'Série não encontrada para esta tarefa.');
         const hoje = obterDataHoje(usuario.fuso_horario);
         const inicio = referencia.data_prevista > hoje ? referencia.data_prevista : hoje;
+        let criadas = 0, removidas = 0;
+        if (entrada.ate !== undefined) {
+          const ate = validarData(entrada.ate);
+          if (ate < inicio) throw new ErroValidacao('O término deve ser igual ou posterior ao início das alterações.');
+          if ((new Date(ate + 'T12:00:00Z') - new Date(inicio + 'T12:00:00Z')) / 86400000 >= 366) throw new ErroValidacao('O período futuro pode abranger até 366 dias.');
+          const anterior = await repositorio.configuracaoSerie(usuario.id, referencia.serie_id, true);
+          let regra = anterior;
+          if (ate > anterior.ate) {
+            if (!anterior.tipo) {
+              if (!entrada.regra) throw new ErroValidacao('Confirme os dias da repetição antiga para prolongá-la.');
+              validarObjeto(entrada.regra, ['tipo', 'dias']);
+              regra = entrada.regra;
+            }
+            const datas = prepararRepeticao({ tarefa: { ...dados, data_prevista: inicio }, repeticao: { tipo: regra.tipo, ate, ...(regra.tipo === 'semanal' ? { dias: regra.dias } : {}) } }).datas.filter(dia => dia > anterior.ate);
+            criadas = await repositorio.prolongar(usuario.id, referencia.serie_id, dados, datas);
+          }
+          if (ate < anterior.ate) {
+            const depois = new Date(ate + 'T12:00:00Z'); depois.setUTCDate(depois.getUTCDate() + 1);
+            removidas = await repositorio.encerrarProximas(usuario.id, referencia.serie_id, depois.toISOString().slice(0,10), hoje);
+          }
+          await repositorio.salvarConfiguracao(usuario.id, referencia.serie_id, { tipo: regra.tipo ?? null, dias: regra.dias, ate });
+        }
         const quantidade = await repositorio.editarProximas(usuario.id, referencia.serie_id, inicio, dados, hoje);
-        return { quantidade, inicio };
+        return { quantidade, inicio, criadas, removidas };
       });
     },
     async encerrarSerie(usuario, entrada, parametroId) {
@@ -81,7 +109,10 @@ export function criarServicoTarefas(banco) {
         if (!referencia.serie_id) throw new ErroAplicacao(404, 'Série não encontrada para esta tarefa.');
         const hoje = obterDataHoje(usuario.fuso_horario);
         const inicio = referencia.data_prevista > hoje ? referencia.data_prevista : hoje;
+        const regra = await repositorio.configuracaoSerie(usuario.id, referencia.serie_id, true);
         const quantidade = await repositorio.encerrarProximas(usuario.id, referencia.serie_id, inicio, hoje);
+        const fim = new Date(inicio + 'T12:00:00Z'); fim.setUTCDate(fim.getUTCDate() - 1);
+        await repositorio.salvarConfiguracao(usuario.id, referencia.serie_id, { ...regra, ate: regra.ate < inicio ? regra.ate : fim.toISOString().slice(0,10) });
         return { quantidade, inicio };
       });
     },

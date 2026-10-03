@@ -23,6 +23,14 @@ Nas duas ações de série, o início é a data da ocorrência selecionada ou ho
 
 O Histórico consulta o estado atual das tarefas, não um registro imutável de alterações. Reagendar muda onde a ocorrência aparece; excluir também a retira do Histórico.
 
+### Término de uma repetição
+
+Em **Editar próximas**, a data de término pode ser aumentada ou reduzida. Prolongar cria ocorrências pendentes somente após o término anterior, seguindo os dias da série; não recria exclusões dentro do período antigo. Encurtar exclui definitivamente pendentes e puladas futuras após a nova data, com confirmação no formulário. Concluídas, passado e puladas de hoje continuam preservados. O término não pode anteceder o início das alterações e o período futuro fica limitado a 366 dias.
+
+Novas séries guardam sua regra. Séries antigas não tinham esse dado: ao prolongar, confirme todos os dias ou os dias da semana que deseja usar para as novas ocorrências. O término mostrado inicialmente nessas séries é o último dia ainda registrado; não se tenta adivinhar a regra a partir das tarefas restantes.
+
+A tela **Hoje** também permite navegar com **Dia anterior** e **Próximo dia**, mantendo o seletor de data e **Voltar para hoje**.
+
 ## Horários das tarefas
 
 O horário inicial e o final são opcionais. Para informar o final, preencha também o início; os dois horários devem ser diferentes. Um final anterior ao início representa o dia seguinte e recebe essa indicação no card. As tarefas continuam agrupadas pela data de início planejada. Horários sobrepostos são permitidos.

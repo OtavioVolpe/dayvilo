@@ -48,7 +48,7 @@ export function criarRepositorioTarefas(banco) {
       );
       return this.buscar(usuarioId, resultado.insertId);
     },
-    async criarRepetidas(usuarioId, dados, datas) {
+    async criarRepetidas(usuarioId, dados, datas, regra = null) {
       const conexao = banco.getConnection ? await banco.getConnection() : banco;
       const propria = conexao !== banco;
       const serieId = randomUUID();
@@ -56,6 +56,7 @@ export function criarRepositorioTarefas(banco) {
       try {
         if (propria) await conexao.beginTransaction();
         else await conexao.query('SAVEPOINT criar_serie');
+        if (regra) await conexao.execute('INSERT INTO configuracoes_series (serie_id, usuario_id, tipo, dias, ate) VALUES (?, ?, ?, ?, ?)', [serieId, usuarioId, regra.tipo, JSON.stringify(regra.dias ?? null), regra.ate]);
         for (const data of datas) {
           const [resultado] = await conexao.execute(
             'INSERT INTO tarefas (usuario_id, titulo, observacao, data_prevista, horario, horario_final, prioridade) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -73,6 +74,28 @@ export function criarRepositorioTarefas(banco) {
         else await conexao.query('ROLLBACK TO SAVEPOINT criar_serie');
         throw erro;
       } finally { if (propria) conexao.release(); }
+    },
+    async configuracaoSerie(usuarioId, serieId, bloquear = false) {
+      // Séries antigas ainda não têm regra: nunca deduzir dias de tarefas já editadas/excluídas.
+      if (bloquear) await banco.execute('INSERT IGNORE INTO configuracoes_series (serie_id, usuario_id, ate) SELECT ?, ?, MAX(data_prevista) FROM tarefas JOIN ocorrencias_series ON tarefa_id = tarefas.id WHERE usuario_id = ? AND serie_id = ? HAVING MAX(data_prevista) IS NOT NULL', [serieId, usuarioId, usuarioId, serieId]);
+      const [[regra]] = await banco.execute('SELECT tipo, dias, ate FROM configuracoes_series WHERE usuario_id = ? AND serie_id = ?' + (bloquear ? ' FOR UPDATE' : ''), [usuarioId, serieId]);
+      if (regra) return regra;
+      const [[limite]] = await banco.execute('SELECT MAX(data_prevista) AS ate FROM tarefas JOIN ocorrencias_series ON tarefa_id = tarefas.id WHERE usuario_id = ? AND serie_id = ?', [usuarioId, serieId]);
+      return { tipo: null, dias: null, ate: limite.ate };
+    },
+    async salvarConfiguracao(usuarioId, serieId, regra) {
+      await banco.execute('UPDATE configuracoes_series SET tipo = ?, dias = ?, ate = ? WHERE usuario_id = ? AND serie_id = ?', [regra.tipo, JSON.stringify(regra.dias ?? null), regra.ate, usuarioId, serieId]);
+    },
+    async prolongar(usuarioId, serieId, dados, datas) {
+      let criadas = 0;
+      for (const data of datas) {
+        const [[existente]] = await banco.execute('SELECT tarefas.id FROM tarefas JOIN ocorrencias_series ON tarefa_id = tarefas.id WHERE usuario_id = ? AND serie_id = ? AND data_prevista = ? LIMIT 1', [usuarioId, serieId, data]);
+        if (existente) continue;
+        const tarefa = await this.criar(usuarioId, { ...dados, data_prevista: data });
+        await banco.execute('INSERT INTO ocorrencias_series (tarefa_id, serie_id) VALUES (?, ?)', [tarefa.id, serieId]);
+        criadas++;
+      }
+      return criadas;
     },
     async editarProximas(usuarioId, serieId, inicio, dados, hoje = inicio) {
       const [resultado] = await banco.execute(

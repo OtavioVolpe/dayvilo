@@ -13,6 +13,9 @@ export default function Planejamento({ semanal = false, historico = false }) {
   const [puladasAbertas, definirPuladasAbertas] = useState({});
   const [tarefaMovida, definirTarefaMovida] = useState(null);
   const cartoesRef = useRef(new Map());
+  const [configuracaoSerie, definirConfiguracaoSerie] = useState(null);
+  const [fimSerie, definirFimSerie] = useState('');
+  const [tipoSerieAntiga, definirTipoSerieAntiga] = useState('');
   const [modoSerie, definirModoSerie] = useState(false);
   const [encerrando, definirEncerrando] = useState(null);
   const [atrasadas, definirAtrasadas] = useState([]);
@@ -76,7 +79,16 @@ export default function Planejamento({ semanal = false, historico = false }) {
     return () => cancelAnimationFrame(quadro);
   }, [tarefaMovida]);
 
-  function abrirFormulario(tarefa = null, dia = data, serie = false) {
+  async function abrirFormulario(tarefa = null, dia = data, serie = false) {
+    definirConfiguracaoSerie(null); definirFimSerie(''); definirTipoSerieAntiga('');
+    if (serie) {
+      definirAtualizando(ids => [...ids, tarefa.id]);
+      try {
+        const configuracao = await solicitar('/tarefas/' + tarefa.id + '/serie');
+        definirConfiguracaoSerie(configuracao); definirFimSerie(configuracao.ate);
+      } catch (falha) { definirErro(falha.message); return; }
+      finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
+    }
     definirModoSerie(serie); definirEncerrando(null);
     definirRepeticao('nenhuma');
     definirNovaData(dia);
@@ -110,10 +122,14 @@ export default function Planejamento({ semanal = false, historico = false }) {
         observacao: campos.get('observacao'), prioridade: campos.has('prioridade'), data_prevista: campos.get('data_prevista') };
       if (modoSerie && editando) {
         const { data_prevista, ...dadosSerie } = dadosTarefa;
+        if (fimSerie !== configuracaoSerie.ate) {
+          dadosSerie.ate = fimSerie;
+          if (!configuracaoSerie.tipo && fimSerie > configuracaoSerie.ate) dadosSerie.regra = { tipo: tipoSerieAntiga, ...(tipoSerieAntiga === 'semanal' ? { dias: campos.getAll('dias_serie_antiga').map(Number) } : {}) };
+        }
         const resultado = await solicitar('/tarefas/' + editando.id + '/serie', {
           method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dadosSerie),
         });
-        definirAviso(resultado.quantidade + ' ocorrência(s) atualizadas: pendentes e puladas futuras. As demais foram preservadas.');
+        definirAviso(resultado.quantidade + ' ocorrência(s) atualizadas; ' + (resultado.criadas || 0) + ' criadas e ' + (resultado.removidas || 0) + ' removidas. Registros preservados continuam como estavam.');
         definirAberto(false); definirEditando(null); definirModoSerie(false);
         definirCarregando(true); definirTentativa(valor => valor + 1);
         return;
@@ -206,7 +222,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
     finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
   }
 
-  function mudarSemana(quantidade) {
+  function mudarData(quantidade) {
     definirCarregando(true); definirExcluindo(null); definirAviso('');
     definirDataSelecionada(deslocarData(data, quantidade));
   }
@@ -286,6 +302,11 @@ export default function Planejamento({ semanal = false, historico = false }) {
       <p>{formatarData(dias[0])} a {formatarData(dias[6], { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
       <button className="botao-secundario" disabled={aberto || carregando || atualizando.length > 0} onClick={() => mudarSemana(7)}>Próxima semana →</button>
     </div>}
+    {!historico && !semanal && data && <div className="navegacao-semana">
+      <button className="botao-secundario" disabled={aberto || salvando || carregando || atualizando.length > 0 || data === '1000-01-01'} onClick={() => mudarData(-1)}>← Dia anterior</button>
+      <p>{formatarData(data, { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+      <button className="botao-secundario" disabled={aberto || salvando || carregando || atualizando.length > 0 || data === '9999-12-31'} onClick={() => mudarData(1)}>Próximo dia →</button>
+    </div>}
     {historico && periodoConsultado && <>
       <p className="explicacao-historico">Atividades organizadas pela data planejada, incluindo hoje. Consulte até 366 dias por vez.</p>
       <form className="seletor-dia" key={periodoConsultado.inicio + periodoConsultado.fim + tentativa} onSubmit={evento => {
@@ -319,7 +340,15 @@ export default function Planejamento({ semanal = false, historico = false }) {
             <p>As ocorrências serão criadas até a data final, em um período de até 366 dias. As ocorrências ficam vinculadas e você poderá editar ou encerrar as próximas em conjunto.</p>
           </>}
         </div>}
-        {modoSerie && editando && <div className="configuracao-repeticao"><p>Altera título, horários, prioridade e observação das ocorrências pendentes e puladas futuras desta repetição a partir de {formatarData(editando.data_prevista > hoje ? editando.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}, inclusive as editadas individualmente. As datas, as concluídas e as puladas de hoje ou do passado serão preservadas. Puladas futuras recebem os novos dados, mas continuam puladas.</p><label className="campo-prioridade"><input type="checkbox" required />Confirmo a alteração nas pendentes e puladas futuras</label></div>}
+        {modoSerie && editando && configuracaoSerie && <div className="configuracao-repeticao">
+          <label>Data de término da repetição<input name="serie_ate" type="date" value={fimSerie} onChange={evento => definirFimSerie(evento.target.value)} required min="1000-01-01" max="9999-12-31" /></label>
+          <p>Prolongar cria novas ocorrências após o término anterior. Encurtar exclui definitivamente as pendentes e puladas futuras além da nova data. Concluídas e registros passados são preservados.</p>
+          {!configuracaoSerie.tipo && fimSerie > configuracaoSerie.ate && <>
+            <p>Esta repetição antiga não guardava os dias escolhidos. Confirme quais dias usar nas novas ocorrências.</p>
+            <label>Repetir nas novas datas<select required value={tipoSerieAntiga} onChange={evento => definirTipoSerieAntiga(evento.target.value)}><option value="">Selecione</option><option value="diaria">Todos os dias</option><option value="semanal">Dias da semana</option></select></label>
+            {tipoSerieAntiga === 'semanal' && <fieldset className="dias-repeticao"><legend>Em quais dias?</legend>{[[1,'Seg'],[2,'Ter'],[3,'Qua'],[4,'Qui'],[5,'Sex'],[6,'Sáb'],[0,'Dom']].map(([dia,nome]) => <label key={dia}><input type="checkbox" name="dias_serie_antiga" value={dia} />{nome}</label>)}</fieldset>}
+          </>}
+          <p>Altera título, horários, prioridade e observação das ocorrências pendentes e puladas futuras desta repetição a partir de {formatarData(editando.data_prevista > hoje ? editando.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}, inclusive as editadas individualmente. As datas das ocorrências mantidas, as concluídas e as puladas de hoje ou do passado serão preservadas. Puladas futuras recebem os novos dados, mas continuam puladas.</p><label className="campo-prioridade"><input type="checkbox" required />Confirmo as alterações e a exclusão das ocorrências abrangidas se encurtar o término</label></div>}
         {editando && !modoSerie && <p className="explicacao-historico">Esta edição altera apenas esta tarefa, mesmo que ela tenha sido criada com repetição.</p>}
         <label>Observação (opcional)<textarea defaultValue={editando?.observacao ?? ""} name="observacao" maxLength={4000} rows={2} /></label>
         <div className="acoes-formulario"><button type="button" className="botao-secundario" onClick={() => { definirAberto(false); definirEditando(null); }}>Cancelar</button><button className="botao-principal" type="submit">{salvando ? 'Salvando…' : 'Salvar tarefa'}</button></div>

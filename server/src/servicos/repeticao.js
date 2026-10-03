@@ -27,5 +27,5 @@ export function prepararRepeticao(entrada) {
 
 export async function criarTarefasRepetidas(repositorio, usuarioId, entrada) {
   const { tarefa, datas } = prepararRepeticao(entrada);
-  return repositorio.criarRepetidas(usuarioId, tarefa, datas);
+  return repositorio.criarRepetidas(usuarioId, tarefa, datas, entrada.repeticao);
 }
