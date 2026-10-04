@@ -39,9 +39,9 @@ Os horários são mantidos na edição, nas repetições, no Histórico e no CSV
 
 ## Selecionar tarefas
 
-Em **Hoje** ou em um bloco diário da **Semana**, clique em **Selecionar**. Marque tarefas pelos círculos ou use **Selecionar todas**. A seleção abrange somente aquele dia, sem incluir pendências anteriores ou outras repetições.
+Em **Hoje** ou em um bloco diário da **Semana**, use o controle de seleção junto à ordenação ou o ícone ao lado de Tarefa no dia. Marque pelos círculos ou use **Todas**. A seleção abrange somente aquele dia, sem incluir pendências anteriores ou outras repetições.
 
-Pendentes podem ser concluídas ou puladas; puladas podem ser restauradas; concluídas podem voltar para pendentes. Ao misturar situações, apenas a exclusão fica disponível. Excluir pede confirmação e não pode ser desfeito. Cancelar sai sem alterar tarefas. Se a lista mudou em outra aba, recarregue e selecione novamente; a operação não é aplicada parcialmente.
+Pendentes podem ser concluídas ou puladas; puladas podem ser restauradas; concluídas podem voltar para pendentes. Ao misturar situações, apenas a exclusão fica disponível. Excluir pede confirmação e não pode ser desfeito. O ícone **X** sai da seleção sem alterar tarefas. Os ícones de ação mostram seus nomes ao passar o mouse e possuem rótulos para leitores de tela. Se a lista mudou em outra aba, recarregue e selecione novamente; a operação não é aplicada parcialmente.
 
 Em Editar próximas, **Alterações a partir de** mostra o início efetivo da edição, sem um campo de data bloqueado.
 

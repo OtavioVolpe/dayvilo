@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import SeloSituacao from './SeloSituacao.jsx';
 import ListaHistorico from './ListaHistorico.jsx';
 import { deslocarData, formatarData } from './datas.js';
-import { Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, ListRestart, CircleStop } from 'lucide-react';
+import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, ListRestart, CircleStop } from 'lucide-react';
 
 export default function Planejamento({ semanal = false, historico = false }) {
   const [diaSelecao, definirDiaSelecao] = useState(null);
@@ -270,14 +270,14 @@ export default function Planejamento({ semanal = false, historico = false }) {
     } catch (falha) { definirErro(falha.message); definirConfirmarLote(false); }
     finally { definirSalvando(false); }
   }
-  const barraSelecao = dia => <BarraSelecao dia={dia} tarefas={tarefas.filter(t => t.data_prevista === dia)} ativo={diaSelecao === dia} selecionados={selecionados}
+  const barraSelecao = dia => <BarraSelecao compacto={semanal} dia={dia} tarefas={tarefas.filter(t => t.data_prevista === dia)} ativo={diaSelecao === dia} selecionados={selecionados}
     bloqueado={salvando || carregando || aberto || atualizando.length > 0 || (diaSelecao !== null && diaSelecao !== dia)}
     iniciar={() => { definirDiaSelecao(dia); definirSelecionados([]); definirExcluindo(null); definirEncerrando(null); definirConfirmarLote(false); definirPuladasAbertas(estado => ({ ...estado, [dia]: true })); }}
     selecionar={ids => { definirSelecionados(ids); definirConfirmarLote(false); }} cancelar={cancelarSelecao} executar={executarLote} confirmar={confirmarLote} definirConfirmar={definirConfirmarLote} />;
   const linha = (tarefa, atrasada = false) => (
     <li className={`tarefa ${diaSelecao === tarefa.data_prevista && !atrasada ? 'modo-selecao' : ''} ${selecionados.includes(tarefa.id) ? 'tarefa-selecionada' : ''} ${diaSelecao === null && !historico && !atrasada && ordem === 'manual' ? 'tarefa-com-alca' : ''} tarefa-${tarefa.situacao} ${tarefa.situacao === 'concluida' ? 'concluida' : ''} ${arrasto?.origem === tarefa.id ? 'tarefa-arrastando' : ''} ${arrasto?.destino === tarefa.id && arrasto.origem !== tarefa.id ? (arrasto.depois ? 'destino-depois' : 'destino-antes') : ''}`} key={tarefa.id} tabIndex={-1} aria-labelledby={`titulo-tarefa-${tarefa.id} situacao-tarefa-${tarefa.id}`} ref={elemento => { if (elemento) cartoesRef.current.set(tarefa.id, elemento); else cartoesRef.current.delete(tarefa.id); }}>
       {diaSelecao === null && !historico && !atrasada && ordem === 'manual' && <AlcaOrdenacao tarefa={tarefa} lista={grupoDoDia(tarefa)} cartoes={cartoesRef} bloqueado={diaSelecao !== null || aberto || salvando || atualizando.length > 0 || carregando || Boolean(excluindo || encerrando)} mover={mover} indicar={definirArrasto} />}
-      {diaSelecao === tarefa.data_prevista && !atrasada ? <button type="button" className="marcador-selecao" aria-label={'Selecionar: ' + tarefa.titulo} aria-pressed={selecionados.includes(tarefa.id)} disabled={salvando || carregando} onClick={() => { definirConfirmarLote(false); definirSelecionados(ids => ids.includes(tarefa.id) ? ids.filter(id => id !== tarefa.id) : [...ids, tarefa.id]); }}>{selecionados.includes(tarefa.id) ? '✓' : '+'}</button> : tarefa.situacao !== 'pulada' && <input type="checkbox" aria-label={`${tarefa.situacao === 'concluida' ? 'Desfazer conclusão' : 'Concluir'}: ${tarefa.titulo}`} checked={tarefa.situacao === 'concluida'} disabled={diaSelecao !== null || aberto || salvando || atualizando.includes(tarefa.id)} onChange={() => alternar(tarefa)} />}
+      {diaSelecao === tarefa.data_prevista && !atrasada ? <button type="button" className="marcador-selecao" aria-label={'Selecionar: ' + tarefa.titulo} aria-pressed={selecionados.includes(tarefa.id)} disabled={salvando || carregando} onClick={() => { definirConfirmarLote(false); definirSelecionados(ids => ids.includes(tarefa.id) ? ids.filter(id => id !== tarefa.id) : [...ids, tarefa.id]); }}>{selecionados.includes(tarefa.id) && <Check size={16} aria-hidden="true" />}</button> : tarefa.situacao !== 'pulada' && <input type="checkbox" aria-label={`${tarefa.situacao === 'concluida' ? 'Desfazer conclusão' : 'Concluir'}: ${tarefa.titulo}`} checked={tarefa.situacao === 'concluida'} disabled={diaSelecao !== null || aberto || salvando || atualizando.includes(tarefa.id)} onChange={() => alternar(tarefa)} />}
       <div className="tarefa-conteudo"><div className="tarefa-cabecalho"><span className="tarefa-titulo" id={`titulo-tarefa-${tarefa.id}`}>{tarefa.titulo}</span></div>
         {tarefa.observacao && <p className="observacao">{tarefa.observacao}</p>}
         <div className="detalhes">{tarefa.serie_id && <span>Repetição</span>}{atrasada === true && <span>Prevista para {formatarData(tarefa.data_prevista, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario ? tarefa.horario + (tarefa.horario_final ? ' às ' + tarefa.horario_final + (tarefa.horario_final < tarefa.horario ? ' (dia seguinte)' : '') : '') : 'Sem horário'}</span>
@@ -387,19 +387,18 @@ export default function Planejamento({ semanal = false, historico = false }) {
         <h3>Pendências anteriores ({atrasadas.length})</h3><p>Conclua, reagende ou pule.</p>
         <ul className="lista-tarefas">{atrasadas.map(tarefa => linha(tarefa, true))}</ul>
       </section>}
-      {!historico && tarefas.length > 0 && <div className="ordenacao"><label>Organizar por <select value={ordem} disabled={diaSelecao !== null || salvando || aberto || atualizando.length > 0} onChange={evento => definirOrdem(evento.target.value)}><option value="manual">Minha ordem</option><option value="criacao">Ordem de criação</option><option value="horario">Horário</option></select></label>{ordem === 'manual' && <p id="ajuda-ordenacao" className="explicacao-historico">Arraste pelos seis pontos ou use ↑ e ↓. Vale dentro do mesmo grupo e dia.</p>}</div>}
+      {!historico && tarefas.length > 0 && <div className="ordenacao"><div className="controles-lista">{!semanal && barraSelecao(data)}<label>Organizar por <select value={ordem} disabled={diaSelecao !== null || salvando || aberto || atualizando.length > 0} onChange={evento => definirOrdem(evento.target.value)}><option value="manual">Minha ordem</option><option value="criacao">Ordem de criação</option><option value="horario">Horário</option></select></label></div>{diaSelecao === null && ordem === 'manual' && <p id="ajuda-ordenacao" className="explicacao-historico">Arraste pelos seis pontos ou use ↑ e ↓. Vale dentro do mesmo grupo e dia.</p>}</div>}
       {historico ? <ListaHistorico periodo={periodoConsultado} tarefas={tarefas} situacao={situacao} definirSituacao={definirSituacao} bloqueado={diaSelecao !== null || aberto || salvando || atualizando.length > 0} renderizarTarefa={tarefa => linha(tarefa)} /> : semanal ? <div className="grade-semana">{dias.map(dia => {
         const itens = tarefas.filter(tarefa => tarefa.data_prevista === dia).sort((a, b) => Number(a.situacao === 'concluida') - Number(b.situacao === 'concluida') || compararTarefas(ordem)(a, b));
         return <section className={dia === hoje ? 'dia-semana dia-atual' : 'dia-semana'} key={dia} aria-label={formatarData(dia, { weekday: 'long', day: 'numeric', month: 'long' })}>
           <header><h3>{formatarData(dia, { weekday: 'short' })} <span>{formatarData(dia)}</span>{dia === hoje && <small>Hoje</small>}</h3>
-          <button className="botao-secundario" disabled={diaSelecao !== null || salvando || atualizando.length > 0} aria-label={'Adicionar tarefa em ' + formatarData(dia)} onClick={() => abrirFormulario(null, dia)}><Plus size={16} aria-hidden="true" />Tarefa</button></header>
-          {barraSelecao(dia)}
+          <div className="controles-dia">{diaSelecao !== dia && barraSelecao(dia)}<button className="botao-secundario" disabled={diaSelecao !== null || salvando || atualizando.length > 0} aria-label={'Adicionar tarefa em ' + formatarData(dia)} onClick={() => abrirFormulario(null, dia)}><Plus size={16} aria-hidden="true" />Tarefa</button></div></header>
+          {diaSelecao === dia && barraSelecao(dia)}
           <p className="resumo-dia">{itens.filter(tarefa => tarefa.situacao === 'concluida').length} de {itens.filter(tarefa => tarefa.situacao !== "pulada").length} concluídas · {itens.filter(tarefa => tarefa.situacao === "pulada").length} puladas</p>
           {itens.some(tarefa => tarefa.situacao !== 'pulada') ? <ul className="lista-tarefas">{itens.filter(tarefa => tarefa.situacao !== 'pulada').map(tarefa => linha(tarefa))}</ul> : <p className="dia-vazio">Nenhuma tarefa ativa neste dia.</p>}
           {grupoPuladas(itens.filter(tarefa => tarefa.situacao === 'pulada'), dia)}
         </section>;
       })}</div> : <>
-      {barraSelecao(data)}
       {pendentes.length > 0 && <><ul className="lista-tarefas">{pendentes.map(tarefa => linha(tarefa))}</ul></>}
       {tarefas.length === 0 && <div className="initial-state"><ListTodo size={26} aria-hidden="true" /><h2>Um dia com espaço livre</h2><p>Nenhuma tarefa nesta data.</p></div>}
       {tarefas.length > 0 && pendentes.length === 0 && <p className="estado-lista">Nenhuma tarefa pendente nesta data.</p>}

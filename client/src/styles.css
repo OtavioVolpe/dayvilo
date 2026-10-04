@@ -77,18 +77,16 @@
 
 .tarefa>.alca-ordenacao{grid-column:1;grid-row:1;align-self:center}
 
-/* Seleção é distinta da conclusão e mantém o alcance visível. */
-.barra-selecao{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px;margin:12px 0;background:var(--surface);border:1px solid var(--line);border-radius:12px}
-.barra-selecao button{padding:8px 12px;border:1px solid currentColor;border-radius:8px}
-.barra-selecao p,.confirmacao-lote{flex-basis:100%;margin:4px 0}
-.confirmacao-lote button{margin-right:8px}
-.tarefa>.marcador-selecao{grid-column:1;grid-row:1;align-self:center;border:2px dashed currentColor;border-radius:50%;width:28px;height:28px;padding:0;display:grid;place-items:center}
-.tarefa-selecionada{outline:2px solid currentColor;outline-offset:-2px}
-.marcador-selecao[aria-pressed="true"]{border-style:solid;font-weight:bold}
-.inicio-alteracoes{margin:12px 0}
-.dia-semana .tarefa>.marcador-selecao{grid-row:2}
-@media(max-width:650px){.tarefa>.marcador-selecao{grid-row:2}}
-
-.tarefa.modo-selecao{grid-template-columns:28px minmax(0,1fr) auto}.barra-selecao button{background:var(--surface)}
-.dia-semana .tarefa.modo-selecao{grid-template-columns:28px minmax(0,1fr)}
-@media(max-width:650px){.tarefa.modo-selecao{grid-template-columns:28px minmax(0,1fr)}}
+/* Seleção compacta, com ações no mesmo estilo dos cards. */
+.controles-lista,.controles-dia{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.controles-lista{justify-content:space-between}.controles-lista>label{margin-left:auto}.controles-dia{gap:6px}
+.abrir-selecao{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:40px;min-height:40px;padding:6px 8px;background:transparent;border:0;border-radius:8px;color:var(--muted);font-size:.85rem}
+.abrir-selecao:hover,.acao-selecao:hover{background:var(--soft);color:var(--accent)}
+.barra-selecao{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:5px 8px;background:var(--soft);border-radius:10px;color:var(--ink);text-align:left;font-size:.8rem;flex:1}
+.dia-semana>.barra-selecao{margin:10px 0}.quantidade-selecao{white-space:nowrap}.selecionar-todas{border:0;background:transparent;color:var(--accent);padding:8px;font-size:inherit;text-decoration:underline;text-underline-offset:3px;min-height:40px}
+.acoes-selecao{display:flex;align-items:center;margin-left:auto;gap:2px}.acao-selecao{width:40px;height:40px;padding:0;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:var(--muted)}
+.barra-selecao>p,.confirmacao-lote{flex-basis:100%;margin:4px 0}.confirmacao-lote>div{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.confirmacao-lote button{padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.tarefa>.marcador-selecao{grid-column:1;grid-row:1;align-self:center;border:1px solid var(--muted);border-radius:50%;width:28px;height:28px;padding:0;display:grid;place-items:center;background:transparent;color:var(--on-accent)}
+.tarefa-selecionada{border-color:var(--accent);background:var(--soft)}.marcador-selecao[aria-pressed="true"]{border-color:var(--accent);background:var(--accent)}
+.inicio-alteracoes{margin:12px 0}.tarefa.modo-selecao{grid-template-columns:28px minmax(0,1fr) auto}
+.dia-semana .tarefa>.marcador-selecao{grid-row:2}.dia-semana .tarefa.modo-selecao{grid-template-columns:28px minmax(0,1fr)}
+@media(max-width:650px){.tarefa>.marcador-selecao{grid-row:2}.tarefa.modo-selecao{grid-template-columns:28px minmax(0,1fr)}.controles-lista>.barra-selecao{flex-basis:100%}}
