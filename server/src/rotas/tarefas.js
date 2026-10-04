@@ -11,6 +11,7 @@ export function criarRotasTarefas(banco) {
   rotas.get('/tarefas/historico', controlador.historico);
   rotas.get('/tarefas/semana', controlador.semana);
   rotas.get('/tarefas', controlador.listar);
+  rotas.patch('/tarefas/selecao', controlador.selecao);
   rotas.patch('/tarefas/ordem', controlador.ordenar);
   rotas.post('/tarefas/repetidas', controlador.repetir);
   rotas.post('/tarefas', controlador.criar);

@@ -76,3 +76,19 @@
 }
 
 .tarefa>.alca-ordenacao{grid-column:1;grid-row:1;align-self:center}
+
+/* Seleção é distinta da conclusão e mantém o alcance visível. */
+.barra-selecao{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px;margin:12px 0;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.barra-selecao button{padding:8px 12px;border:1px solid currentColor;border-radius:8px}
+.barra-selecao p,.confirmacao-lote{flex-basis:100%;margin:4px 0}
+.confirmacao-lote button{margin-right:8px}
+.tarefa>.marcador-selecao{grid-column:1;grid-row:1;align-self:center;border:2px dashed currentColor;border-radius:50%;width:28px;height:28px;padding:0;display:grid;place-items:center}
+.tarefa-selecionada{outline:2px solid currentColor;outline-offset:-2px}
+.marcador-selecao[aria-pressed="true"]{border-style:solid;font-weight:bold}
+.inicio-alteracoes{margin:12px 0}
+.dia-semana .tarefa>.marcador-selecao{grid-row:2}
+@media(max-width:650px){.tarefa>.marcador-selecao{grid-row:2}}
+
+.tarefa.modo-selecao{grid-template-columns:28px minmax(0,1fr) auto}.barra-selecao button{background:var(--surface)}
+.dia-semana .tarefa.modo-selecao{grid-template-columns:28px minmax(0,1fr)}
+@media(max-width:650px){.tarefa.modo-selecao{grid-template-columns:28px minmax(0,1fr)}}

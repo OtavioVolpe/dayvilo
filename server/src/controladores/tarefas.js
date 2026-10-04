@@ -1,9 +1,14 @@
+import { alterarSelecao } from '../servicos/selecao-tarefas.js';
 import { criarServicoTarefas } from '../servicos/tarefas.js';
 import { obterDataHoje } from '../validacoes/tarefas.js';
 
 export function criarControladorTarefas(banco) {
   const tarefas = criarServicoTarefas(banco);
   return {
+    async selecao(requisicao, resposta) {
+      if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });
+      resposta.json(await alterarSelecao(banco, requisicao.usuario.id, requisicao.body));
+    },
     perfil(requisicao, resposta) {
       resposta.json({ nome: requisicao.usuario.nome, fuso_horario: requisicao.usuario.fuso_horario, data_hoje: obterDataHoje(requisicao.usuario.fuso_horario) });
     },

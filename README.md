@@ -37,6 +37,14 @@ O horário inicial e o final são opcionais. Para informar o final, preencha tam
 
 Os horários são mantidos na edição, nas repetições, no Histórico e no CSV. Tarefas existentes continuam sem horário final até que ele seja informado.
 
+## Selecionar tarefas
+
+Em **Hoje** ou em um bloco diário da **Semana**, clique em **Selecionar**. Marque tarefas pelos círculos ou use **Selecionar todas**. A seleção abrange somente aquele dia, sem incluir pendências anteriores ou outras repetições.
+
+Pendentes podem ser concluídas ou puladas; puladas podem ser restauradas; concluídas podem voltar para pendentes. Ao misturar situações, apenas a exclusão fica disponível. Excluir pede confirmação e não pode ser desfeito. Cancelar sai sem alterar tarefas. Se a lista mudou em outra aba, recarregue e selecione novamente; a operação não é aplicada parcialmente.
+
+Em Editar próximas, **Alterações a partir de** mostra o início efetivo da edição, sem um campo de data bloqueado.
+
 ## Organizar tarefas
 
 Em Hoje e Semana, selecione **Minha ordem** e segure a alça de seis pontos à esquerda de uma tarefa para arrastá-la dentro do mesmo grupo (Pendentes, Puladas ou Concluídas) e dia. Uma linha indica a posição de destino; soltar salva a sequência. Escape cancela o arraste. Pelo teclado, coloque o foco na alça e use as setas para cima ou para baixo.
