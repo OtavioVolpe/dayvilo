@@ -36,8 +36,8 @@ export default function MenuTarefa({ titulo, opcoes, bloqueado }) {
     <div ref={painelRef} id={id} popover="auto" className="menu-tarefa" role="group"
       aria-label={'Opções de ' + titulo} style={{ ...posicao, visibility: aberto && posicao ? 'visible' : 'hidden' }}
       onToggle={evento => { const visivel = evento.newState === 'open'; definirAberto(visivel); if (!visivel) definirPosicao(null); }}>
-      {opcoes.map(({ texto, Icone, executar, desabilitada, separador }) => <button key={texto}
-        type="button" className={separador ? 'menu-separador' : undefined}
+      {opcoes.map(({ texto, Icone, executar, desabilitada, separador, apenasMobile }) => <button key={texto}
+        type="button" className={[separador && 'menu-separador', apenasMobile && 'apenas-mobile'].filter(Boolean).join(' ')}
         disabled={bloqueado || desabilitada} onClick={() => { painelRef.current.hidePopover(); executar(); }}>
         <Icone size={17} aria-hidden="true" /><span>{texto}</span>
       </button>)}

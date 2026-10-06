@@ -55,7 +55,17 @@ A sequência fica salva no banco. Também é possível visualizar por horário o
 
 ## Consultar histórico
 
-Use **Últimos 7 dias**, **Últimos 30 dias** ou escolha **De/Até**. Os atalhos incluem hoje; para um dia específico, informe a mesma data nos dois campos.
+Use **7 dias**, **30 dias** ou **Personalizado**. Os atalhos incluem hoje. Em Personalizado, preencha De/Até e aplique; para um dia específico, informe a mesma data nos dois campos. Os quatro totais resumem todo o período; o filtro de situação altera apenas a lista e o CSV.
+
+### Layout no PC e no celular
+
+- Hoje e Semana usam setas e um calendário compacto. Escolher uma data atualiza a lista; Hoje/Semana atual retorna ao período atual.
+- Seleção e ordenação ficam junto à navegação. A seleção abre uma faixa com quantidade, Todas e ações por ícones.
+- No PC, a edição fica no lápis. No celular, fica no menu de três pontos. Excluir e as demais ações ficam nesse menu, conforme a situação da tarefa.
+- A semana agrupa cada dia em um bloco de cor própria, com resumo e listas por situação.
+- O arraste continua disponível em Minha ordem nas três listas. Formulários, regras de repetição e confirmações permanecem iguais.
+
+Os componentes `NavegacaoDatas.jsx` e `FiltroPeriodo.jsx` concentram os controles de período. `planejamento.css` reúne os ajustes responsivos da rotina.
 
 ## Exportar histórico
 

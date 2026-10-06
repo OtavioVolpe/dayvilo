@@ -1,4 +1,6 @@
 import BarraSelecao from './BarraSelecao.jsx';
+import NavegacaoDatas from './NavegacaoDatas.jsx';
+import FiltroPeriodo from './FiltroPeriodo.jsx';
 import AlcaOrdenacao from './AlcaOrdenacao.jsx';
 import { compararOrdemManual, compararTarefas } from './ordenacao.js';
 import MenuTarefa from './MenuTarefa.jsx';
@@ -228,9 +230,9 @@ export default function Planejamento({ semanal = false, historico = false }) {
     finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
   }
 
-  function mudarData(quantidade) {
+  function escolherData(dia) {
     definirCarregando(true); definirExcluindo(null); definirAviso('');
-    definirDataSelecionada(deslocarData(data, quantidade));
+    definirDataSelecionada(dia); definirTentativa(valor => valor + 1);
   }
 
   const concluidas = tarefas.filter(tarefa => tarefa.situacao === 'concluida');
@@ -283,17 +285,18 @@ export default function Planejamento({ semanal = false, historico = false }) {
         <div className="detalhes">{tarefa.serie_id && <span>Repetição</span>}{atrasada === true && <span>Prevista para {formatarData(tarefa.data_prevista, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario ? tarefa.horario + (tarefa.horario_final ? ' às ' + tarefa.horario_final + (tarefa.horario_final < tarefa.horario ? ' (dia seguinte)' : '') : '') : 'Sem horário'}</span>
           {tarefa.prioridade && <span className="prioridade"><Star size={13} aria-hidden="true" />Prioridade</span>}</div>
       </div>
+      <SeloSituacao situacao={tarefa.situacao} id={`situacao-tarefa-${tarefa.id}`} />
       <div className="acoes-tarefa">
-        <SeloSituacao situacao={tarefa.situacao} id={`situacao-tarefa-${tarefa.id}`} />
-        {diaSelecao === null && <>{tarefa.situacao === 'pendente' && <button type="button" title="Editar esta tarefa" disabled={diaSelecao !== null || aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Editar: ${tarefa.titulo}`} onClick={() => abrirFormulario(tarefa)}><Pencil size={17} aria-hidden="true" /></button>}
-        <button type="button" title="Excluir tarefa" disabled={diaSelecao !== null || aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Excluir: ${tarefa.titulo}`} onClick={() => definirExcluindo(tarefa.id)}><Trash2 size={17} aria-hidden="true" /></button>
+        {diaSelecao === null && <>{tarefa.situacao === 'pendente' && <button type="button" className="editar-desktop" title="Editar esta tarefa" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Editar: ${tarefa.titulo}`} onClick={() => abrirFormulario(tarefa)}><Pencil size={17} aria-hidden="true" /></button>}
         <MenuTarefa titulo={tarefa.titulo} bloqueado={diaSelecao !== null || aberto || salvando || atualizando.includes(tarefa.id)} opcoes={[
+          ...(tarefa.situacao === 'pendente' ? [{ texto: 'Editar tarefa', Icone: Pencil, apenasMobile: true, executar: () => abrirFormulario(tarefa) }] : []),
           ...(atrasada === true ? [{ texto: 'Trazer para hoje', Icone: CalendarArrowUp, executar: () => alterarTarefa(tarefa, 'hoje') }] : []),
           ...(tarefa.situacao !== 'concluida' ? [{ texto: tarefa.situacao === 'pulada' ? 'Restaurar tarefa' : 'Pular esta tarefa', Icone: tarefa.situacao === 'pulada' ? RotateCcw : SkipForward, executar: () => alterarTarefa(tarefa, tarefa.situacao === 'pulada' ? 'pendente' : 'pulada') }] : []),
           ...(tarefa.serie_id && tarefa.situacao === 'pendente' ? [
             { texto: 'Editar próximas', Icone: ListRestart, separador: tarefa.situacao !== 'concluida' || atrasada === true, desabilitada: atualizando.length > 0, executar: () => abrirFormulario(tarefa, data, true) },
             { texto: 'Encerrar repetição', Icone: CircleStop, desabilitada: atualizando.length > 0, executar: () => { definirEncerrando(tarefa.id); definirExcluindo(null); } },
           ] : []),
+          { texto: 'Excluir tarefa', Icone: Trash2, separador: true, executar: () => definirExcluindo(tarefa.id) },
         ]} /></>}
       </div>
       {encerrando === tarefa.id && <div className="confirmacao-exclusao" role="group" aria-label="Confirmar encerramento">
@@ -317,40 +320,22 @@ export default function Planejamento({ semanal = false, historico = false }) {
     <ul className="lista-tarefas">{itens.map(tarefa => linha(tarefa))}</ul>
   </details>;
 
-  return <section aria-label={historico ? "Histórico de tarefas" : semanal ? "Tarefas da semana" : "Tarefas do dia"} aria-busy={carregando}>
-    <div className="lista-cabecalho"><h2>{historico ? "Meu histórico" : semanal ? "Minha semana" : "Minha rotina"}</h2>{!historico && <button className="botao-principal" disabled={diaSelecao !== null || salvando || carregando || !data} onClick={() => abrirFormulario()} aria-expanded={aberto}><Plus size={17} aria-hidden="true" />Nova tarefa</button>}</div>
-    {semanal && dias.length > 0 && <div className="navegacao-semana">
-      <button className="botao-secundario" disabled={diaSelecao !== null || aberto || carregando || atualizando.length > 0} onClick={() => mudarData(-7)}>← Semana anterior</button>
-      <p>{formatarData(dias[0])} a {formatarData(dias[6], { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
-      <button className="botao-secundario" disabled={diaSelecao !== null || aberto || carregando || atualizando.length > 0} onClick={() => mudarData(7)}>Próxima semana →</button>
+  const bloqueado = diaSelecao !== null || aberto || salvando || carregando || atualizando.length > 0;
+  const consultarPeriodo = valor => {
+    definirCarregando(true); definirExcluindo(null); definirAviso('');
+    definirPeriodo(valor); definirTentativa(atual => atual + 1);
+  };
+  const grupoConcluidas = itens => itens.length > 0 && <details className="tarefas-concluidas grupo-concluidas" open><summary><span className="grupo-titulo"><ChevronRight className="grupo-seta" size={17} aria-hidden="true" /><CircleCheck size={18} aria-hidden="true" />Concluídas<span className="grupo-contagem">{itens.length}</span></span></summary><ul className="lista-tarefas">{itens.map(tarefa => linha(tarefa))}</ul></details>;
+  return <section className="planejamento" aria-label={historico ? "Histórico de tarefas" : semanal ? "Tarefas da semana" : "Tarefas do dia"} aria-busy={carregando}>
+    <div className="lista-cabecalho"><div><h1>{historico ? "Meu histórico" : semanal ? "Minha semana" : "Minha rotina"}</h1>{!historico && data && <p className="data-planejamento">{semanal ? 'Sua rotina, dia a dia.' : formatarData(data, { weekday: 'long', day: 'numeric', month: 'long' })}</p>}</div>{!historico && <button className="botao-principal" disabled={diaSelecao !== null || salvando || carregando || !data} onClick={() => abrirFormulario()} aria-expanded={aberto}><Plus size={17} aria-hidden="true" />Nova tarefa</button>}</div>
+    {historico && periodoConsultado && <FiltroPeriodo hoje={hoje} periodo={periodoConsultado} bloqueado={bloqueado} aoConsultar={consultarPeriodo} />}
+    {!historico && <div className="controles-planejamento">
+      <NavegacaoDatas data={data} hoje={hoje} dias={dias} semanal={semanal} bloqueado={bloqueado} aoEscolher={escolherData} aoVoltar={() => escolherData('')} />
+      {consultaValida && tarefas.length > 0 && <div className="controles-organizacao">
+        {!semanal && diaSelecao === null && barraSelecao(data)}
+        <label><span className="rotulo-ordenacao">Ordenar </span><select aria-label="Ordenar tarefas" value={ordem} disabled={bloqueado} onChange={evento => definirOrdem(evento.target.value)}><option value="manual">Minha ordem</option><option value="criacao">Criação</option><option value="horario">Horário</option></select></label>
+      </div>}
     </div>}
-    {!historico && !semanal && data && <div className="navegacao-semana">
-      <button className="botao-secundario" disabled={diaSelecao !== null || aberto || salvando || carregando || atualizando.length > 0 || data === '1000-01-01'} onClick={() => mudarData(-1)}>← Dia anterior</button>
-      <p>{formatarData(data, { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
-      <button className="botao-secundario" disabled={diaSelecao !== null || aberto || salvando || carregando || atualizando.length > 0 || data === '9999-12-31'} onClick={() => mudarData(1)}>Próximo dia →</button>
-    </div>}
-    {historico && periodoConsultado && <>
-      <p className="explicacao-historico">Consulte pela data planejada, até 366 dias por vez.</p>
-      <form className="seletor-dia" key={periodoConsultado.inicio + periodoConsultado.fim + tentativa} onSubmit={evento => {
-        evento.preventDefault(); const campos = new FormData(evento.currentTarget);
-        definirCarregando(true); definirExcluindo(null); definirAviso('');
-        definirPeriodo({ inicio: campos.get('inicio'), fim: campos.get('fim') });
-      }}>
-        <label>De<input type="date" name="inicio" defaultValue={periodoConsultado.inicio} min="1000-01-01" max={hoje} required disabled={diaSelecao !== null || aberto || carregando || atualizando.length > 0} /></label>
-        <label>Até<input type="date" name="fim" defaultValue={periodoConsultado.fim} min="1000-01-01" max={hoje} required disabled={diaSelecao !== null || aberto || carregando || atualizando.length > 0} /></label>
-        <button className="botao-secundario" disabled={diaSelecao !== null || aberto || carregando || atualizando.length > 0}>Consultar período</button>
-        {[7, 30].map(dias => <button key={dias} type="button" className="botao-secundario" disabled={diaSelecao !== null || !hoje || aberto || carregando || atualizando.length > 0} onClick={() => {
-          definirCarregando(true); definirExcluindo(null); definirAviso('');
-          definirPeriodo(dias === 30 ? null : { inicio: deslocarData(hoje, -6), fim: hoje });
-          definirTentativa(valor => valor + 1);
-        }}>Últimos {dias} dias</button>)}
-      </form>
-    </>}
-    {!historico && <form className="seletor-dia" key={data} onSubmit={evento => {
-      evento.preventDefault();
-      const dia = new FormData(evento.currentTarget).get('dia');
-      definirCarregando(true); definirExcluindo(null); definirAviso(''); definirDataSelecionada(dia); definirTentativa(valor => valor + 1);
-    }}><label>{semanal ? "Semana que inclui" : "Ver tarefas de"}<input aria-label="Data da lista" name="dia" type="date" required min="1000-01-01" max="9999-12-31" defaultValue={data} disabled={diaSelecao !== null || aberto || salvando || atualizando.length > 0} /></label><button type="submit" className="botao-secundario" disabled={diaSelecao !== null || !data || aberto || salvando || atualizando.length > 0}>{semanal ? "Ver semana" : "Ver dia"}</button><button type="button" className="botao-secundario" disabled={diaSelecao !== null || aberto || salvando || atualizando.length > 0} onClick={() => { definirCarregando(true); definirDataSelecionada(''); definirTentativa(valor => valor + 1); definirAviso(''); definirExcluindo(null); }}>{semanal ? "Semana atual" : "Voltar para hoje"}</button></form>}
     {aviso && <p className="aviso-tarefa" role="status">{aviso}</p>}
     {erro && <div className="mensagem-erro" role="alert">{erro} <button type="button" onClick={() => definirTentativa(valor => valor + 1)}>Recarregar lista</button></div>}
     <form key={(editando?.id ?? `nova-${novaData || data}`) + String(modoSerie)} ref={formularioRef} onSubmit={adicionar} className="formulario-tarefa" hidden={!aberto}>
@@ -383,11 +368,13 @@ export default function Planejamento({ semanal = false, historico = false }) {
     </form>
     {carregando ? <p role="status" className="estado-lista">Carregando sua rotina…</p> : data && consultaValida && <>
       {!historico && tarefas.length > 0 && <div className="progresso"><div><span>{concluidas.length} de {totalAtivas} concluídas · {puladas.length} puladas</span><span>{totalAtivas ? Math.round(concluidas.length / totalAtivas * 100) : 0}%</span></div><progress aria-label={semanal ? "Progresso da semana" : "Progresso do dia"} value={concluidas.length} max={totalAtivas || 1} /></div>}
+      {!historico && diaSelecao === null && ordem === 'manual' && tarefas.length > 0 && <p id="ajuda-ordenacao" className="ajuda-ordenacao">Arraste pelos seis pontos ou use ↑ e ↓, dentro do mesmo grupo e dia.</p>}
+      {!historico && !semanal && diaSelecao === data && barraSelecao(data)}
       {!historico && !semanal && data === hoje && atrasadas.length > 0 && <section className="tarefas-atrasadas" aria-label="Pendências anteriores">
         <h3>Pendências anteriores ({atrasadas.length})</h3><p>Conclua, reagende ou pule.</p>
         <ul className="lista-tarefas">{atrasadas.map(tarefa => linha(tarefa, true))}</ul>
       </section>}
-      {!historico && tarefas.length > 0 && <div className="ordenacao"><div className="controles-lista">{!semanal && barraSelecao(data)}<label>Organizar por <select value={ordem} disabled={diaSelecao !== null || salvando || aberto || atualizando.length > 0} onChange={evento => definirOrdem(evento.target.value)}><option value="manual">Minha ordem</option><option value="criacao">Ordem de criação</option><option value="horario">Horário</option></select></label></div>{diaSelecao === null && ordem === 'manual' && <p id="ajuda-ordenacao" className="explicacao-historico">Arraste pelos seis pontos ou use ↑ e ↓. Vale dentro do mesmo grupo e dia.</p>}</div>}
+
       {historico ? <ListaHistorico periodo={periodoConsultado} tarefas={tarefas} situacao={situacao} definirSituacao={definirSituacao} bloqueado={diaSelecao !== null || aberto || salvando || atualizando.length > 0} renderizarTarefa={tarefa => linha(tarefa)} /> : semanal ? <div className="grade-semana">{dias.map(dia => {
         const itens = tarefas.filter(tarefa => tarefa.data_prevista === dia).sort((a, b) => Number(a.situacao === 'concluida') - Number(b.situacao === 'concluida') || compararTarefas(ordem)(a, b));
         return <section className={dia === hoje ? 'dia-semana dia-atual' : 'dia-semana'} key={dia} aria-label={formatarData(dia, { weekday: 'long', day: 'numeric', month: 'long' })}>
@@ -395,15 +382,16 @@ export default function Planejamento({ semanal = false, historico = false }) {
           <div className="controles-dia">{diaSelecao !== dia && barraSelecao(dia)}<button className="botao-secundario" disabled={diaSelecao !== null || salvando || atualizando.length > 0} aria-label={'Adicionar tarefa em ' + formatarData(dia)} onClick={() => abrirFormulario(null, dia)}><Plus size={16} aria-hidden="true" />Tarefa</button></div></header>
           {diaSelecao === dia && barraSelecao(dia)}
           <p className="resumo-dia">{itens.filter(tarefa => tarefa.situacao === 'concluida').length} de {itens.filter(tarefa => tarefa.situacao !== "pulada").length} concluídas · {itens.filter(tarefa => tarefa.situacao === "pulada").length} puladas</p>
-          {itens.some(tarefa => tarefa.situacao !== 'pulada') ? <ul className="lista-tarefas">{itens.filter(tarefa => tarefa.situacao !== 'pulada').map(tarefa => linha(tarefa))}</ul> : <p className="dia-vazio">Nenhuma tarefa ativa neste dia.</p>}
+          {itens.some(tarefa => tarefa.situacao === 'pendente') ? <ul className="lista-tarefas">{itens.filter(tarefa => tarefa.situacao === 'pendente').map(tarefa => linha(tarefa))}</ul> : itens.length === 0 && <p className="dia-vazio">Sem tarefas neste dia.</p>}
           {grupoPuladas(itens.filter(tarefa => tarefa.situacao === 'pulada'), dia)}
+          {grupoConcluidas(itens.filter(tarefa => tarefa.situacao === 'concluida'))}
         </section>;
       })}</div> : <>
       {pendentes.length > 0 && <><ul className="lista-tarefas">{pendentes.map(tarefa => linha(tarefa))}</ul></>}
       {tarefas.length === 0 && <div className="initial-state"><ListTodo size={26} aria-hidden="true" /><h2>Um dia com espaço livre</h2><p>Nenhuma tarefa nesta data.</p></div>}
       {tarefas.length > 0 && pendentes.length === 0 && <p className="estado-lista">Nenhuma tarefa pendente nesta data.</p>}
       {grupoPuladas(puladas, data)}
-      {concluidas.length > 0 && <details className="tarefas-concluidas grupo-concluidas" open><summary><span className="grupo-titulo"><ChevronRight className="grupo-seta" size={17} aria-hidden="true" /><CircleCheck size={18} aria-hidden="true" />Concluídas<span className="grupo-contagem">{concluidas.length}</span></span></summary><ul className="lista-tarefas">{concluidas.map(tarefa => linha(tarefa))}</ul></details>}
+      {grupoConcluidas(concluidas)}
     </>}
     </>}
   </section>;

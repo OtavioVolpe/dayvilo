@@ -1,0 +1,110 @@
+/* Interface compartilhada entre PC e celular. As regras de tarefas continuam no serviço. */
+.app-layout>main{max-width:1200px;padding:28px 36px 40px}
+.routine-tabs{justify-content:flex-start;width:100%;margin:0 0 28px;padding:0;gap:24px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent}
+.routine-tabs button{border-radius:0;padding:10px 2px 15px;border-bottom:2px solid transparent}
+.routine-tabs button[aria-pressed=true]{background:transparent;border-bottom-color:var(--accent)}
+.planejamento .lista-cabecalho{align-items:center;margin-bottom:20px}
+.planejamento h1{font-size:1.7rem;margin:0;font-weight:600}
+.data-planejamento{font-size:.8rem;color:var(--muted);margin-top:6px;text-transform:capitalize}
+.controles-planejamento{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.navegacao-datas{display:flex;align-items:center;gap:8px;position:relative;flex-wrap:wrap;min-width:0}
+.faixa-data{display:flex;align-items:center;max-width:100%;background:var(--surface);border:1px solid var(--line);border-radius:11px}
+.faixa-data button{min-height:44px;min-width:44px;border:0;border-radius:8px;padding:8px;background:transparent;display:flex;align-items:center;justify-content:center;gap:7px}
+.faixa-data .escolher-data{font-size:.85rem;flex:1;min-width:0}
+.escolher-data svg{flex-shrink:0}.escolher-data span{overflow-wrap:anywhere}
+.faixa-data button:hover:not(:disabled),.voltar-hoje:hover:not(:disabled){background:var(--soft)}
+.voltar-hoje{min-height:44px;padding:8px;border:0;background:transparent;border-radius:8px;font-size:.8rem;color:var(--accent)}
+.voltar-hoje:disabled{color:var(--muted)}
+.painel-data{position:absolute;top:calc(100% + 6px);left:0;z-index:3;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 25px #0002;width:260px;max-width:100%}
+.painel-data[hidden]{display:none}.painel-data label{display:flex;flex-direction:column;gap:7px;font-size:.8rem;color:var(--muted)}
+.controles-organizacao{display:flex;align-items:center;justify-content:flex-end;gap:10px;color:var(--muted);font-size:.8rem;flex-wrap:wrap}
+.controles-organizacao select{min-height:44px;font-size:.8rem}
+.ajuda-ordenacao{font-size:.75rem;color:var(--muted);line-height:1.5;margin:0 0 16px}
+.atalhos-periodo{display:inline-flex;max-width:100%;padding:4px;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:11px}
+.atalhos-periodo button{border:0;background:transparent;border-radius:8px;min-height:44px;padding:8px 16px;font-size:.85rem}
+.atalhos-periodo button[aria-pressed=true]{background:var(--soft);color:var(--accent);font-weight:600}
+.periodo-consultado{color:var(--muted);font-size:.8rem;margin:12px 0 18px}
+.periodo-personalizado{margin:12px 0;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.erro-periodo{flex-basis:100%;color:var(--ink);font-size:.875rem}
+.planejamento .resumo-historico{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:18px 0;gap:0;margin:18px 0}
+.planejamento .resumo-historico p{background:transparent;border:0;border-right:1px solid var(--line);border-radius:0;padding:0 18px}
+.planejamento .resumo-historico p:last-child{border-right:0}
+.planejamento .resumo-historico strong{color:var(--ink);margin-bottom:3px;font-weight:600}
+.planejamento .resumo-historico p:nth-child(2) strong{color:var(--accent)}
+.planejamento .resumo-historico p:nth-child(4) strong{color:var(--pulada)}
+.planejamento .filtro-historico{border-top:1px solid var(--line);padding-top:14px;font-size:.8rem}
+.planejamento .filtro-historico p{order:-1}.planejamento .filtro-historico label{margin-left:auto}
+.planejamento .dia-semana{background:light-dark(#eaf0e7,#232f27);align-self:start}
+.planejamento .dia-semana .tarefa{background:var(--background)}
+.planejamento .dia-semana .tarefa-selecionada{background:var(--soft)}
+.planejamento .tarefas-atrasadas{border:0;border-left:3px solid var(--pulada-borda);border-radius:0;padding:0 0 0 12px;background:transparent}
+.planejamento .tarefas-atrasadas h3{font-size:.85rem;font-weight:500;color:var(--muted)}
+.planejamento .tarefas-atrasadas>p{font-size:.75rem;margin-bottom:12px}
+.planejamento .progresso{border-top:1px solid var(--line);padding-top:14px;margin-bottom:14px}
+.planejamento progress{height:5px}
+/* Checkbox, conteúdo, status e ações: um alinhamento estável, mesmo com arraste. */
+.planejamento .tarefa{grid-template-columns:28px minmax(0,1fr) auto auto;gap:8px 12px;align-items:center;padding:16px}
+.planejamento .tarefa>input,.planejamento .tarefa>.marcador-selecao{grid-column:1;grid-row:1;margin:0;justify-self:center}
+.planejamento .tarefa>.tarefa-conteudo{grid-column:2;grid-row:1}
+.planejamento .tarefa>.selo-situacao{grid-column:3;grid-row:1;justify-self:start}
+.planejamento .tarefa>.acoes-tarefa{grid-column:4;grid-row:1;flex-basis:auto;flex-wrap:nowrap;justify-content:flex-end}
+.planejamento .tarefa-com-alca{grid-template-columns:28px 28px minmax(0,1fr) auto auto}
+.planejamento .tarefa-com-alca>.alca-ordenacao{grid-column:1;grid-row:1;width:28px;min-width:28px}
+.planejamento .tarefa-com-alca>input{grid-column:2}
+.planejamento .tarefa-com-alca>.tarefa-conteudo{grid-column:3}
+.planejamento .tarefa-com-alca>.selo-situacao{grid-column:4}
+.planejamento .tarefa-com-alca>.acoes-tarefa{grid-column:5}
+.planejamento .tarefa>.confirmacao-exclusao{grid-column:1/-1;grid-row:3}
+.planejamento .detalhes{margin-top:5px;gap:6px 12px}
+.planejamento .selo-situacao{font-size:.7rem;padding:4px 7px;font-weight:500}
+.planejamento .barra-selecao{min-height:60px;padding:9px 12px;margin-bottom:16px;border-radius:12px}
+.planejamento .acao-selecao{width:44px;height:44px}.planejamento .acao-selecao svg{width:20px;height:20px}
+.menu-tarefa .apenas-mobile{display:none}
+/* Blocos semanais usam a composição estreita sem esconder o lápis do PC. */
+.planejamento .dia-semana .tarefa{grid-template-columns:28px minmax(0,1fr) auto;gap:6px 8px;padding:12px}
+.planejamento .dia-semana .tarefa>.tarefa-conteudo{grid-column:2;grid-row:1}
+.planejamento .dia-semana .tarefa>input,.planejamento .dia-semana .tarefa>.marcador-selecao{grid-column:1;grid-row:1/3}
+.planejamento .dia-semana .tarefa>.selo-situacao{grid-column:2;grid-row:2}
+.planejamento .dia-semana .tarefa>.acoes-tarefa{grid-column:3;grid-row:1/3}
+.planejamento .dia-semana .tarefa-com-alca{grid-template-columns:24px 24px minmax(0,1fr) auto}
+.planejamento .dia-semana .tarefa-com-alca>.alca-ordenacao{grid-column:1;grid-row:1/3;width:24px;min-width:24px}
+.planejamento .dia-semana .tarefa-com-alca>input{grid-column:2;grid-row:1/3}
+.planejamento .dia-semana .tarefa-com-alca>.tarefa-conteudo{grid-column:3;grid-row:1}
+.planejamento .dia-semana .tarefa-com-alca>.selo-situacao{grid-column:3;grid-row:2}
+.planejamento .dia-semana .tarefa-com-alca>.acoes-tarefa{grid-column:4;grid-row:1/3;justify-self:end}
+.planejamento .dia-semana .tarefa>.confirmacao-exclusao{grid-row:4}
+@media(max-width:1050px){.grade-semana{grid-template-columns:1fr}.app-layout>main{padding:24px}}
+@media(max-width:650px){
+  .app-layout>main{padding:20px 16px 32px}.routine-tabs{gap:8px;margin-bottom:24px}.routine-tabs button{flex:1;padding:10px 4px 14px}
+  .planejamento h1{font-size:1.25rem}.planejamento .data-planejamento{display:none}.planejamento .lista-cabecalho{gap:8px;margin-bottom:18px}
+  .controles-planejamento{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 6px}
+  .navegacao-datas{display:contents}.faixa-data{grid-column:1/-1;width:100%;margin-bottom:4px}
+  .voltar-hoje{grid-column:1;grid-row:2;justify-self:start;padding:8px 4px}
+  .controles-organizacao{grid-column:2;grid-row:2;gap:2px;flex-wrap:nowrap}
+  .controles-organizacao .abrir-selecao{font-size:.75rem;padding:6px 4px;gap:4px}
+  .rotulo-ordenacao{display:none}.controles-organizacao select{font-size:.75rem;border:0;background:transparent;padding:6px 2px;max-width:110px}
+  .painel-data{position:static;grid-column:1/-1;width:100%;max-width:none;box-shadow:none;margin:8px 0}
+  .atalhos-periodo{display:flex}.atalhos-periodo button{flex:1;padding:8px 6px;font-size:.8rem}
+  .periodo-personalizado{gap:10px}.periodo-personalizado label{flex:1 1 110px;min-width:0}.periodo-personalizado input{width:100%}
+  .planejamento input:not([type=checkbox]),.planejamento textarea{font-size:16px;min-width:0}
+  .planejamento .resumo-historico{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 0}.planejamento .resumo-historico p:nth-child(2){border-right:0}
+  .planejamento .filtro-historico{gap:10px}.planejamento .filtro-historico p{flex-basis:100%}.planejamento .filtro-historico label{margin-left:0}.planejamento .filtro-historico>.botao-secundario{margin-left:auto;font-size:.8rem;padding:8px}
+  .planejamento .editar-desktop{display:none}.menu-tarefa .apenas-mobile{display:flex}
+  .planejamento .tarefa,.planejamento .dia-semana .tarefa{grid-template-columns:28px minmax(0,1fr) 44px;gap:6px 8px;padding:12px}
+  .planejamento .tarefa>.tarefa-conteudo,.planejamento .dia-semana .tarefa>.tarefa-conteudo{grid-column:2;grid-row:1}
+  .planejamento .tarefa>input,.planejamento .tarefa>.marcador-selecao,.planejamento .dia-semana .tarefa>input,.planejamento .dia-semana .tarefa>.marcador-selecao{grid-column:1;grid-row:1/3}
+  .planejamento .tarefa>.selo-situacao,.planejamento .dia-semana .tarefa>.selo-situacao{grid-column:2;grid-row:2}
+  .planejamento .tarefa>.acoes-tarefa,.planejamento .dia-semana .tarefa>.acoes-tarefa{grid-column:3;grid-row:1/3;justify-self:end}
+  .planejamento .tarefa-com-alca,.planejamento .dia-semana .tarefa-com-alca{grid-template-columns:20px 24px minmax(0,1fr) 44px;gap:6px}
+  .planejamento .tarefa-com-alca>.alca-ordenacao,.planejamento .dia-semana .tarefa-com-alca>.alca-ordenacao{grid-column:1;grid-row:1/3;width:20px;min-width:20px}
+  .planejamento .tarefa-com-alca>input,.planejamento .dia-semana .tarefa-com-alca>input{grid-column:2}
+  .planejamento .tarefa-com-alca>.tarefa-conteudo,.planejamento .dia-semana .tarefa-com-alca>.tarefa-conteudo{grid-column:3}
+  .planejamento .tarefa-com-alca>.selo-situacao,.planejamento .dia-semana .tarefa-com-alca>.selo-situacao{grid-column:3}
+  .planejamento .tarefa-com-alca>.acoes-tarefa,.planejamento .dia-semana .tarefa-com-alca>.acoes-tarefa{grid-column:4;grid-row:1/3}
+  .planejamento .tarefa>.confirmacao-exclusao{grid-column:1/-1;grid-row:4}
+  .planejamento .tarefa-titulo{font-size:.9rem}.planejamento .detalhes{font-size:.75rem}
+  .planejamento .barra-selecao .acoes-selecao{flex-basis:100%;justify-content:flex-end}
+  .planejamento .barra-selecao .selecionar-todas{margin-left:auto}
+  .planejamento .dia-semana{padding:12px}.planejamento .dia-semana h3{font-size:.9rem}
+  .campos-opcionais>label{min-width:0;flex:1 1 125px}.campos-opcionais input{width:100%}.campos-opcionais .campo-prioridade input{width:20px}
+}

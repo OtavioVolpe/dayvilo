@@ -30,7 +30,6 @@ export default function App() {
   const solicitarRecuperacao = () => { window.location.hash = 'recuperar-senha'; };
   const { sessao, cadastroAberto, erro, aviso, saindo, entrar, sair, atualizar } = useSessao();
   const [view, setView] = useState('Hoje');
-  const date = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
 
   return (
     <div className="app-shell">
@@ -53,11 +52,6 @@ export default function App() {
           <nav className="routine-tabs" aria-label="Visualizações da rotina">
             {['Hoje', 'Semana', 'Histórico'].map(item => <button key={item} aria-pressed={view === item} onClick={() => setView(item)}>{item}</button>)}
           </nav>
-          <header className="page-heading">
-            <p className="date-label">{date}</p>
-            <h1>{view === 'Hoje' ? 'Seu dia, no seu ritmo.' : view === 'Semana' ? 'Uma semana possível.' : 'Um dia de cada vez.'}</h1>
-            <p className="subtitle">{view === 'Hoje' ? 'Espaço para o que importa hoje.' : view === 'Semana' ? 'Uma visão dos seus próximos dias.' : 'Reveja o que fez parte da sua rotina.'}</p>
-          </header>
           {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
           <Planejamento key={`${sessao.id}-${view}`} semanal={view === 'Semana'} historico={view === 'Histórico'} />
         </main>
