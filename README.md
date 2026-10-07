@@ -235,6 +235,8 @@ Prepare o banco com backup/restauração e migrações antes de iniciar o servid
 
 ## Backup local no Windows
 
+Para os dados atuais do site, use o **backup online** abaixo. O banco local e o Aiven são independentes.
+
 Com MySQL 8 e PowerShell, execute na raiz do projeto:
 
 ```powershell
@@ -244,3 +246,22 @@ Com MySQL 8 e PowerShell, execute na raiz do projeto:
 O script exporta apenas o banco local chamado dayvilo, configurado em server/.env, para a pasta irmã dayvilo-backups. Para outro caminho do cliente MySQL, use o parâmetro -Mysqldump. A exportação usa snapshot consistente para tabelas InnoDB; não execute alterações de estrutura durante o backup.
 
 O arquivo final .sql e seu SHA-256 só são produzidos após sucesso. Arquivos .partial indicam exportação incompleta. O backup contém dados privados e deve ficar fora do GitHub. Guarde uma cópia separada e teste a restauração em um banco vazio antes de depender desse backup. O script não exporta contas administrativas do servidor MySQL; exporta as tabelas da aplicação.
+
+## Backup online e teste de recuperação no Windows
+
+Com Node 24 e os executáveis do MySQL 8 instalados:
+
+```powershell
+npm run db:backup:online
+npm run db:backup:verificar -- "C:/caminho/para/dayvilo-online-....sql"
+```
+
+O primeiro comando lê somente `server/.env.aiven`, conecta ao Aiven com TLS e verificação do servidor e exporta as tabelas InnoDB. O Aiven deve estar Running. Não execute mudanças de estrutura/migrações durante a cópia. O script não modifica a origem. Usa snapshot transacional, conforme a [documentação do mysqldump](https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html).
+
+Os arquivos ficam em `../dayvilo-backups`, fora do Git: SQL, SHA-256 e, após verificação, relatório `.verificado.json`. O nome usa horário UTC. São privados e contêm dados de conta, tarefas e autenticação. A pasta herda as permissões do usuário Windows; não é um backup criptografado.
+
+A verificação aceita somente backups confiáveis gerados pelo projeto. Confere o hash, inicia um MySQL descartável sem TCP (memória compartilhada local), restaura em um banco novo e compara tabelas e dados reexportados. Não acessa Aiven nem o banco local do projeto. Ao terminar, encerra o processo temporário e remove seus dados. Não testa uma recuperação completa da aplicação nem garante compatibilidade com todas as versões futuras do MySQL.
+
+Se os executáveis estiverem em outro local, configure `MYSQLDUMP_PATH` para exportar e `MYSQL_BIN` (pasta dos executáveis) para verificar. Não publique `.env.aiven`. Interrupções abruptas podem deixar pastas `.conexao-*` ou `.restauracao-*` privadas; não as compartilhe.
+
+Rotina inicial sugerida: backup após mudanças importantes na rotina e antes de migrações; enquanto houver uso diário, fazer uma cópia por dia. Ainda é **manual**, sem agendamento. Guarde também uma cópia em armazenamento privado separado deste computador. Para recuperar em produção, restaure primeiro em banco vazio, valide a aplicação e só então planeje a troca; nunca rode este SQL diretamente sobre o banco em uso.

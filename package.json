@@ -9,6 +9,8 @@
     "dev": "concurrently -k -n api,web \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w client",
     "start": "npm run start -w server",
+    "db:backup:online": "node server/scripts/backup-online.js",
+    "db:backup:verificar": "node server/scripts/verificar-backup.js",
     "db:check": "node --env-file-if-exists=server/.env server/scripts/check-db.js",
     "db:migrate": "node --env-file-if-exists=server/.env server/scripts/migrate.js",
     "emails:listar": "node server/scripts/listar-emails.js",
