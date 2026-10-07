@@ -94,7 +94,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
       try {
         const configuracao = await solicitar('/tarefas/' + tarefa.id + '/serie');
         definirConfiguracaoSerie(configuracao); definirFimSerie(configuracao.ate);
-      } catch (falha) { definirErro(falha.message); return; }
+      } catch (falha) { definirAviso(''); definirErro(falha.message); return; }
       finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
     }
     definirModoSerie(serie); definirEncerrando(null);
@@ -115,7 +115,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
       definirAtrasadas(anteriores => anteriores.filter(item => item.id !== tarefa.id));
       if (editando?.id === tarefa.id) { definirEditando(null); definirAberto(false); }
       definirExcluindo(null);
-    } catch (falha) { definirErro(falha.message); }
+    } catch (falha) { definirAviso(''); definirErro(falha.message); }
     finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
   }
 
@@ -165,7 +165,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
       }
       definirCarregando(true); definirTentativa(valor => valor + 1);
       formulario.reset(); definirAberto(false); definirEditando(null); definirRepeticao('nenhuma');
-    } catch (falha) { definirErro(falha.message); }
+    } catch (falha) { definirAviso(''); definirErro(falha.message); }
     finally { definirSalvando(false); }
   }
 
@@ -177,7 +177,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
       });
       definirAviso(resultado.quantidade ? resultado.quantidade + ' tarefa(s) removidas. Histórico preservado.' : 'Não há ocorrências elegíveis para encerrar a partir dessa data. Demais tarefas mantidas.');
       definirEncerrando(null); definirCarregando(true); definirTentativa(valor => valor + 1);
-    } catch (falha) { definirErro(falha.message); }
+    } catch (falha) { definirAviso(''); definirErro(falha.message); }
     finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
   }
 
@@ -189,7 +189,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
         body: JSON.stringify({ concluida: tarefa.situacao !== 'concluida' }),
       });
       atualizarTarefa(dados.tarefa);
-    } catch (falha) { definirErro(falha.message); }
+    } catch (falha) { definirAviso(''); definirErro(falha.message); }
     finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
   }
 
@@ -226,7 +226,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
           : foraDoDia ? 'Tarefa de ' + formatarData(dados.tarefa.data_prevista) + ' pulada. Ela continua no Histórico e pode ser restaurada.'
           : 'Tarefa movida para Puladas. Você pode restaurá-la quando quiser.'
         : 'Tarefa voltou para as pendentes.');
-    } catch (falha) { definirErro(falha.message); }
+    } catch (falha) { definirAviso(''); definirErro(falha.message); }
     finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
   }
 
@@ -257,7 +257,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
       definirTarefas(atuais => atuais.map(item => ordens.has(item.id) ? { ...item, ordem: ordens.get(item.id) } : item));
       definirAviso('Ordem salva. ' + tarefa.titulo + ' está na posição ' + (indice + deslocamento + 1) + ' deste grupo no dia.');
       definirTarefaMovida({ id: tarefa.id, ordenacao: true });
-    } catch (falha) { definirErro(falha.message); }
+    } catch (falha) { definirAviso(''); definirErro(falha.message); }
     finally { definirSalvando(false); }
   }
   async function executarLote(acao) {
@@ -269,7 +269,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
       if (acao === 'pular') definirPuladasAbertas(estado => ({ ...estado, [diaSelecao]: true }));
       definirAviso(resultado.quantidade + ' tarefa(s) ' + ({ concluir: 'concluídas.', pular: 'puladas.', restaurar: 'restauradas.', desfazer: 'voltaram para pendentes.', excluir: 'excluídas.' }[acao]));
       cancelarSelecao(); definirCarregando(true); definirTentativa(valor => valor + 1);
-    } catch (falha) { definirErro(falha.message); definirConfirmarLote(false); }
+    } catch (falha) { definirAviso(''); definirErro(falha.message); definirConfirmarLote(false); }
     finally { definirSalvando(false); }
   }
   const barraSelecao = dia => <BarraSelecao compacto={semanal} dia={dia} tarefas={tarefas.filter(t => t.data_prevista === dia)} ativo={diaSelecao === dia} selecionados={selecionados}
