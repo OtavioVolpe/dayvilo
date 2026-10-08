@@ -19,6 +19,9 @@
 .painel-data[hidden]{display:none}.painel-data label{display:flex;flex-direction:column;gap:7px;font-size:.8rem;color:var(--muted)}
 .controles-organizacao{display:flex;align-items:center;justify-content:flex-end;gap:10px;color:var(--muted);font-size:.8rem;flex-wrap:wrap}
 .controles-organizacao select{min-height:44px;font-size:.8rem}
+.controles-organizacao .abrir-selecao{min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+.controles-organizacao .abrir-selecao:hover:not(:disabled){background:var(--soft)}
+.controles-organizacao .abrir-selecao+label{border-left:1px solid var(--line);padding-left:16px;margin-left:6px}
 .ajuda-ordenacao{font-size:.75rem;color:var(--muted);line-height:1.5;margin:0 0 16px}
 .atalhos-periodo{display:inline-flex;max-width:100%;padding:4px;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:11px}
 .atalhos-periodo button{border:0;background:transparent;border-radius:8px;min-height:44px;padding:8px 16px;font-size:.85rem}
@@ -80,8 +83,9 @@
   .controles-planejamento{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 6px}
   .navegacao-datas{display:contents}.faixa-data{grid-column:1/-1;width:100%;margin-bottom:4px}
   .voltar-hoje{grid-column:1;grid-row:2;justify-self:start;padding:8px 4px}
-  .controles-organizacao{grid-column:2;grid-row:2;gap:2px;flex-wrap:nowrap}
-  .controles-organizacao .abrir-selecao{font-size:.75rem;padding:6px 4px;gap:4px}
+  .controles-organizacao{grid-column:2;grid-row:2;gap:8px;flex-wrap:nowrap}
+  .controles-organizacao .abrir-selecao{font-size:.75rem;padding:6px;gap:4px}
+  .controles-organizacao .abrir-selecao+label{padding-left:8px;margin-left:0}
   .rotulo-ordenacao{display:none}.controles-organizacao select{font-size:.75rem;border:0;background:transparent;padding:6px 2px;max-width:110px}
   .painel-data{position:static;grid-column:1/-1;width:100%;max-width:none;box-shadow:none;margin:8px 0}
   .atalhos-periodo{display:flex}.atalhos-periodo button{flex:1;padding:8px 6px;font-size:.8rem}
