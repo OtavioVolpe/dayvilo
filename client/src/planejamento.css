@@ -37,7 +37,7 @@
 .planejamento .resumo-historico p:nth-child(4) strong{color:var(--pulada)}
 .planejamento .filtro-historico{border-top:1px solid var(--line);padding-top:14px;font-size:.8rem}
 .planejamento .filtro-historico p{order:-1}.planejamento .filtro-historico label{margin-left:auto}
-.planejamento .dia-semana{background:light-dark(#eaf0e7,#232f27);align-self:start}
+.planejamento .dia-semana{background:var(--dia-fundo);align-self:start}
 .planejamento .dia-semana .tarefa{background:var(--background)}
 .planejamento .dia-semana .tarefa-selecionada{background:var(--soft)}
 .planejamento .tarefas-atrasadas{border:0;border-left:3px solid var(--pulada-borda);border-radius:0;padding:0 0 0 12px;background:transparent}

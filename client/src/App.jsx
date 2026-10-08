@@ -1,4 +1,4 @@
-import MinhaConta, { aplicarTema, lerTema } from './MinhaConta.jsx';
+import MinhaConta from './MinhaConta.jsx';
 import ConfirmarEmail, { AvisoConfirmacao } from './ConfirmarEmail.jsx';
 import Acesso from './Acesso.jsx';
 import { useSessao } from './useSessao.js';
@@ -31,7 +31,7 @@ export default function App() {
   const solicitarRecuperacao = () => { window.location.hash = 'recuperar-senha'; };
   const { sessao, cadastroAberto, erro, aviso, saindo, entrar, sair, atualizar, atualizarNome, encerrar } = useSessao();
   const [view, setView] = useState('Hoje');
-  useEffect(() => { aplicarTema(lerTema()); }, []);
+
 
   return (
     <div className="app-shell">

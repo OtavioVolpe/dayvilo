@@ -4,7 +4,7 @@ import { solicitar } from './api.js';
 import './minha-conta.css';
 
 export function aplicarTema(tema) {
-  document.documentElement.style.colorScheme = tema === 'claro' ? 'light' : tema === 'escuro' ? 'dark' : 'light dark';
+  document.documentElement.dataset.tema = ['claro', 'escuro'].includes(tema) ? tema : 'automatico';
 }
 export function lerTema() {
   try { const valor = localStorage.getItem('dayvilo-tema'); return ['claro', 'escuro'].includes(valor) ? valor : 'automatico'; } catch { return 'automatico'; }
