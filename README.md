@@ -265,3 +265,9 @@ A verificação aceita somente backups confiáveis gerados pelo projeto. Confere
 Se os executáveis estiverem em outro local, configure `MYSQLDUMP_PATH` para exportar e `MYSQL_BIN` (pasta dos executáveis) para verificar. Não publique `.env.aiven`. Interrupções abruptas podem deixar pastas `.conexao-*` ou `.restauracao-*` privadas; não as compartilhe.
 
 Rotina inicial sugerida: backup após mudanças importantes na rotina e antes de migrações; enquanto houver uso diário, fazer uma cópia por dia. Ainda é **manual**, sem agendamento. Guarde também uma cópia em armazenamento privado separado deste computador. Para recuperar em produção, restaure primeiro em banco vazio, valide a aplicação e só então planeje a troca; nunca rode este SQL diretamente sobre o banco em uso.
+
+## Minha conta
+
+Clique no nome no cabeçalho para editar o nome, consultar o e-mail e sua confirmação, escolher o tema, trocar a senha ou encerrar todas as sessões. O e-mail é somente leitura. A preferência de tema fica neste navegador; Automático acompanha o dispositivo.
+
+A troca de senha exige a senha atual e uma nova senha de 15 a 128 caracteres. Encerra todas as sessões e invalida links pendentes de recuperação. Sair de todos os dispositivos pede confirmação e mantém os dados e tarefas. As rotas exigem sessão e proteção CSRF. Não há migração de banco nesta funcionalidade.

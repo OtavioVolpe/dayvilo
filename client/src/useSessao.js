@@ -58,5 +58,7 @@ export function useSessao() {
     } catch (falha) { definirErro(falha.message); }
     finally { definirSaindo(false); }
   }
-  return { sessao, cadastroAberto, erro, aviso, saindo, entrar, sair, atualizar };
+  function atualizarNome(nome) { definirSessao(atual => ({ ...atual, nome })); canal.current?.postMessage('atualizar'); }
+  function encerrar(mensagem) { versao.current++; definirCsrf(''); definirSessao(null); definirAviso(mensagem); definirErro(''); canal.current?.postMessage('atualizar'); }
+  return { sessao, cadastroAberto, erro, aviso, saindo, entrar, sair, atualizar, atualizarNome, encerrar };
 }

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { criarControladorMinhaConta } from '../controladores/minha-conta.js';
 import { criarServicoAutenticacao } from '../servicos/autenticacao.js';
 import { criarServicoConfirmacao } from '../servicos/confirmacao-email.js';
 import { criarServicoRecuperacao } from '../servicos/recuperacao-senha.js';
@@ -13,6 +14,7 @@ export function instalarContas(aplicacao, banco, entrega) {
   aplicacao.use('/api', carregarSessao(contas));
   const rotas = Router();
   const controlador = criarControladorContas({ contas, confirmacao, recuperacao, entrega });
+  const minhaConta = criarControladorMinhaConta(banco);
   const limitar = criarLimitador(10);
   const limitarPedidos = criarLimitador(5);
   const limitarConfirmacoes = criarLimitador(5);
@@ -28,6 +30,9 @@ export function instalarContas(aplicacao, banco, entrega) {
   rotas.post('/confirmacao/confirmar', limitarTokensConfirmacao, controlador.confirmarEmail);
   rotas.get('/sessao', controlador.sessao);
   rotas.post('/saida', exigirConta, conferirCsrf, controlador.sair);
+  rotas.patch('/perfil', exigirConta, conferirCsrf, minhaConta.nome);
+  rotas.put('/senha', exigirConta, conferirCsrf, limitarRedefinicoes, minhaConta.senha);
+  rotas.post('/saida-todas', exigirConta, conferirCsrf, minhaConta.sairTodas);
   aplicacao.use('/api/contas', rotas);
   aplicacao.use('/api', exigirConta, conferirCsrf);
 }

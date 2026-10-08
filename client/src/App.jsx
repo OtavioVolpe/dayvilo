@@ -1,10 +1,11 @@
+import MinhaConta, { aplicarTema, lerTema } from './MinhaConta.jsx';
 import ConfirmarEmail, { AvisoConfirmacao } from './ConfirmarEmail.jsx';
 import Acesso from './Acesso.jsx';
 import { useSessao } from './useSessao.js';
 import RecuperarSenha from './RecuperarSenha.jsx';
 import { useEffect, useState } from 'react';
 import Planejamento from './Planejamento.jsx';
-import { Sprout, Sun, Utensils, Dumbbell, BookOpen } from 'lucide-react';
+import { UserRound, Sprout, Sun, Utensils, Dumbbell, BookOpen } from 'lucide-react';
 
 const areas = [
   { name: 'Rotina', icon: Sun },
@@ -28,14 +29,15 @@ export default function App() {
     return () => window.removeEventListener('hashchange', atualizarRota);
   }, []);
   const solicitarRecuperacao = () => { window.location.hash = 'recuperar-senha'; };
-  const { sessao, cadastroAberto, erro, aviso, saindo, entrar, sair, atualizar } = useSessao();
+  const { sessao, cadastroAberto, erro, aviso, saindo, entrar, sair, atualizar, atualizarNome, encerrar } = useSessao();
   const [view, setView] = useState('Hoje');
+  useEffect(() => { aplicarTema(lerTema()); }, []);
 
   return (
     <div className="app-shell">
       <header className="app-header">
         <span className="brand"><span className="brand-mark"><Sprout size={22} aria-hidden="true" /></span>Dayvilo</span>
-        {sessao && !recuperacao && <div className="conta-atual"><span title={sessao.email}>{sessao.nome}</span><button className="botao-secundario" disabled={saindo} onClick={sair}>{saindo ? 'Saindo…' : 'Sair'}</button></div>}
+        {sessao && !recuperacao && <div className="conta-atual"><button className="abrir-minha-conta" aria-label="Minha conta" onClick={() => setView('Conta')}><UserRound size={18} aria-hidden="true" /><span>{sessao.nome}</span></button><button className="botao-secundario" disabled={saindo} onClick={sair}>{saindo ? 'Saindo…' : 'Sair'}</button></div>}
       </header>
       {recuperacao?.confirmacao ? <ConfirmarEmail key={recuperacao.token} token={recuperacao.token} atualizar={atualizar} aoVoltar={() => { window.history.replaceState(null, '', window.location.pathname + window.location.search); definirRecuperacao(null); atualizar(); }} /> : recuperacao ? <RecuperarSenha key={recuperacao.token ?? 'pedido'} token={recuperacao.token} aoSolicitarNovo={solicitarRecuperacao} aoVoltar={() => { window.history.replaceState(null, '', window.location.pathname + window.location.search); definirRecuperacao(null); atualizar(); }} /> : sessao === undefined ? <main><p className="estado-lista" role="status">{erro || 'Abrindo seu espaço…'}</p>{erro && <button className="botao-secundario" onClick={atualizar}>Tentar novamente</button>}</main>
         : !sessao ? <Acesso cadastroAberto={cadastroAberto} aoRecuperar={solicitarRecuperacao} aoEntrar={dados => { setView('Hoje'); entrar(dados); }} aviso={aviso} /> : <div className="app-layout">
@@ -48,12 +50,13 @@ export default function App() {
           ))}
         </nav>
         <main>
-          <AvisoConfirmacao key={sessao.id} sessao={sessao} atualizar={atualizar} aviso={aviso} />
+          {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
+          {view === 'Conta' ? <MinhaConta key={sessao.id} sessao={sessao} atualizarNome={atualizarNome} encerrar={encerrar} voltar={() => setView('Hoje')} /> : <><AvisoConfirmacao key={sessao.id} sessao={sessao} atualizar={atualizar} aviso={aviso} />
           <nav className="routine-tabs" aria-label="Visualizações da rotina">
             {['Hoje', 'Semana', 'Histórico'].map(item => <button key={item} aria-pressed={view === item} onClick={() => setView(item)}>{item}</button>)}
           </nav>
-          {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
-          <Planejamento key={`${sessao.id}-${view}`} semanal={view === 'Semana'} historico={view === 'Histórico'} />
+
+          <Planejamento key={`${sessao.id}-${view}`} semanal={view === 'Semana'} historico={view === 'Histórico'} /></>}
         </main>
       </div>}
     </div>

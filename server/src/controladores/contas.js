@@ -2,7 +2,7 @@ import { setTimeout as aguardar } from 'node:timers/promises';
 import { ErroConta } from '../servicos/autenticacao.js';
 import { nomeCookie, opcoesCookie, limparCookie } from '../middlewares/sessao.js';
 
-let operacoesSenha = 0;
+import { limitarOperacaoSenha } from '../servicos/limite-senha.js';
 
 export function criarControladorContas({ contas, confirmacao, recuperacao, entrega }) {
   function autenticar(acao, status) {
@@ -10,9 +10,7 @@ export function criarControladorContas({ contas, confirmacao, recuperacao, entre
       if (acao === 'cadastrar' && entrega.cadastroAberto === false) throw new ErroConta(403, 'Novos cadastros estão fechados no momento.');
       if (requisicao.usuario) throw new ErroConta(409, 'Saia da conta atual antes de entrar em outra.');
       if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });
-      if (operacoesSenha >= 2) throw new ErroConta(503, 'Servidor ocupado. Tente novamente em alguns segundos.');
-      operacoesSenha++;
-      try {
+      await limitarOperacaoSenha(async () => {
         const sessao = await contas[acao](requisicao.body);
         resposta.cookie(nomeCookie, sessao.token, { ...opcoesCookie, secure: resposta.locals.cookieSeguro === true, maxAge: 7 * 24 * 60 * 60 * 1000 });
         // A resposta da sessão é a única fonte do perfil e do token CSRF para a interface.
@@ -23,7 +21,7 @@ export function criarControladorContas({ contas, confirmacao, recuperacao, entre
           catch { aviso_confirmacao = 'Sua conta foi criada, mas não conseguimos enviar a confirmação. Você pode solicitar outro link na sua rotina.'; }
         }
         resposta.status(status).json({ usuario, csrf, aviso_confirmacao });
-      } finally { operacoesSenha--; }
+      });
     };
   }
   return {
@@ -51,12 +49,10 @@ export function criarControladorContas({ contas, confirmacao, recuperacao, entre
     },
     async redefinirSenha(requisicao, resposta) {
       if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });
-      if (operacoesSenha >= 2) throw new ErroConta(503, 'Servidor ocupado. Tente novamente em alguns segundos.');
-      operacoesSenha++;
-      try {
+      await limitarOperacaoSenha(async () => {
         await recuperacao.redefinir(requisicao.body);
         resposta.json({ mensagem: 'Senha atualizada. Entre novamente com sua nova senha.' });
-      } finally { operacoesSenha--; }
+      });
     },
     async solicitarConfirmacao(requisicao, resposta) {
       const resultado = await confirmacao.solicitar(requisicao.usuario.id);
