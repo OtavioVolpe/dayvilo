@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import SeloSituacao from './SeloSituacao.jsx';
 import ListaHistorico from './ListaHistorico.jsx';
 import { deslocarData, formatarData } from './datas.js';
-import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, ListRestart, CircleStop, Repeat2 } from 'lucide-react';
+import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, ListRestart, CircleStop, RefreshCw } from 'lucide-react';
 
 export default function Planejamento({ semanal = false, historico = false }) {
   const [diaSelecao, definirDiaSelecao] = useState(null);
@@ -282,7 +282,7 @@ export default function Planejamento({ semanal = false, historico = false }) {
       {diaSelecao === tarefa.data_prevista && !atrasada ? <button type="button" className="marcador-selecao" aria-label={'Selecionar: ' + tarefa.titulo} aria-pressed={selecionados.includes(tarefa.id)} disabled={salvando || carregando} onClick={() => { definirConfirmarLote(false); definirSelecionados(ids => ids.includes(tarefa.id) ? ids.filter(id => id !== tarefa.id) : [...ids, tarefa.id]); }}>{selecionados.includes(tarefa.id) && <Check size={16} aria-hidden="true" />}</button> : tarefa.situacao !== 'pulada' && <input type="checkbox" aria-label={`${tarefa.situacao === 'concluida' ? 'Desfazer conclusão' : 'Concluir'}: ${tarefa.titulo}`} checked={tarefa.situacao === 'concluida'} disabled={diaSelecao !== null || aberto || salvando || atualizando.includes(tarefa.id)} onChange={() => alternar(tarefa)} />}
       <div className="tarefa-conteudo"><div className="tarefa-cabecalho"><span className="tarefa-titulo" id={`titulo-tarefa-${tarefa.id}`}>{tarefa.titulo}</span></div>
         {tarefa.observacao && <p className="observacao">{tarefa.observacao}</p>}
-        <div className="detalhes">{tarefa.serie_id && <span><Repeat2 size={13} aria-hidden="true" />Repetição</span>}{atrasada === true && <span>Prevista para {formatarData(tarefa.data_prevista, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario ? tarefa.horario + (tarefa.horario_final ? ' às ' + tarefa.horario_final + (tarefa.horario_final < tarefa.horario ? ' (dia seguinte)' : '') : '') : 'Sem horário'}</span>
+        <div className="detalhes">{tarefa.serie_id && <span><RefreshCw size={16} style={{ flexShrink: 0 }} aria-hidden="true" />Repetição</span>}{atrasada === true && <span>Prevista para {formatarData(tarefa.data_prevista, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario ? tarefa.horario + (tarefa.horario_final ? ' às ' + tarefa.horario_final + (tarefa.horario_final < tarefa.horario ? ' (dia seguinte)' : '') : '') : 'Sem horário'}</span>
           {tarefa.prioridade && <span className="prioridade"><Star size={13} aria-hidden="true" />Prioridade</span>}</div>
       </div>
       <SeloSituacao situacao={tarefa.situacao} id={`situacao-tarefa-${tarefa.id}`} />
