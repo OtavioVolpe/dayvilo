@@ -3,7 +3,19 @@
 .dias-casa{display:none}
 .planejamento-casa .grade-semana{grid-template-columns:repeat(7,minmax(210px,1fr));overflow-x:auto;align-items:start;padding-bottom:12px;gap:12px}
 .planejamento-casa .dia-semana{padding:12px}
-.planejamento-casa .dia-semana>header{flex-wrap:wrap}
+.planejamento-casa .dia-semana>header{flex-wrap:nowrap;align-items:flex-start}
+.planejamento-casa .dia-semana>header h3{min-width:0}
+.planejamento-casa .dia-semana>header h3 span{display:block;margin:4px 0 0}
+.planejamento-casa .controles-dia{flex-shrink:0}
+.planejamento-casa .resumo-controles-dia{display:flex;align-items:center;gap:8px}
+.planejamento-casa .resumo-controles-dia .resumo-dia{flex:1;min-width:0}
+.planejamento-casa .resumo-controles-dia .abrir-selecao{flex-shrink:0;border:1px solid var(--line);background:var(--background)}
+.planejamento.planejamento-casa .barra-selecao{display:grid;grid-template-columns:auto auto;justify-content:center;gap:4px 8px;text-align:center}
+.planejamento.planejamento-casa .barra-selecao .selecionar-todas{margin:0}
+.planejamento.planejamento-casa .barra-selecao .acoes-selecao{grid-column:1/-1;justify-content:center;margin:0;gap:0}
+.planejamento.planejamento-casa .barra-selecao .acao-selecao{width:40px;height:44px}
+.planejamento.planejamento-casa .barra-selecao>p,.planejamento.planejamento-casa .confirmacao-lote{grid-column:1/-1;min-width:0}
+.planejamento-casa .confirmacao-lote>div{justify-content:center}
 .planejamento.planejamento-casa .dia-semana .tarefa{display:flex;flex-wrap:wrap;gap:10px}
 .planejamento.planejamento-casa .dia-semana .tarefa-conteudo{min-width:0;flex:1 1 calc(100% - 40px)}
 .planejamento.planejamento-casa .dia-semana .acoes-tarefa{margin-left:auto}
