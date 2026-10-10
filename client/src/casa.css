@@ -1,0 +1,22 @@
+.layout-casa main{max-width:none;padding-inline:24px}
+.selo-casa{color:var(--accent)}
+.dias-casa{display:none}
+.planejamento-casa .grade-semana{grid-template-columns:repeat(7,minmax(210px,1fr));overflow-x:auto;align-items:start;padding-bottom:12px;gap:12px}
+.planejamento-casa .dia-semana{padding:12px}
+.planejamento-casa .dia-semana>header{flex-wrap:wrap}
+.planejamento.planejamento-casa .dia-semana .tarefa{display:flex;flex-wrap:wrap;gap:10px}
+.planejamento.planejamento-casa .dia-semana .tarefa-conteudo{min-width:0;flex:1 1 calc(100% - 40px)}
+.planejamento.planejamento-casa .dia-semana .acoes-tarefa{margin-left:auto}
+.planejamento.planejamento-casa .dia-semana .tarefa>.selo-situacao{margin-inline:auto;align-self:center}
+.planejamento.planejamento-casa .dia-semana .acoes-tarefa{justify-content:center;flex-basis:100%;margin:0}
+.planejamento-casa .data-planejamento{text-transform:none}
+.planejamento-casa .tarefa-titulo{overflow-wrap:anywhere}
+.planejamento-casa .detalhes{flex-wrap:wrap}
+@media(max-width:650px){
+  .layout-casa main{padding-inline:16px}
+  .dias-casa{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:20px 0 12px}
+  .dias-casa button{display:flex;flex-direction:column;align-items:center;gap:5px;border:1px solid var(--line);border-radius:10px;padding:10px 0;background:var(--surface);font-size:.75rem;min-height:52px}
+  .dias-casa button[aria-pressed=true]{background:var(--soft);color:var(--accent);border-color:var(--accent)}
+  .planejamento-casa .grade-semana{display:block;overflow:visible}
+  .planejamento-casa .dia-casa-oculto{display:none}
+}

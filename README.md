@@ -4,6 +4,16 @@ Aplicação web de organização pessoal, com foco em uma rotina flexível e uma
 
 A área de rotina reúne três visões: **Hoje**, **Semana** e **Histórico**. A visão semanal organiza as tarefas de segunda a domingo, permite navegar entre semanas e adicionar, editar ou concluir tarefas de cada dia. O Histórico consulta as tarefas pela data planejada, com filtros de situação e períodos de até 366 dias. Mostra o estado atual das tarefas; alterações de data e exclusões também afetam essa consulta. No cadastro, tarefas podem se repetir diariamente ou nos dias da semana escolhidos, com data final e período de até 366 dias. As ocorrências são criadas de uma vez e as novas repetições ficam vinculadas a uma série. Cada ocorrência pendente pode ser concluída, editada ou pulada individualmente. Para editar uma pulada, restaure-a; para editar uma concluída, desfaça a conclusão. A exclusão individual está disponível em qualquer situação. Editar próximas e Encerrar repetição seguem as regras abaixo. Repetições anteriores à criação dos vínculos continuam independentes. Na tela Hoje, pendências de datas anteriores aparecem separadamente e podem ser concluídas, reagendadas para hoje ou puladas. Pular preserva a tarefa no Histórico, pode ser desfeito com Restaurar e retira a ocorrência do total usado no progresso. Em Hoje e Semana, as puladas ficam em seções recolhidas inicialmente; ao pular uma tarefa da lista, a seção do dia abre e mostra o card movido. Pendentes, concluídas e puladas têm selos com texto e ícone, com cores distintas, também no Histórico. O design privilegia clareza e navegação entre as áreas da vida pessoal.
 
+## Casa
+
+Planejamento de limpeza por dia e ambiente (quarto, banheiro, cozinha ou outro nome). No computador, a semana aparece em colunas com rolagem lateral; no celular, escolha o dia na faixa semanal.
+
+As tarefas de Casa também aparecem em Hoje, Semana e Histórico da Rotina, identificadas pelo ambiente. São os mesmos registros: concluir, editar, pular ou excluir em uma tela reflete na outra. Pendências não são transferidas nem concluídas automaticamente.
+
+Além da repetição diária e semanal, é possível repetir a cada duas semanas ou todo mês. A quinzenal alterna semanas a partir da semana inicial. A mensal mantém o dia da data inicial; quando o mês é mais curto, usa seu último dia. A data de término é explícita (até 366 dias), e pode ser prolongada em Editar próximas sem perder a frequência original. O ambiente também pode ser editado nessa ação. Casa permite ordenar por horário, criação ou Minha ordem. O arraste funciona dentro de cada dia e situação; a ordem é compartilhada com Rotina e preserva as posições das outras tarefas.
+
+Antes de executar esta versão em uma instalação existente, aplique as migrações com `npm run db:migrate` no banco local configurado. Em produção, faça backup e execute o migrador com a configuração do banco de destino **antes** de publicar o novo código. As migrações 011 e 012 preservam as tarefas existentes como Rotina.
+
 ## Ações das tarefas
 
 Ações individuais afetam somente a ocorrência escolhida, mesmo quando ela pertence a uma repetição.

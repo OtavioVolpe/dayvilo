@@ -26,7 +26,11 @@ export function validarObjeto(valor, campos) {
 }
 
 export function validarNovaTarefa(dados) {
-  validarObjeto(dados, ['titulo', 'observacao', 'data_prevista', 'horario', 'horario_final', 'prioridade']);
+  validarObjeto(dados, ['titulo', 'observacao', 'data_prevista', 'horario', 'horario_final', 'prioridade', 'area', 'ambiente']);
+  if (dados.area !== undefined && !['rotina', 'casa'].includes(dados.area)) throw new ErroValidacao('Área inválida.');
+  if (dados.ambiente != null && (typeof dados.ambiente !== 'string' || [...dados.ambiente.trim()].length > 60)) throw new ErroValidacao('Informe um ambiente com até 60 caracteres.');
+  if (dados.area === 'casa' && !dados.ambiente?.trim()) throw new ErroValidacao('Informe o ambiente da tarefa.');
+  if (dados.area !== 'casa' && dados.ambiente != null) throw new ErroValidacao('O ambiente pertence às tarefas de Casa.');
   if (typeof dados.titulo !== 'string' || !dados.titulo.trim() || [...dados.titulo.trim()].length > 200) {
     throw new ErroValidacao('O título precisa ter entre 1 e 200 caracteres.');
   }
@@ -45,6 +49,7 @@ export function validarNovaTarefa(dados) {
   if (dados.horario_final != null && !dados.horario) throw new ErroValidacao('Informe o horário inicial antes do horário final.');
   if (dados.horario_final != null && dados.horario_final === dados.horario) throw new ErroValidacao('Os horários inicial e final devem ser diferentes.');
   return {
+    ...(dados.area !== undefined ? { area: dados.area, ambiente: dados.area === 'casa' ? dados.ambiente.trim() : null } : {}),
     titulo: dados.titulo.trim(),
     observacao: dados.observacao?.trim() || null,
     data_prevista: dados.data_prevista == null ? null : validarData(dados.data_prevista),

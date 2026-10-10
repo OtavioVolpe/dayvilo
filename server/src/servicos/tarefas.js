@@ -69,11 +69,13 @@ export function criarServicoTarefas(banco) {
     },
     async editarSerie(usuario, entrada, parametroId) {
       const id = validarId(parametroId);
-      validarObjeto(entrada, ['titulo', 'observacao', 'horario', 'horario_final', 'prioridade', 'ate', 'regra']);
+      validarObjeto(entrada, ['titulo', 'observacao', 'horario', 'horario_final', 'prioridade', 'ate', 'regra', 'area', 'ambiente']);
       const { ate: fimSolicitado, regra: regraSolicitada, ...camposTarefa } = entrada;
-      const dados = validarNovaTarefa(camposTarefa);
+      // Validação dentro da transação preserva a área nas edições da Rotina.
       return alterar(usuario, id, ['pendente'], async (repositorio, referencia) => {
         if (!referencia.serie_id) throw new ErroAplicacao(404, 'Série não encontrada para esta tarefa.');
+        if (camposTarefa.area !== undefined && camposTarefa.area !== referencia.area) throw new ErroValidacao('A área da tarefa não pode ser alterada.');
+        const dados = validarNovaTarefa({ area: referencia.area, ambiente: referencia.ambiente, ...camposTarefa });
         const hoje = obterDataHoje(usuario.fuso_horario);
         const inicio = referencia.data_prevista > hoje ? referencia.data_prevista : hoje;
         let criadas = 0, removidas = 0;
@@ -89,7 +91,7 @@ export function criarServicoTarefas(banco) {
               validarObjeto(entrada.regra, ['tipo', 'dias']);
               regra = entrada.regra;
             }
-            const datas = prepararRepeticao({ tarefa: { ...dados, data_prevista: inicio }, repeticao: { tipo: regra.tipo, ate, ...(regra.tipo === 'semanal' ? { dias: regra.dias } : {}) } }).datas.filter(dia => dia > anterior.ate);
+            const datas = prepararRepeticao({ tarefa: { ...dados, data_prevista: inicio }, repeticao: { tipo: regra.tipo, ate, ...(['semanal', 'quinzenal'].includes(regra.tipo) ? { dias: regra.dias } : {}) } }, anterior.inicio || inicio).datas.filter(dia => dia > anterior.ate);
             criadas = await repositorio.prolongar(usuario.id, referencia.serie_id, dados, datas);
           }
           if (ate < anterior.ate) {
@@ -118,11 +120,12 @@ export function criarServicoTarefas(banco) {
     },
     async editar(usuario, entrada, parametroId) {
       const id = validarId(parametroId);
-      validarObjeto(entrada, ['titulo', 'observacao', 'horario', 'horario_final', 'prioridade', 'data_prevista']);
+      validarObjeto(entrada, ['titulo', 'observacao', 'horario', 'horario_final', 'prioridade', 'data_prevista', 'area', 'ambiente']);
       if (Object.hasOwn(entrada, 'data_prevista')) validarData(entrada.data_prevista);
-      return alterar(usuario, id, ['pendente'], async repositorio => ({
-        tarefa: await repositorio.editar(usuario.id, id, validarNovaTarefa(entrada)),
-      }));
+      return alterar(usuario, id, ['pendente'], async (repositorio, atual) => {
+        if (entrada.area !== undefined && entrada.area !== atual.area) throw new ErroValidacao('A área da tarefa não pode ser alterada.');
+        return { tarefa: await repositorio.editar(usuario.id, id, validarNovaTarefa({ area: atual.area, ambiente: atual.ambiente, ...entrada })) };
+      });
     },
     async excluir(usuario, entrada, parametroId) {
       if (!await tarefas.excluir(usuario.id, validarId(parametroId))) throw new ErroAplicacao(404, 'Tarefa não encontrada.');
