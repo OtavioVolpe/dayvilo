@@ -5,14 +5,15 @@ import { useSessao } from './useSessao.js';
 import RecuperarSenha from './RecuperarSenha.jsx';
 import { useEffect, useState } from 'react';
 import Planejamento from './Planejamento.jsx';
-import { UserRound, Sprout, Sun, Utensils, Dumbbell, BookOpen, House, LockKeyhole } from 'lucide-react';
+import { UserRound, Sprout, Sun, Utensils, Dumbbell, BookOpen, House, Wallet, LockKeyhole } from 'lucide-react';
 
 const areas = [
   { name: 'Rotina', icon: Sun },
   { name: 'Casa', label: 'Tarefas de casa', icon: House },
-  { name: 'Alimentação', icon: Utensils },
   { name: 'Treino', icon: Dumbbell },
+  { name: 'Alimentação', icon: Utensils },
   { name: 'Leitura', icon: BookOpen },
+  { name: 'Financeiro', icon: Wallet },
 ];
 
 function lerRecuperacao() {
