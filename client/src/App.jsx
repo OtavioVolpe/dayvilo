@@ -5,13 +5,14 @@ import { useSessao } from './useSessao.js';
 import RecuperarSenha from './RecuperarSenha.jsx';
 import { useEffect, useState } from 'react';
 import Planejamento from './Planejamento.jsx';
-import { UserRound, Sprout, Sun, Utensils, Dumbbell, BookOpen } from 'lucide-react';
+import { UserRound, Sprout, Sun, Utensils, Dumbbell, BookOpen, House, LockKeyhole } from 'lucide-react';
 
 const areas = [
   { name: 'Rotina', icon: Sun },
   { name: 'Alimentação', icon: Utensils },
   { name: 'Treino', icon: Dumbbell },
   { name: 'Leitura', icon: BookOpen },
+  { name: 'Casa', label: 'Tarefas de casa', icon: House },
 ];
 
 function lerRecuperacao() {
@@ -43,9 +44,10 @@ export default function App() {
         : !sessao ? <Acesso cadastroAberto={cadastroAberto} aoRecuperar={solicitarRecuperacao} aoEntrar={dados => { setView('Hoje'); entrar(dados); }} aviso={aviso} /> : <div className="app-layout">
         <nav className="areas" aria-label="Áreas pessoais">
           <p className="areas-label">Seu espaço</p>
-          {areas.map(({ name, icon: Icon }) => (
-            <button key={name} disabled={name !== 'Rotina'} aria-current={name === 'Rotina' ? 'page' : undefined} aria-label={name === 'Rotina' ? name : `${name}, indisponível`} onClick={() => setView('Hoje')}>
+          {areas.map(({ name, label = name, icon: Icon }) => (
+            <button key={name} disabled={name !== 'Rotina'} aria-current={name === 'Rotina' ? 'page' : undefined} aria-label={name === 'Rotina' ? label : `${label}, em breve`} title={name === 'Rotina' ? label : `${label} — em breve`} onClick={() => setView('Hoje')}>
               <Icon size={20} aria-hidden="true" /><span>{name}</span>
+              {name !== 'Rotina' && <LockKeyhole className="area-cadeado" size={12} aria-hidden="true" />}
             </button>
           ))}
         </nav>
