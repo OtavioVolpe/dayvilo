@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-const colunas = 'id, titulo, observacao, area, ambiente, data_prevista, horario, horario_final, prioridade, situacao, ordem, (SELECT serie_id FROM ocorrencias_series WHERE tarefa_id = tarefas.id) AS serie_id';
+const colunas = '(SELECT id FROM sessoes_treino WHERE tarefa_id = tarefas.id) AS treino_sessao_id, id, titulo, observacao, area, ambiente, data_prevista, horario, horario_final, prioridade, situacao, ordem, (SELECT serie_id FROM ocorrencias_series WHERE tarefa_id = tarefas.id) AS serie_id';
 
 function apresentarTarefa(tarefa) {
   return { ...tarefa, prioridade: Boolean(tarefa.prioridade), horario: tarefa.horario?.slice(0, 5) ?? null, horario_final: tarefa.horario_final?.slice(0, 5) ?? null };

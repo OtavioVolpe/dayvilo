@@ -12,7 +12,7 @@ import ListaHistorico from './ListaHistorico.jsx';
 import { deslocarData, formatarData } from './datas.js';
 import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, ListRestart, CircleStop, RefreshCw, House } from 'lucide-react';
 
-export default function Planejamento({ semanal = false, historico = false, casa = false }) {
+export default function Planejamento({ semanal = false, historico = false, casa = false, aoAbrirTreino }) {
   const [diaSelecao, definirDiaSelecao] = useState(null);
   const [selecionados, definirSelecionados] = useState([]);
   const [confirmarLote, definirConfirmarLote] = useState(false);
@@ -288,6 +288,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
         {tarefa.observacao && <p className="observacao">{tarefa.observacao}</p>}
         <div className="detalhes">{tarefa.area === 'casa' && <span className="selo-casa"><House size={13} aria-hidden="true" />Casa · {tarefa.ambiente}</span>}{tarefa.serie_id && <span><RefreshCw size={13} style={{ flexShrink: 0 }} aria-hidden="true" />Repetição</span>}{atrasada === true && <span>Prevista para {formatarData(tarefa.data_prevista, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario ? tarefa.horario + (tarefa.horario_final ? ' às ' + tarefa.horario_final + (tarefa.horario_final < tarefa.horario ? ' (dia seguinte)' : '') : '') : 'Sem horário'}</span>
           {tarefa.prioridade && <span className="prioridade"><Star size={13} aria-hidden="true" />Prioridade</span>}</div>
+        {tarefa.treino_sessao_id && <button type="button" className="abrir-treino-rotina" disabled={bloqueado} onClick={() => aoAbrirTreino?.(tarefa.treino_sessao_id)}>Abrir treino →</button>}
       </div>
       <SeloSituacao situacao={tarefa.situacao} id={`situacao-tarefa-${tarefa.id}`} />
       <div className="acoes-tarefa">
@@ -310,7 +311,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
         <button type="button" disabled={diaSelecao !== null || aberto || salvando || atualizando.length > 0} onClick={() => encerrarSerie(tarefa)}>Confirmar encerramento</button>
       </div>}
       {excluindo === tarefa.id && <div className="confirmacao-exclusao" role="group" aria-label="Confirmar exclusão">
-        <p>Excluir só esta tarefa? Não pode ser desfeito.</p>
+        <p>{tarefa.treino_sessao_id ? 'Excluir este treino e seu registro de séries? Não pode ser desfeito.' : 'Excluir só esta tarefa? Não pode ser desfeito.'}</p>
         <button type="button" disabled={diaSelecao !== null || atualizando.includes(tarefa.id)} onClick={() => definirExcluindo(null)}>Cancelar</button>
         <button type="button" disabled={diaSelecao !== null || aberto || salvando || atualizando.includes(tarefa.id)} onClick={() => excluir(tarefa)}>{atualizando.includes(tarefa.id) ? 'Excluindo…' : 'Confirmar exclusão'}</button>
       </div>}

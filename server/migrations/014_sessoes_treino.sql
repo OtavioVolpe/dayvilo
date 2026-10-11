@@ -1,0 +1,10 @@
+CREATE TABLE sessoes_treino (
+ id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+ tarefa_id INT UNSIGNED NOT NULL UNIQUE,
+ ficha_id INT UNSIGNED NOT NULL,
+ planejado JSON NOT NULL,
+ realizado JSON NOT NULL,
+ versao INT UNSIGNED NOT NULL DEFAULT 1,
+ CONSTRAINT sessoes_treino_tarefa_fk FOREIGN KEY (tarefa_id) REFERENCES tarefas(id) ON DELETE CASCADE,
+ CONSTRAINT sessoes_treino_ficha_fk FOREIGN KEY (ficha_id) REFERENCES fichas_treino(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

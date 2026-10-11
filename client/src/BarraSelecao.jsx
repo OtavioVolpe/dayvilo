@@ -18,6 +18,6 @@ export default function BarraSelecao({ dia, tarefas, ativo, selecionados, bloque
       {acao('Sair da seleção', X, cancelar)}
     </div>
     {new Set(itens.map(t => t.situacao)).size > 1 && <p>Para mudar a situação, selecione tarefas do mesmo grupo.</p>}
-    {confirmar && <div className="confirmacao-lote" role="group" aria-label="Confirmar exclusão da seleção"><p>Excluir estas {itens.length} tarefas? Não pode ser desfeito.</p><div><button type="button" disabled={bloqueado} onClick={() => definirConfirmar(false)}>Voltar</button><button type="button" disabled={bloqueado || !itens.length} onClick={() => executar('excluir')}>Confirmar exclusão</button></div></div>}
+    {confirmar && <div className="confirmacao-lote" role="group" aria-label="Confirmar exclusão da seleção"><p>Excluir estas {itens.length} tarefas? {itens.some(t => t.treino_sessao_id) && 'Os registros dos treinos selecionados também serão excluídos. '}Não pode ser desfeito.</p><div><button type="button" disabled={bloqueado} onClick={() => definirConfirmar(false)}>Voltar</button><button type="button" disabled={bloqueado || !itens.length} onClick={() => executar('excluir')}>Confirmar exclusão</button></div></div>}
   </div>;
 }

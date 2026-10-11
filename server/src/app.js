@@ -6,6 +6,7 @@ import express from 'express';
 import { criarEntregaLocal } from './servicos/email-local.js';
 import { instalarContas } from './rotas/contas.js';
 import { criarRotasTarefas } from './rotas/tarefas.js';
+import { criarRotasTreinos } from './rotas/treinos.js';
 import { restringirOrigemLocal } from './middlewares/origem-local.js';
 import { instalarTratamentoErros } from './middlewares/erros.js';
 
@@ -26,10 +27,12 @@ export function criarAplicacao({ banco, porta = 3001, modoEmail = 'local', envia
     });
     aplicacao.get('/', (requisicao, resposta) => resposta.sendFile(join(pastaInterface, 'index.html')));
   }
+  aplicacao.use('/api/treinos', express.json({ limit: '128kb' }));
   aplicacao.use(express.json({ limit: '32kb' }));
   // Contas instala a sessão e a proteção antes das rotas privadas.
   instalarContas(aplicacao, banco, { enviarEmail, urlAplicacao, modoEmail, cadastroAberto });
   aplicacao.use('/api', criarRotasTarefas(banco));
+  aplicacao.use('/api/treinos', criarRotasTreinos(banco));
   instalarTratamentoErros(aplicacao);
   return aplicacao;
 }
