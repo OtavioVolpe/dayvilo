@@ -49,7 +49,11 @@ test('Treino: histórico imutável da ficha, execução opcional, integração, 
     assert.equal((await tarefas.listar(usuario, { data: agenda.inicio })).tarefas[0].situacao, 'concluida');
     sessao = (await treino.consultar(usuario, id)).sessao;
     await assert.rejects(treino.registrar(usuario, id, { ...concluir, versao: sessao.versao }), { status: 409 });
-    await tarefas.concluir(usuario, { concluida: false }, sessao.tarefa_id);
+    await tarefas.situacao(usuario, { situacao: 'pendente' }, sessao.tarefa_id);
+    const reaberta = (await treino.consultar(usuario, id)).sessao;
+    assert.equal(reaberta.situacao, 'pendente');
+    assert.deepEqual(reaberta.realizado, sessao.realizado);
+    assert.equal((await tarefas.listar(usuario, { data: agenda.inicio })).tarefas[0].situacao, 'pendente');
     await tarefas.situacao(usuario, { situacao: 'pulada' }, sessao.tarefa_id);
     await assert.rejects(treino.registrar(usuario, id, { ...concluir, versao: sessao.versao }), { status: 409 });
     await tarefas.situacao(usuario, { situacao: 'pendente' }, sessao.tarefa_id);

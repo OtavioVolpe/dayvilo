@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 import SeloSituacao from './SeloSituacao.jsx';
 import ListaHistorico from './ListaHistorico.jsx';
 import { deslocarData, formatarData } from './datas.js';
-import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, ListRestart, CircleStop, RefreshCw, House } from 'lucide-react';
+import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, ListRestart, CircleStop, RefreshCw, House, Dumbbell } from 'lucide-react';
 
 export default function Planejamento({ semanal = false, historico = false, casa = false, aoAbrirTreino }) {
   const [diaSelecao, definirDiaSelecao] = useState(null);
@@ -288,10 +288,10 @@ export default function Planejamento({ semanal = false, historico = false, casa 
         {tarefa.observacao && <p className="observacao">{tarefa.observacao}</p>}
         <div className="detalhes">{tarefa.area === 'casa' && <span className="selo-casa"><House size={13} aria-hidden="true" />Casa · {tarefa.ambiente}</span>}{tarefa.serie_id && <span><RefreshCw size={13} style={{ flexShrink: 0 }} aria-hidden="true" />Repetição</span>}{atrasada === true && <span>Prevista para {formatarData(tarefa.data_prevista, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario ? tarefa.horario + (tarefa.horario_final ? ' às ' + tarefa.horario_final + (tarefa.horario_final < tarefa.horario ? ' (dia seguinte)' : '') : '') : 'Sem horário'}</span>
           {tarefa.prioridade && <span className="prioridade"><Star size={13} aria-hidden="true" />Prioridade</span>}</div>
-        {tarefa.treino_sessao_id && <button type="button" className="abrir-treino-rotina" disabled={bloqueado} onClick={() => aoAbrirTreino?.(tarefa.treino_sessao_id)}>Abrir treino →</button>}
       </div>
       <SeloSituacao situacao={tarefa.situacao} id={`situacao-tarefa-${tarefa.id}`} />
-      <div className="acoes-tarefa">
+      <div className={`acoes-tarefa${tarefa.treino_sessao_id ? ' acoes-com-treino' : ''}`}>
+        {diaSelecao === null && tarefa.treino_sessao_id && <button type="button" className="abrir-treino-rotina" aria-label={`Abrir treino: ${tarefa.titulo}`} title="Abrir treino" disabled={bloqueado} onClick={() => aoAbrirTreino?.(tarefa.treino_sessao_id)}><Dumbbell size={18} aria-hidden="true" /></button>}
       {casa && diaSelecao === null && !historico && !atrasada && ordem === 'manual' && <AlcaOrdenacao tarefa={tarefa} lista={grupoDoDia(tarefa)} cartoes={cartoesRef} bloqueado={diaSelecao !== null || aberto || salvando || atualizando.length > 0 || carregando || Boolean(excluindo || encerrando)} mover={mover} indicar={definirArrasto} />}
         {diaSelecao === null && <>{tarefa.situacao === 'pendente' && <button type="button" className="editar-desktop" title="Editar esta tarefa" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Editar: ${tarefa.titulo}`} onClick={() => abrirFormulario(tarefa)}><Pencil size={17} aria-hidden="true" /></button>}
         <MenuTarefa titulo={tarefa.titulo} bloqueado={diaSelecao !== null || aberto || salvando || atualizando.includes(tarefa.id)} opcoes={[

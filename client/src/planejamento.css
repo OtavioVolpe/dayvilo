@@ -94,6 +94,7 @@
   .planejamento .resumo-historico{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 0}.planejamento .resumo-historico p:nth-child(2){border-right:0}
   .planejamento .filtro-historico{gap:10px}.planejamento .filtro-historico p{flex-basis:100%}.planejamento .filtro-historico label{margin-left:0}.planejamento .filtro-historico>.botao-secundario{margin-left:auto;font-size:.8rem;padding:8px}
   .planejamento .editar-desktop{display:none}.menu-tarefa .apenas-mobile{display:flex}
+  .planejamento .tarefa>.acoes-com-treino{flex-direction:column;gap:0}
   .planejamento .tarefa,.planejamento .dia-semana .tarefa{grid-template-columns:28px minmax(0,1fr) 44px;gap:6px 8px;padding:12px}
   .planejamento .tarefa>.tarefa-conteudo,.planejamento .dia-semana .tarefa>.tarefa-conteudo{grid-column:2;grid-row:1}
   .planejamento .tarefa>input,.planejamento .tarefa>.marcador-selecao,.planejamento .dia-semana .tarefa>input,.planejamento .dia-semana .tarefa>.marcador-selecao{grid-column:1;grid-row:1/3}
