@@ -113,3 +113,4 @@
   .planejamento .dia-semana{padding:12px}.planejamento .dia-semana h3{font-size:.9rem}
   .campos-opcionais>label{min-width:0;flex:1 1 125px}.campos-opcionais input{width:100%}.campos-opcionais .campo-prioridade input{width:20px}
 }
+.planejamento .selo-treino{color:var(--accent)}
