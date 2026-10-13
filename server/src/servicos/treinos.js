@@ -1,5 +1,5 @@
 import { ErroConta, transacionar } from './autenticacao.js';
-import { validarObjeto, validarData, validarId, ErroValidacao } from '../validacoes/tarefas.js';
+import { validarObjeto, validarData, validarId, obterDataHoje, ErroValidacao } from '../validacoes/tarefas.js';
 const json = valor => typeof valor === 'string' ? JSON.parse(valor) : valor;
 const texto = (valor, max, obrigatorio = false) => {
   if (typeof valor !== 'string' || valor.length > max || (obrigatorio && !valor.trim())) throw new ErroValidacao('Preencha os textos dentro do limite indicado.');
@@ -82,6 +82,26 @@ export function criarServicoTreinos(banco) {
           quantidade++;
         }
         return { quantidade };
+      });
+    },
+    async desagendar(usuario, dados) {
+      validarObjeto(dados, ['ficha_id', 'inicio', 'fim', 'dias']);
+      const inicio = validarData(dados.inicio), fim = validarData(dados.fim);
+      if (fim < inicio || (new Date(fim) - new Date(inicio)) / 86400000 > 365) throw new ErroValidacao('Escolha um período de até 366 dias.');
+      if (!Array.isArray(dados.dias) || !dados.dias.length || dados.dias.length > 7 || dados.dias.some(d => !Number.isInteger(d) || d < 0 || d > 6)) throw new ErroValidacao('Escolha os dias da semana.');
+      return transacionar(banco, async c => {
+        const f = await ficha(c, usuario, dados.ficha_id, true);
+        const [sessoes] = await c.execute('SELECT s.tarefa_id, s.realizado, t.data_prevista, t.situacao FROM sessoes_treino s JOIN tarefas t ON t.id = s.tarefa_id WHERE s.ficha_id = ? AND t.usuario_id = ? AND t.data_prevista BETWEEN ? AND ? FOR UPDATE', [f.id, usuario.id, inicio, fim]);
+        const hoje = obterDataHoje(usuario.fuso_horario);
+        let quantidade = 0, preservados = 0;
+        for (const s of sessoes) {
+          if (!dados.dias.includes(new Date(s.data_prevista + 'T12:00:00Z').getUTCDay())) continue;
+          const temRegistro = json(s.realizado).some(e => e.observacao.trim() || e.series.some(r => r.feita || r.carga !== null || r.repeticoes !== null));
+          if (s.data_prevista < hoje || s.situacao === 'concluida' || temRegistro) { preservados++; continue; }
+          await c.execute('DELETE FROM tarefas WHERE id = ? AND usuario_id = ?', [s.tarefa_id, usuario.id]);
+          quantidade++;
+        }
+        return { quantidade, preservados };
       });
     },
     async consultar(usuario, id) { return { sessao: await sessao(banco, usuario, id) }; },

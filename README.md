@@ -291,3 +291,7 @@ Rotina inicial sugerida: backup após mudanças importantes na rotina e antes de
 Clique no nome no cabeçalho para editar o nome, consultar o e-mail e sua confirmação, escolher o tema, trocar a senha ou encerrar todas as sessões. O e-mail é somente leitura. A preferência de tema fica neste navegador; Automático acompanha o dispositivo.
 
 A troca de senha exige a senha atual e uma nova senha de 15 a 128 caracteres. Encerra todas as sessões e invalida links pendentes de recuperação. Sair de todos os dispositivos pede confirmação e mantém os dados e tarefas. As rotas exigem sessão e proteção CSRF. Não há migração de banco nesta funcionalidade.
+
+### Desagendar treinos
+
+Criar uma ficha não agenda tarefas. Agendar começa sem dias selecionados e cria treinos somente nos dias da semana escolhidos, dentro do período. Em Minhas fichas, Desagendar remove daquela ficha os dias selecionados no período, também na Rotina. Preserva passados, concluídos e qualquer treino com registros de execução. A confirmação informa que a remoção não pode ser desfeita. A ficha e os demais agendamentos permanecem. Não exige migração adicional.

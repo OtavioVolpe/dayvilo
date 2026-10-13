@@ -8,6 +8,39 @@ import { criarServicoTreinos, validarFicha } from '../src/servicos/treinos.js';
 import { criarServicoTarefas } from '../src/servicos/tarefas.js';
 const modelo = { nome: 'A — Peito', exercicios: [{ nome: 'Supino', series: 3, repeticoes: '8–12', carga: 20, descanso: 60, observacao: 'Peso total' }] };
 
+test('Desagendar filtra ficha, período e dias, preserva histórico e registros', async () => {
+  const pool = criarPoolBanco(), banco = await pool.getConnection();
+  try {
+    await banco.beginTransaction();
+    const [u] = await banco.execute('INSERT INTO usuarios(nome) VALUES (?)', ['Desagendar teste']);
+    const [v] = await banco.execute('INSERT INTO usuarios(nome) VALUES (?)', ['Outra conta']);
+    const usuario = { id: u.insertId, fuso_horario: 'America/Sao_Paulo' }, outro = { ...usuario, id: v.insertId };
+    const treino = criarServicoTreinos(banco), tarefas = criarServicoTarefas(banco);
+    const { ficha } = await treino.salvarFicha(usuario, modelo);
+    assert.equal((await treino.listar(usuario, { inicio: '2030-01-01', fim: '2030-01-31' })).sessoes.length, 0);
+    const agenda = { ficha_id: ficha.id, inicio: '2030-01-01', fim: '2030-01-31', dias: [2, 3] };
+    await assert.rejects(treino.agendar(usuario, { ...agenda, dias: [] }), { status: 400 });
+    await treino.agendar(usuario, agenda);
+    const lista = (await treino.listar(usuario, { inicio: agenda.inicio, fim: agenda.fim })).sessoes;
+    const tercas = lista.filter(s => new Date(s.data_prevista + 'T12:00:00Z').getUTCDay() === 2);
+    await tarefas.situacao(usuario, { situacao: 'concluida' }, tercas[0].tarefa_id);
+    const s = (await treino.consultar(usuario, tercas[1].id)).sessao;
+    s.realizado[0].series[0].carga = 0;
+    await treino.registrar(usuario, s.id, { versao: s.versao, realizado: s.realizado, concluir: false });
+    await tarefas.situacao(usuario, { situacao: 'pulada' }, tercas[2].tarefa_id);
+    const selecao = { ...agenda, fim: '2030-01-29', dias: [2] };
+    await assert.rejects(treino.desagendar(outro, selecao), { status: 404 });
+    await assert.rejects(treino.desagendar(usuario, { ...selecao, dias: [] }), { status: 400 });
+    assert.deepEqual(await treino.desagendar(usuario, selecao), { quantidade: tercas.length - 2, preservados: 2 });
+    const restantes = (await treino.listar(usuario, { inicio: agenda.inicio, fim: agenda.fim })).sessoes;
+    assert.deepEqual(restantes.map(s => s.id), lista.filter(s => !tercas.slice(2).some(t => t.id === s.id)).map(s => s.id));
+    assert.equal((await treino.consultar(usuario, tercas[1].id)).sessao.realizado[0].series[0].carga, 0);
+    assert.equal((await treino.listar(usuario, { inicio: agenda.inicio, fim: agenda.fim })).fichas.length, 1);
+    await treino.agendar(usuario, { ...agenda, inicio: '2000-01-01', fim: '2000-01-01', dias: [6] });
+    assert.deepEqual(await treino.desagendar(usuario, { ...agenda, inicio: '2000-01-01', fim: '2000-01-01', dias: [6] }), { quantidade: 0, preservados: 1 });
+  } finally { await banco.rollback(); banco.release(); await pool.end(); }
+});
+
 test('Treino: histórico imutável da ficha, execução opcional, integração, conflitos e isolamento', async () => {
   const pool = criarPoolBanco(), banco = await pool.getConnection();
   try {
