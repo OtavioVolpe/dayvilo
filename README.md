@@ -295,3 +295,7 @@ A troca de senha exige a senha atual e uma nova senha de 15 a 128 caracteres. En
 ### Desagendar treinos
 
 Criar uma ficha não agenda tarefas. Agendar começa sem dias selecionados e cria treinos somente nos dias da semana escolhidos, dentro do período. Em Minhas fichas, Desagendar remove daquela ficha os dias selecionados no período, também na Rotina. Preserva passados, concluídos e qualquer treino com registros de execução. A confirmação informa que a remoção não pode ser desfeita. A ficha e os demais agendamentos permanecem. Não exige migração adicional.
+
+### Excluir ficha de treino
+
+Excluir ficha remove também suas ocorrências de hoje em diante que estejam pendentes ou puladas e sem registros de execução. Passados, concluídos e ocorrências com cargas (inclusive zero), repetições, séries marcadas ou notas são preservados, consultáveis pela data em Treino ou pelo Histórico da Rotina. Outras fichas não são afetadas. A referência interna da ficha permanece para preservar esses registros, sem permitir novos agendamentos. A confirmação explica a remoção sem desfazer. Não exige migration.

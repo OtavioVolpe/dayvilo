@@ -1,6 +1,7 @@
 import { ErroConta, transacionar } from './autenticacao.js';
 import { validarObjeto, validarData, validarId, obterDataHoje, ErroValidacao } from '../validacoes/tarefas.js';
 const json = valor => typeof valor === 'string' ? JSON.parse(valor) : valor;
+const temRegistro = realizado => json(realizado).some(e => e.observacao.trim() || e.series.some(r => r.feita || r.carga !== null || r.repeticoes !== null));
 const texto = (valor, max, obrigatorio = false) => {
   if (typeof valor !== 'string' || valor.length > max || (obrigatorio && !valor.trim())) throw new ErroValidacao('Preencha os textos dentro do limite indicado.');
   return valor.trim();
@@ -55,10 +56,21 @@ export function criarServicoTreinos(banco) {
         return { ficha: await ficha(c, usuario, id) };
       });
     },
-    async arquivar(usuario, id) {
-      const f = await ficha(banco, usuario, id);
-      await banco.execute('UPDATE fichas_treino SET arquivada = TRUE WHERE id = ? AND usuario_id = ?', [f.id, usuario.id]);
-      return { mensagem: 'Ficha arquivada. Os treinos agendados foram mantidos.' };
+    async excluirFicha(usuario, id) {
+      return transacionar(banco, async c => {
+        const f = await ficha(c, usuario, id, true);
+        const hoje = obterDataHoje(usuario.fuso_horario);
+        const [sessoes] = await c.execute('SELECT s.tarefa_id, s.realizado, t.situacao FROM sessoes_treino s JOIN tarefas t ON t.id = s.tarefa_id WHERE s.ficha_id = ? AND t.usuario_id = ? AND t.data_prevista >= ? FOR UPDATE', [f.id, usuario.id, hoje]);
+        let quantidade = 0;
+        for (const s of sessoes) {
+          if (s.situacao === 'concluida' || temRegistro(s.realizado)) continue;
+          await c.execute('DELETE FROM tarefas WHERE id = ? AND usuario_id = ?', [s.tarefa_id, usuario.id]);
+          quantidade++;
+        }
+        // A referência permanece somente para permitir consultar os registros preservados.
+        await c.execute('UPDATE fichas_treino SET arquivada = TRUE WHERE id = ? AND usuario_id = ?', [f.id, usuario.id]);
+        return { quantidade, mensagem: `Ficha excluída. ${quantidade} treino(s) desagendado(s). Histórico e registros mantidos.` };
+      });
     },
     async agendar(usuario, dados) {
       validarObjeto(dados, ['ficha_id', 'inicio', 'fim', 'dias']);
@@ -96,8 +108,7 @@ export function criarServicoTreinos(banco) {
         let quantidade = 0, preservados = 0;
         for (const s of sessoes) {
           if (!dados.dias.includes(new Date(s.data_prevista + 'T12:00:00Z').getUTCDay())) continue;
-          const temRegistro = json(s.realizado).some(e => e.observacao.trim() || e.series.some(r => r.feita || r.carga !== null || r.repeticoes !== null));
-          if (s.data_prevista < hoje || s.situacao === 'concluida' || temRegistro) { preservados++; continue; }
+          if (s.data_prevista < hoje || s.situacao === 'concluida' || temRegistro(s.realizado)) { preservados++; continue; }
           await c.execute('DELETE FROM tarefas WHERE id = ? AND usuario_id = ?', [s.tarefa_id, usuario.id]);
           quantidade++;
         }

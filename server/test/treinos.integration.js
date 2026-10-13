@@ -38,6 +38,20 @@ test('Desagendar filtra ficha, período e dias, preserva histórico e registros'
     assert.equal((await treino.listar(usuario, { inicio: agenda.inicio, fim: agenda.fim })).fichas.length, 1);
     await treino.agendar(usuario, { ...agenda, inicio: '2000-01-01', fim: '2000-01-01', dias: [6] });
     assert.deepEqual(await treino.desagendar(usuario, { ...agenda, inicio: '2000-01-01', fim: '2000-01-01', dias: [6] }), { quantidade: 0, preservados: 1 });
+    const { ficha: outraFicha } = await treino.salvarFicha(usuario, { ...modelo, nome: 'Outra ficha' });
+    await treino.agendar(usuario, { ...agenda, ficha_id: outraFicha.id });
+    await assert.rejects(treino.excluirFicha(outro, ficha.id), { status: 404 });
+    const excluida = await treino.excluirFicha(usuario, ficha.id);
+    assert.equal(excluida.quantidade, restantes.length - 2);
+    const aposExcluir = await treino.listar(usuario, { inicio: agenda.inicio, fim: agenda.fim });
+    assert.deepEqual(aposExcluir.fichas.map(f => f.id), [outraFicha.id]);
+    for (const t of tercas.slice(0, 2)) assert.equal((await treino.consultar(usuario, t.id)).sessao.id, t.id);
+    assert.equal((await treino.consultar(usuario, tercas[1].id)).sessao.realizado[0].series[0].carga, 0);
+    assert.equal((await treino.listar(usuario, { inicio: '2000-01-01', fim: '2000-01-01' })).sessoes.length, 1);
+    assert.equal(aposExcluir.sessoes.length, lista.length + 2);
+    const quartaRemovida = lista.find(s => !tercas.some(t => t.id === s.id));
+    await assert.rejects(treino.consultar(usuario, quartaRemovida.id), { status: 404 });
+    await assert.rejects(treino.agendar(usuario, agenda), { status: 404 });
   } finally { await banco.rollback(); banco.release(); await pool.end(); }
 });
 
@@ -64,7 +78,7 @@ test('Treino: histórico imutável da ficha, execução opcional, integração, 
     assert.equal((await treino.consultar(usuario, id)).sessao.planejado.exercicios[0].carga, 20);
     await assert.rejects(treino.salvarFicha(usuario, { ...modelo, versao: ficha.versao }, ficha.id), { status: 409 });
     await assert.rejects(treino.consultar(outro, id), { status: 404 });
-    await assert.rejects(treino.arquivar(outro, ficha.id), { status: 404 });
+    await assert.rejects(treino.excluirFicha(outro, ficha.id), { status: 404 });
     const registro = { versao: sessao.versao, realizado: sessao.realizado, concluir: false };
     await assert.rejects(treino.registrar(usuario, id, { ...registro, realizado: [] }), { status: 400 });
     const invalido = structuredClone(registro);
@@ -95,7 +109,7 @@ test('Treino: histórico imutável da ficha, execução opcional, integração, 
     await assert.rejects(treino.agendar(usuario, { ...agenda, fim: '2031-01-14' }), { status: 400 });
     const ultimoDia = '9999-12-31';
     assert.equal((await treino.agendar(usuario, { ...agenda, inicio: ultimoDia, fim: ultimoDia, dias: [new Date(ultimoDia + 'T12:00:00Z').getUTCDay()] })).quantidade, 1);
-    await treino.arquivar(usuario, ficha.id);
+    await treino.excluirFicha(usuario, ficha.id);
     assert.equal((await treino.listar(usuario, { inicio: agenda.inicio, fim: agenda.fim })).fichas.length, 0);
     assert.equal((await treino.consultar(usuario, id)).sessao.realizado[0].series[0].repeticoes, 10);
     await assert.rejects(treino.agendar(usuario, agenda), { status: 404 });
