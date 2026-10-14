@@ -15,7 +15,7 @@ const dataCurta = d => d ? d.split('-').reverse().join('/') : '—';
 const json = (method, body) => ({ method, headers: { 'Content-Type':'application/json' }, body:JSON.stringify(body) });
 const detalhesFixos = () => ({produto:'CDB',emissor:'',indice:'cdi',taxa:'',vencimento:'',liquidez:'Diária'});
 const detalhesVariaveis = () => ({codigo:'',classe:'acao',quantidade:'',preco_medio_centavos:''});
-const categorias = ['Moradia','Alimentação','Transporte','Saúde','Lazer','Educação','Trabalho','Outros'];
+const categorias = ['Moradia','Alimentação','Transporte','Saúde','Beleza','Lazer','Educação','Trabalho','Investimentos','Outros'];
 const nomeRegistro = {aporte:'Aporte / compra',resgate:'Resgate / venda',saldo:'Valor da posição'};
 const nomeClasse = {acao:'Ação',fii:'FII',etf:'ETF',outro:'Outro'};
 function moverMes(mes, n) {
@@ -48,7 +48,7 @@ export default function Financeiro({aoAlterarSujo}) {
   function sairFormulario(acao=()=>{}){if(sujo){setConfirmacao({mensagem:'Descartar alterações não salvas?',acao:()=>{setForm(null);setSujo(false);acao();}});}else{setForm(null);acao();}}
   async function executar(acao){if(ocupado)return;setOcupado(true);setErro('');setAviso('');try{const r=await acao();setAviso(r.mensagem);setForm(null);setSujo(false);setRevisao(v=>v+1);}catch(e){setErro(e.message);}finally{setOcupado(false);}}
   function confirmar(mensagem,acao){setConfirmacao({mensagem,acao:()=>executar(acao)});}
-  function novoLancamento(){abrir('lancamento',{tipo:'despesa',descricao:'',categoria:'Outros',valor:'',data_prevista:mes===hoje.slice(0,7)?hoje:mes+'-01',data_pagamento:null,observacao:'',repetir_ate:'',escopo:'este'});}
+  function novoLancamento(){abrir('lancamento',{tipo:'despesa',descricao:'',categoria:'',valor:'',data_prevista:mes===hoje.slice(0,7)?hoje:mes+'-01',data_pagamento:null,observacao:'',repetir_ate:'',escopo:'este'});}
   function editarLancamento(l){abrir('lancamento',{...l,valor:decimal(l.valor_centavos),repetir_ate:'',escopo:'este'});}
   function editarInvestimento(i){abrir('investimento',{...i,detalhes:{...i.detalhes,...(i.tipo==='variavel'?{preco_medio_centavos:decimal(i.detalhes.preco_medio_centavos),quantidade:i.detalhes.quantidade??''}:{taxa:i.detalhes.taxa??'',vencimento:i.detalhes.vencimento??''})}});}
   async function salvar(e){
@@ -80,7 +80,7 @@ export default function Financeiro({aoAlterarSujo}) {
         {v.id&&v.serie&&!v.data_pagamento&&v.data_prevista>=hoje&&<label>Aplicar em<select value={v.escopo} onChange={e=>alterar('escopo',e.target.value)}><option value="este">Só este lançamento</option><option value="proximos">Este e próximos pendentes</option></select></label>}
         <div className="fin-campos"><label>Tipo<select value={v.tipo} onChange={e=>alterar('tipo',e.target.value)}><option value="despesa">Despesa</option><option value="receita">Receita</option></select></label><label>Valor (R$)<input type="number" required min="0.01" max="1000000000" step="0.01" value={v.valor} onChange={e=>alterar('valor',e.target.value)}/></label></div>
         <label>Descrição<input autoFocus required maxLength={120} value={v.descricao} onChange={e=>alterar('descricao',e.target.value)}/></label>
-        <div className="fin-campos"><label>Categoria<input list="fin-categorias" required maxLength={60} value={v.categoria} onChange={e=>alterar('categoria',e.target.value)}/><datalist id="fin-categorias">{categorias.map(c=><option key={c} value={c}/>)}</datalist></label><label>Data prevista<input type="date" required disabled={v.escopo==='proximos'} value={v.data_prevista} onInput={e=>alterar('data_prevista',e.target.value)}/></label></div>
+        <div className="fin-campos"><label>Categoria<input list="fin-categorias" placeholder="Escolha ou digite" required maxLength={60} value={v.categoria} onChange={e=>alterar('categoria',e.target.value)}/><datalist id="fin-categorias">{categorias.map(c=><option key={c} value={c}/>)}</datalist></label><label>Data prevista<input type="date" required disabled={v.escopo==='proximos'} value={v.data_prevista} onInput={e=>alterar('data_prevista',e.target.value)}/></label></div>
         {v.escopo!=='proximos'&&<div className="fin-campos"><label>Situação<select value={v.data_pagamento?'realizado':'pendente'} onChange={e=>alterar('data_pagamento',e.target.value==='realizado'?hoje:null)}><option value="pendente">Pendente</option><option value="realizado">{v.tipo==='receita'?'Recebido':'Pago'}</option></select></label>{v.data_pagamento!==null&&<label>Data {v.tipo==='receita'?'do recebimento':'do pagamento'}<input type="date" required max={hoje} value={v.data_pagamento} onInput={e=>alterar('data_pagamento',e.target.value)}/></label>}</div>}
         {!v.id&&<div className="fin-campos"><label>Repetição<select value={v.repetir_ate?'mensal':'nao'} onChange={e=>alterar('repetir_ate',e.target.value==='mensal'?v.data_prevista:'')}><option value="nao">Não repetir</option><option value="mensal">Mensal</option></select></label>{v.repetir_ate&&<label>Repetir até<input type="date" required min={v.data_prevista} value={v.repetir_ate} onInput={e=>alterar('repetir_ate',e.target.value)}/></label>}</div>}
         {v.repetir_ate&&<p className="fin-ajuda">Até 366 dias. Nos meses curtos, usa o último dia. Só o primeiro pode começar pago/recebido.</p>}
