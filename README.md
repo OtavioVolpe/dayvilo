@@ -4,6 +4,36 @@ Aplicação web de organização pessoal, com foco em uma rotina flexível e uma
 
 A área de rotina reúne três visões: **Hoje**, **Semana** e **Histórico**. A visão semanal organiza as tarefas de segunda a domingo, permite navegar entre semanas e adicionar, editar ou concluir tarefas de cada dia. O Histórico consulta as tarefas pela data planejada, com filtros de situação e períodos de até 366 dias. Mostra o estado atual das tarefas; alterações de data e exclusões também afetam essa consulta. No cadastro, tarefas podem se repetir diariamente ou nos dias da semana escolhidos, com data final e período de até 366 dias. As ocorrências são criadas de uma vez e as novas repetições ficam vinculadas a uma série. Cada ocorrência pendente pode ser concluída, editada ou pulada individualmente. Para editar uma pulada, restaure-a; para editar uma concluída, desfaça a conclusão. A exclusão individual está disponível em qualquer situação. Editar próximas e Encerrar repetição seguem as regras abaixo. Repetições anteriores à criação dos vínculos continuam independentes. Na tela Hoje, pendências de datas anteriores aparecem separadamente e podem ser concluídas, reagendadas para hoje ou puladas. Pular preserva a tarefa no Histórico, pode ser desfeito com Restaurar e retira a ocorrência do total usado no progresso. Em Hoje e Semana, as puladas ficam em seções recolhidas inicialmente; ao pular uma tarefa da lista, a seção do dia abre e mostra o card movido. Pendentes, concluídas e puladas têm selos com texto e ícone, com cores distintas, também no Histórico. O design privilegia clareza e navegação entre as áreas da vida pessoal.
 
+## Financeiro
+
+Quarta seção do menu, após Treino. **Movimentações** permite navegar por mês, cadastrar receitas/despesas, informar categorias, marcar como pago/recebido com data realizada, editar, excluir e consultar gastos pagos por categoria. Os valores são inteiros em centavos. O resumo pertence ao **mês da data prevista**; pagar em outro mês não muda esse agrupamento. Resultado do mês = recebido − pago, não saldo bancário. Pendentes vencidos ficam sinalizados; não há limpeza automática do histórico.
+
+Repetição mensal tem término explícito e limite de 366 dias. Dia 31 usa o último dia nos meses curtos e retorna ao dia 31 quando possível. Só a primeira ocorrência pode começar paga. Editar permite só esta ou esta e próximas pendentes (a partir de hoje); o segundo escopo mantém datas e pagamentos e substitui também edições individuais futuras. Encerrar remove pendentes desde a data selecionada ou hoje, o que for posterior, preservando pagos e passados. Excluir individualmente não tem recuperação.
+
+**Investimentos** é um cadastro manual separado das receitas/despesas:
+
+- Renda fixa: produto, instituição onde está, emissor, % CDI / prefixado / IPCA + taxa, liquidez e vencimento.
+- Renda variável: código, classe, instituição, quantidade e preço médio **informados manualmente**. Compras e vendas não recalculam estes dois campos.
+- Registrar: aporte/compra, resgate/venda ou valor da posição, cada um com data e observação. O cadastro inicial não inventa um aporte; ele é registrado separadamente.
+- Aportes e resgates não entram como gastos ou receitas. Não há saldo bancário, rentabilidade, impostos ou cotações automáticas.
+- A avaliação vigente é a última por data (e ordem de registro no mesmo dia), não a soma das avaliações. Aportes/resgates não atualizam a avaliação. A interface mostra data e quantas posições foram avaliadas; os totais podem misturar datas diferentes.
+- Para corrigir um registro, exclua-o e cadastre novamente. Excluir investimento remove seu histórico mediante confirmação. Metadados são editáveis; os registros de aportes, resgates e avaliações permanecem até exclusão explícita.
+
+Sessão e CSRF são obrigatórios, todas as consultas pertencem ao usuário autenticado e alterações exigem versão atual. Forms avisam antes de descartar alterações. Nada financeiro é enviado à Rotina automaticamente.
+
+### Testar e publicar o Financeiro
+
+São necessárias as migrations **015, 016 e 017**. No desenvolvimento, use exclusivamente o banco local em `server/.env`, execute `npm run db:migrate` e `npm run dev`.
+
+1. Em Financeiro, crie uma despesa mensal no dia 31 e consulte os meses seguintes.
+2. Registre um pagamento; confira Pago, A pagar, Resultado e categoria. Desfaça-o e confira novamente.
+3. Edite próximos pendentes, depois encerre a repetição e confira que pagos permanecem.
+4. Crie renda fixa, registre aporte e avaliação; confira a instituição, taxa, valores e datas.
+5. Cadastre renda variável, registre compra e confira que ela não aparece como despesa. Quantidade e preço médio continuam manuais.
+6. Reabra o navegador e confira a persistência. Teste outra conta para verificar que os dados não aparecem nela.
+
+Antes do push/deploy, faça backup online, valide sua restauração e aplique 015–017 no Aiven com a configuração privada. O banco online não é migrado pelo build. Os testes específicos são `server/test/financeiro.test.js` e `server/test/financeiro.integration.js`; a suíte completa continua disponível pelos scripts de teste.
+
 ## Treino
 
 Hoje abre os treinos de uma data; Semana mostra a divisão por dia. As fichas contêm exercícios em ordem, séries, repetições previstas, carga de referência em kg, descanso em segundos e observações. O agendamento escolhe dias da semana e um período de até 366 dias. A mesma ficha não é agendada duas vezes na mesma data.

@@ -1,0 +1,127 @@
+import { useEffect, useState } from 'react';
+import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight, ArrowDownLeft, ArrowUpRight, Landmark, ChartNoAxesCombined, RefreshCw } from 'lucide-react';
+import { solicitar } from './api.js';
+import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
+import './financeiro.css';
+
+const moeda = v => (v / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const decimal = v => v == null ? '' : (v / 100).toFixed(2);
+const emCentavos = v => {
+  if (!/^\d+(\.\d{1,2})?$/.test(String(v))) throw new Error('Informe o valor com até duas casas decimais.');
+  const [inteiro, fracao=''] = String(v).split('.');
+  return Number(inteiro)*100+Number(fracao.padEnd(2,'0'));
+};
+const dataCurta = d => d ? d.split('-').reverse().join('/') : '—';
+const json = (method, body) => ({ method, headers: { 'Content-Type':'application/json' }, body:JSON.stringify(body) });
+const detalhesFixos = () => ({produto:'CDB',emissor:'',indice:'cdi',taxa:'',vencimento:'',liquidez:'Diária'});
+const detalhesVariaveis = () => ({codigo:'',classe:'acao',quantidade:'',preco_medio_centavos:''});
+const categorias = ['Moradia','Alimentação','Transporte','Saúde','Lazer','Educação','Trabalho','Outros'];
+const nomeRegistro = {aporte:'Aporte / compra',resgate:'Resgate / venda',saldo:'Valor da posição'};
+const nomeClasse = {acao:'Ação',fii:'FII',etf:'ETF',outro:'Outro'};
+function moverMes(mes, n) {
+  const [ano,m] = mes.split('-').map(Number), d=new Date(Date.UTC(ano,m-1+n,1));
+  return d.toISOString().slice(0,7);
+}
+export default function Financeiro({aoAlterarSujo}) {
+  const [hoje,setHoje]=useState(''),[mes,setMes]=useState(''),[aba,setAba]=useState('movimentos');
+  const [dados,setDados]=useState(null),[investimentos,setInvestimentos]=useState([]),[revisao,setRevisao]=useState(0);
+  const [carregando,setCarregando]=useState(true),[ocupado,setOcupado]=useState(false),[erro,setErro]=useState(''),[aviso,setAviso]=useState('');
+  const [filtro,setFiltro]=useState('todos'),[form,setForm]=useState(null),[sujo,setSujo]=useState(false),[confirmacao,setConfirmacao]=useState(null);
+  const [expandido,setExpandido]=useState(null);
+  useEffect(()=>{aoAlterarSujo?.(sujo);return()=>aoAlterarSujo?.(false);},[sujo,aoAlterarSujo]);
+  useEffect(()=>{if(!sujo)return;const sair=e=>{e.preventDefault();e.returnValue='';};window.addEventListener('beforeunload',sair);return()=>window.removeEventListener('beforeunload',sair);},[sujo]);
+  useEffect(()=>{
+    const controle=new AbortController();setCarregando(true);setErro('');
+    (async()=>{
+      const perfil=await solicitar('/perfil',{signal:controle.signal});
+      const atual=mes||perfil.data_hoje.slice(0,7);
+      const [lista,carteira]=await Promise.all([solicitar('/financeiro?mes='+atual,{signal:controle.signal}),solicitar('/financeiro/investimentos',{signal:controle.signal})]);
+      if(controle.signal.aborted)return;
+      setHoje(perfil.data_hoje);if(!mes)setMes(atual);setDados(lista);setInvestimentos(carteira.investimentos);
+    })().catch(e=>{if(!controle.signal.aborted){setDados(null);setErro(e.message);}}).finally(()=>{if(!controle.signal.aborted)setCarregando(false);});
+    return()=>controle.abort();
+  },[mes,revisao]);
+  const bloqueado=ocupado||carregando||!dados;
+  function abrir(kind,value){setForm({kind,value});setSujo(false);setAviso('');setErro('');}
+  function alterar(campo,valor){setForm(f=>({...f,value:{...f.value,[campo]:valor}}));setSujo(true);}
+  function detalhe(campo,valor){setForm(f=>({...f,value:{...f.value,detalhes:{...f.value.detalhes,[campo]:valor}}}));setSujo(true);}
+  function sairFormulario(acao=()=>{}){if(sujo){setConfirmacao({mensagem:'Descartar alterações não salvas?',acao:()=>{setForm(null);setSujo(false);acao();}});}else{setForm(null);acao();}}
+  async function executar(acao){if(ocupado)return;setOcupado(true);setErro('');setAviso('');try{const r=await acao();setAviso(r.mensagem);setForm(null);setSujo(false);setRevisao(v=>v+1);}catch(e){setErro(e.message);}finally{setOcupado(false);}}
+  function confirmar(mensagem,acao){setConfirmacao({mensagem,acao:()=>executar(acao)});}
+  function novoLancamento(){abrir('lancamento',{tipo:'despesa',descricao:'',categoria:'Outros',valor:'',data_prevista:mes===hoje.slice(0,7)?hoje:mes+'-01',data_pagamento:null,observacao:'',repetir_ate:'',escopo:'este'});}
+  function editarLancamento(l){abrir('lancamento',{...l,valor:decimal(l.valor_centavos),repetir_ate:'',escopo:'este'});}
+  function editarInvestimento(i){abrir('investimento',{...i,detalhes:{...i.detalhes,...(i.tipo==='variavel'?{preco_medio_centavos:decimal(i.detalhes.preco_medio_centavos),quantidade:i.detalhes.quantidade??''}:{taxa:i.detalhes.taxa??'',vencimento:i.detalhes.vencimento??''})}});}
+  async function salvar(e){
+    e.preventDefault(); const v=form.value;
+    await executar(async()=>{
+      if(form.kind==='lancamento'){
+        const body={tipo:v.tipo,descricao:v.descricao,categoria:v.categoria,valor_centavos:emCentavos(v.valor),data_prevista:v.data_prevista,data_pagamento:v.data_pagamento,observacao:v.observacao,...(v.id?{versao:v.versao,escopo:v.escopo}:{repetir_ate:v.repetir_ate||null})};
+        return solicitar('/financeiro/lancamentos'+(v.id?'/'+v.id:''),json(v.id?'PUT':'POST',body));
+      }
+      if(form.kind==='pagamento')return solicitar('/financeiro/lancamentos/'+v.id,json('PATCH',{versao:v.versao,data_pagamento:v.data_pagamento}));
+      if(form.kind==='registro')return solicitar('/financeiro/investimentos/'+v.id+'/registros',json('POST',{versao:v.versao,tipo:v.tipo,data:v.data,valor_centavos:emCentavos(v.valor),observacao:v.observacao}));
+      const detalhes=v.tipo==='fixa'?{...v.detalhes,taxa:v.detalhes.taxa===''?null:Number(v.detalhes.taxa),vencimento:v.detalhes.vencimento||null}:{...v.detalhes,quantidade:v.detalhes.quantidade===''?null:Number(v.detalhes.quantidade),preco_medio_centavos:v.detalhes.preco_medio_centavos===''?null:emCentavos(v.detalhes.preco_medio_centavos)};
+      return solicitar('/financeiro/investimentos'+(v.id?'/'+v.id:''),json(v.id?'PUT':'POST',{tipo:v.tipo,nome:v.nome,instituicao:v.instituicao,detalhes,...(v.id?{versao:v.versao}:{})}));
+    });
+  }
+  const v=form?.value;
+  const lista=(dados?.lancamentos||[]).filter(l=>filtro==='todos'||filtro==='pendentes'&&!l.data_pagamento||filtro===l.tipo);
+  const totalAportes=investimentos.reduce((a,i)=>a+i.aportes,0),totalResgates=investimentos.reduce((a,i)=>a+i.resgates,0);
+  const avaliados=investimentos.filter(i=>i.saldo),totalInformado=avaliados.reduce((a,i)=>a+i.saldo.valor_centavos,0);
+  return <section className="financeiro" aria-label="Financeiro" aria-busy={ocupado||carregando}>
+    {confirmacao&&<ConfirmacaoTreino mensagem={confirmacao.mensagem} cancelar={()=>setConfirmacao(null)} confirmar={()=>{const acao=confirmacao.acao;setConfirmacao(null);acao();}}/>}
+    <header className="fin-topo"><h1>Meu financeiro</h1>{!form&&<button className="botao-principal" disabled={bloqueado} onClick={()=>aba==='movimentos'?novoLancamento():abrir('investimento',{tipo:'fixa',nome:'',instituicao:'',detalhes:detalhesFixos()})}><Plus size={18}/>{aba==='movimentos'?'Lançamento':'Investimento'}</button>}</header>
+    <nav className="routine-tabs" aria-label="Seções do Financeiro">{[['movimentos','Movimentações'],['investimentos','Investimentos']].map(([id,nome])=><button key={id} disabled={ocupado} aria-pressed={aba===id} onClick={()=>{if(id!==aba)sairFormulario(()=>{setAba(id);setAviso('');});}}>{nome}</button>)}</nav>
+    {erro&&<p role="alert" className="mensagem-erro">{erro} {!dados&&<button onClick={()=>setRevisao(n=>n+1)}>Tentar novamente</button>}</p>}
+    {aviso&&<p role="status" className="mensagem-sucesso">{aviso}</p>}
+    {carregando&&<p role="status">Carregando financeiro…</p>}
+    {form&&<form onSubmit={salvar} className="fin-form"><fieldset disabled={ocupado||carregando}><legend>{form.kind==='lancamento'?(v.id?'Editar lançamento':'Novo lançamento'):form.kind==='pagamento'?(v.tipo==='receita'?'Registrar recebimento':'Registrar pagamento'):form.kind==='registro'?'Registrar no investimento':v.id?'Editar investimento':'Novo investimento'}</legend>
+      {form.kind==='lancamento'&&<>
+        {v.id&&v.serie&&!v.data_pagamento&&v.data_prevista>=hoje&&<label>Aplicar em<select value={v.escopo} onChange={e=>alterar('escopo',e.target.value)}><option value="este">Só este lançamento</option><option value="proximos">Este e próximos pendentes</option></select></label>}
+        <div className="fin-campos"><label>Tipo<select value={v.tipo} onChange={e=>alterar('tipo',e.target.value)}><option value="despesa">Despesa</option><option value="receita">Receita</option></select></label><label>Valor (R$)<input type="number" required min="0.01" max="1000000000" step="0.01" value={v.valor} onChange={e=>alterar('valor',e.target.value)}/></label></div>
+        <label>Descrição<input autoFocus required maxLength={120} value={v.descricao} onChange={e=>alterar('descricao',e.target.value)}/></label>
+        <div className="fin-campos"><label>Categoria<input list="fin-categorias" required maxLength={60} value={v.categoria} onChange={e=>alterar('categoria',e.target.value)}/><datalist id="fin-categorias">{categorias.map(c=><option key={c} value={c}/>)}</datalist></label><label>Data prevista<input type="date" required disabled={v.escopo==='proximos'} value={v.data_prevista} onInput={e=>alterar('data_prevista',e.target.value)}/></label></div>
+        {v.escopo!=='proximos'&&<div className="fin-campos"><label>Situação<select value={v.data_pagamento?'realizado':'pendente'} onChange={e=>alterar('data_pagamento',e.target.value==='realizado'?hoje:null)}><option value="pendente">Pendente</option><option value="realizado">{v.tipo==='receita'?'Recebido':'Pago'}</option></select></label>{v.data_pagamento!==null&&<label>Data {v.tipo==='receita'?'do recebimento':'do pagamento'}<input type="date" required max={hoje} value={v.data_pagamento} onInput={e=>alterar('data_pagamento',e.target.value)}/></label>}</div>}
+        {!v.id&&<div className="fin-campos"><label>Repetição<select value={v.repetir_ate?'mensal':'nao'} onChange={e=>alterar('repetir_ate',e.target.value==='mensal'?v.data_prevista:'')}><option value="nao">Não repetir</option><option value="mensal">Mensal</option></select></label>{v.repetir_ate&&<label>Repetir até<input type="date" required min={v.data_prevista} value={v.repetir_ate} onInput={e=>alterar('repetir_ate',e.target.value)}/></label>}</div>}
+        {v.repetir_ate&&<p className="fin-ajuda">Até 366 dias. Nos meses curtos, usa o último dia. Só o primeiro pode começar pago/recebido.</p>}
+        {v.escopo==='proximos'&&<p className="fin-ajuda">Atualiza os próximos pendentes, inclusive edições individuais. Datas e pagamentos são mantidos.</p>}
+        <label>Observação (opcional)<textarea maxLength={1000} value={v.observacao} onChange={e=>alterar('observacao',e.target.value)}/></label>
+      </>}
+      {form.kind==='pagamento'&&<><h2>{v.descricao} · {moeda(v.valor_centavos)}</h2><label>Data realizada<input type="date" required max={hoje} value={v.data_pagamento} onInput={e=>alterar('data_pagamento',e.target.value)}/></label></>}
+      {form.kind==='investimento'&&<>
+        <div className="fin-campos"><label>Tipo<select value={v.tipo} onChange={e=>{setForm(f=>({...f,value:{...f.value,tipo:e.target.value,detalhes:e.target.value==='fixa'?detalhesFixos():detalhesVariaveis()}}));setSujo(true);}}><option value="fixa">Renda fixa</option><option value="variavel">Renda variável</option></select></label><label>Nome<input autoFocus required maxLength={120} value={v.nome} onChange={e=>alterar('nome',e.target.value)} placeholder="Ex.: Reserva de emergência"/></label></div>
+        <label>Onde está (banco ou corretora)<input required maxLength={120} value={v.instituicao} onChange={e=>alterar('instituicao',e.target.value)}/></label>
+        {v.tipo==='fixa'?<><div className="fin-campos"><label>Produto<input required maxLength={60} value={v.detalhes.produto} onChange={e=>detalhe('produto',e.target.value)} placeholder="CDB, LCI, Tesouro…"/></label><label>Emissor<input required maxLength={120} value={v.detalhes.emissor} onChange={e=>detalhe('emissor',e.target.value)}/></label><label>Rentabilidade<select value={v.detalhes.indice} onChange={e=>detalhe('indice',e.target.value)}><option value="cdi">% do CDI</option><option value="prefixado">Prefixado</option><option value="ipca">IPCA + taxa</option></select></label><label>{v.detalhes.indice==='cdi'?'Percentual do CDI (%)':'Taxa anual (%)'}<input type="number" min="0" max="10000" step="0.0001" value={v.detalhes.taxa} onChange={e=>detalhe('taxa',e.target.value)}/></label><label>Vencimento (opcional)<input type="date" value={v.detalhes.vencimento} onInput={e=>detalhe('vencimento',e.target.value)}/></label><label>Liquidez (opcional)<input maxLength={120} value={v.detalhes.liquidez} onChange={e=>detalhe('liquidez',e.target.value)}/></label></div></>:<><div className="fin-campos"><label>Código do ativo<input required maxLength={30} value={v.detalhes.codigo} onChange={e=>detalhe('codigo',e.target.value)}/></label><label>Classe<select value={v.detalhes.classe} onChange={e=>detalhe('classe',e.target.value)}>{Object.entries(nomeClasse).map(([id,n])=><option value={id} key={id}>{n}</option>)}</select></label><label>Quantidade atual (manual)<input type="number" min="0" max="1000000000" step="any" value={v.detalhes.quantidade} onChange={e=>detalhe('quantidade',e.target.value)}/></label><label>Preço médio (R$, manual)<input type="number" min="0" step="0.01" max="1000000000" value={v.detalhes.preco_medio_centavos} onChange={e=>detalhe('preco_medio_centavos',e.target.value)}/></label></div><p className="fin-ajuda">Compras e vendas não recalculam quantidade nem preço médio nesta versão.</p></>}
+        <p className="fin-ajuda">Após salvar, registre aportes, resgates e o valor da posição. Não calculamos rendimentos ou impostos.</p>
+      </>}
+      {form.kind==='registro'&&<><h2>{v.nome}</h2><div className="fin-campos"><label>Registro<select value={v.tipo} onChange={e=>alterar('tipo',e.target.value)}>{Object.entries(nomeRegistro).map(([id,n])=><option value={id} key={id}>{n}</option>)}</select></label><label>Valor (R$)<input required type="number" min={v.tipo==='saldo'?'0':'0.01'} step="0.01" max="1000000000" value={v.valor} onChange={e=>alterar('valor',e.target.value)}/></label><label>Data<input required type="date" max={hoje} value={v.data} onInput={e=>alterar('data',e.target.value)}/></label></div><label>Observação (opcional)<textarea maxLength={500} value={v.observacao} onChange={e=>alterar('observacao',e.target.value)}/></label><p className="fin-ajuda">Valor da posição substitui a avaliação anterior pela data, sem somar. Aportes e resgates não alteram despesas ou receitas.</p></>}
+      <div className="fin-acoes"><button type="button" onClick={()=>sairFormulario()}>Cancelar</button><button className="botao-principal" type="submit">Salvar</button></div>
+    </fieldset></form>}
+    {!form&&dados&&!carregando&&aba==='movimentos'&&<>
+      <div className="fin-periodo"><button disabled={bloqueado||mes==='1000-01'} aria-label="Mês anterior" onClick={()=>setMes(moverMes(mes,-1))}><ChevronLeft size={18}/></button><label><span className="sr-only">Consultar mês</span><input type="month" min="1000-01" max="9999-12" value={mes} onInput={e=>{if(e.target.value)setMes(e.target.value);}}/></label><button disabled={bloqueado||mes==='9999-12'} aria-label="Próximo mês" onClick={()=>setMes(moverMes(mes,1))}><ChevronRight size={18}/></button><button disabled={bloqueado||mes===hoje.slice(0,7)} onClick={()=>setMes(hoje.slice(0,7))}>Mês atual</button></div>
+      <div className="fin-resumo">{[['Recebido',dados.resumo.recebido],['Pago',dados.resumo.pago],['Resultado do mês',dados.resumo.recebido-dados.resumo.pago]].map(([nome,valor])=><div key={nome}><span>{nome}</span><strong>{moeda(valor)}</strong></div>)}</div>
+      <div className="fin-pendentes"><span>A pagar <strong>{moeda(dados.resumo.pagar)}</strong></span><span>A receber <strong>{moeda(dados.resumo.receber)}</strong></span></div>
+      <p className="fin-ajuda">Mês da data prevista. Resultado = recebido − pago; não é o saldo bancário.</p>
+      <div className="fin-filtros" aria-label="Filtrar lançamentos">{[['todos','Todos'],['despesa','Despesas'],['receita','Receitas'],['pendentes','Pendentes']].map(([id,nome])=><button key={id} aria-pressed={filtro===id} onClick={()=>setFiltro(id)}>{nome}</button>)}</div>
+      {!lista.length&&<p className="fin-vazio">Nenhum lançamento neste filtro e mês.</p>}
+      <ul className="fin-lista">{lista.map(l=><li key={l.id} className="fin-linha"><span className="fin-simbolo">{l.tipo==='receita'?<ArrowDownLeft size={18}/>:<ArrowUpRight size={18}/>}</span><div className="fin-descricao"><strong>{l.descricao}</strong><small>{dataCurta(l.data_prevista)} · {l.categoria}{l.serie&&<> · <RefreshCw size={12}/> Mensal</>}</small>{l.data_pagamento?<small>{l.tipo==='receita'?'Recebido':'Pago'} em {dataCurta(l.data_pagamento)}</small>:l.data_prevista<hoje&&<small className="fin-atraso">Em atraso</small>}{l.observacao&&<small>{l.observacao}</small>}</div><strong className="fin-valor">{l.tipo==='receita'?'+':'−'} {moeda(l.valor_centavos)}</strong><div className="fin-acoes-linha">
+        <button disabled={bloqueado} aria-label={l.data_pagamento?`Desfazer pagamento de ${l.descricao}`:`${l.tipo==='receita'?'Receber':'Pagar'} ${l.descricao}`} onClick={()=>l.data_pagamento?confirmar('Voltar este lançamento a pendente?',()=>solicitar('/financeiro/lancamentos/'+l.id,json('PATCH',{versao:l.versao,data_pagamento:null}))):abrir('pagamento',{...l,data_pagamento:hoje})}>{l.data_pagamento?(l.tipo==='receita'?'✓ Recebido':'✓ Pago'):(l.tipo==='receita'?'Receber':'Pagar')}</button>
+        <button disabled={bloqueado} aria-label={'Editar '+l.descricao} title="Editar" onClick={()=>editarLancamento(l)}><Pencil size={17}/></button><button disabled={bloqueado} aria-label={'Excluir '+l.descricao} title="Excluir" onClick={()=>confirmar('Excluir só este lançamento? Não pode ser desfeito.',()=>solicitar('/financeiro/lancamentos/'+l.id,json('DELETE',{versao:l.versao,escopo:'este'})))}><Trash2 size={17}/></button>
+        {l.serie&&<button disabled={bloqueado} className="fin-encerrar" onClick={()=>confirmar('Encerrar a partir desta data (ou de hoje, se passada)? Remove os próximos pendentes. Pagos e passados são mantidos.',()=>solicitar('/financeiro/lancamentos/'+l.id,json('DELETE',{versao:l.versao,escopo:'proximos'})))}>Encerrar repetição</button>}
+      </div></li>)}</ul>
+      {Object.keys(dados.resumo.categorias).length>0&&<section className="fin-categorias"><h2>Com o que gastei</h2>{Object.entries(dados.resumo.categorias).sort((a,b)=>b[1]-a[1]).map(([nome,valor])=><div key={nome}><span>{nome}</span><meter min="0" max={dados.resumo.pago} value={valor} aria-label={nome}/><span>{moeda(valor)}</span></div>)}</section>}
+    </>}
+    {!form&&dados&&!carregando&&aba==='investimentos'&&<>
+      <div className="fin-resumo">{[['Aportes acumulados',totalAportes],['Resgates acumulados',totalResgates],['Posições informadas',totalInformado]].map(([n,v])=><div key={n}><span>{n}</span><strong>{moeda(v)}</strong></div>)}</div>
+      <p className="fin-ajuda">{avaliados.length} de {investimentos.length} posições avaliadas. Datas podem ser diferentes. Valores manuais, sem cotações automáticas.</p>
+      {!investimentos.length&&<p className="fin-vazio">Cadastre seu primeiro investimento. Aportes e resgates ficam separados dos gastos.</p>}
+      {investimentos.map(i=><article className="fin-investimento" key={i.id}><header><button className="fin-abrir" aria-expanded={expandido===i.id} onClick={()=>setExpandido(expandido===i.id?null:i.id)}><span className="fin-simbolo">{i.tipo==='fixa'?<Landmark size={22}/>:<ChartNoAxesCombined size={22}/>}</span><span><small className="fin-simbolo">{i.tipo==='fixa'?'Renda fixa':'Renda variável'}</small><strong>{i.nome}</strong><small>{i.instituicao} · {i.tipo==='fixa'?i.detalhes.produto:i.detalhes.codigo}</small></span><ChevronRight className={expandido===i.id?'fin-expandido':''} size={18}/></button><span className="fin-valor">{i.saldo?moeda(i.saldo.valor_centavos):'Sem avaliação'}{i.saldo&&<small>{dataCurta(i.saldo.data)}</small>}</span></header>
+        {expandido===i.id&&<><dl className="fin-detalhes"><div><dt>Onde está</dt><dd>{i.instituicao}</dd></div>{i.tipo==='fixa'?<><div><dt>Emissor</dt><dd>{i.detalhes.emissor}</dd></div><div><dt>Rentabilidade informada</dt><dd>{i.detalhes.taxa===null?'Não informada':i.detalhes.indice==='cdi'?`${i.detalhes.taxa}% do CDI`:i.detalhes.indice==='ipca'?`IPCA + ${i.detalhes.taxa}% a.a.`:`${i.detalhes.taxa}% a.a.`}</dd></div><div><dt>Vencimento</dt><dd>{dataCurta(i.detalhes.vencimento)}</dd></div><div><dt>Liquidez</dt><dd>{i.detalhes.liquidez||'Não informada'}</dd></div></>:<><div><dt>Ativo</dt><dd>{i.detalhes.codigo} · {nomeClasse[i.detalhes.classe]}</dd></div><div><dt>Quantidade informada</dt><dd>{i.detalhes.quantidade??'Não informada'}</dd></div><div><dt>Preço médio informado</dt><dd>{i.detalhes.preco_medio_centavos===null?'Não informado':moeda(i.detalhes.preco_medio_centavos)}</dd></div></>}<div><dt>Aportes − resgates</dt><dd>{moeda(i.aportes-i.resgates)}</dd></div></dl>
+          <p className="fin-ajuda">Aportes e resgates não atualizam o valor da posição. Informe uma nova avaliação após movimentar.</p>
+          <div className="fin-acoes"><button disabled={bloqueado} onClick={()=>abrir('registro',{id:i.id,versao:i.versao,nome:i.nome,tipo:'aporte',valor:'',data:hoje,observacao:''})}><Plus size={16}/> Registrar</button><button disabled={bloqueado} aria-label={'Editar investimento '+i.nome} onClick={()=>editarInvestimento(i)}><Pencil size={17}/></button><button disabled={bloqueado} aria-label={'Excluir investimento '+i.nome} onClick={()=>confirmar('Excluir este investimento e todos os seus registros? Não pode ser desfeito.',()=>solicitar('/financeiro/investimentos/'+i.id,json('DELETE',{versao:i.versao})))}><Trash2 size={17}/></button></div>
+          <h3>Registros</h3>{!i.registros.length&&<p className="fin-ajuda">Registre seu primeiro aporte ou compra.</p>}<ul className="fin-registros">{[...i.registros].reverse().map(r=><li key={r.id}><span>{nomeRegistro[r.tipo]}<small>{dataCurta(r.data)}{r.observacao&&` · ${r.observacao}`}</small></span><strong>{moeda(r.valor_centavos)}</strong><button disabled={bloqueado} aria-label={`Excluir ${nomeRegistro[r.tipo]} de ${dataCurta(r.data)}`} onClick={()=>confirmar('Excluir este registro para corrigir? Os totais serão recalculados.',()=>solicitar(`/financeiro/investimentos/${i.id}/registros/${r.id}`,json('DELETE',{versao:i.versao})))}><Trash2 size={16}/></button></li>)}</ul>
+        </>}
+      </article>)}
+    </>}
+  </section>;
+}
