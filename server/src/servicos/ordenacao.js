@@ -1,5 +1,6 @@
 import { ErroConta, transacionar } from './autenticacao.js';
 import { validarObjeto, validarData, ErroValidacao } from '../validacoes/tarefas.js';
+import { visivelNaRotina } from '../repositorios/tarefas.js';
 
 export async function ordenarTarefas(banco, usuarioId, dados) {
   validarObjeto(dados, ['data', 'situacao', 'ids', 'anteriores', 'area']);
@@ -12,7 +13,7 @@ export async function ordenarTarefas(banco, usuarioId, dados) {
   }
   if (dados.ids.length !== dados.anteriores.length || dados.ids.some(id => !dados.anteriores.includes(id))) throw new ErroValidacao('As sequências devem conter as mesmas tarefas.');
   return transacionar(banco, async conexao => {
-    const [todas] = await conexao.execute("SELECT id, area FROM tarefas WHERE usuario_id = ? AND data_prevista = ? AND situacao = ? ORDER BY ordem = 0, ordem, id FOR UPDATE", [usuarioId, data, situacao]);
+    const [todas] = await conexao.execute(`SELECT id, area FROM tarefas WHERE ${visivelNaRotina} AND usuario_id = ? AND data_prevista = ? AND situacao = ? ORDER BY ordem = 0, ordem, id FOR UPDATE`, [usuarioId, data, situacao]);
     const atuais = dados.area ? todas.filter(tarefa => tarefa.area === dados.area) : todas;
     if (atuais.length !== dados.anteriores.length || atuais.some((tarefa, indice) => tarefa.id !== dados.anteriores[indice])) throw new ErroConta(409, 'A lista mudou. Atualize a página antes de organizar novamente.');
     let proximo = 0;

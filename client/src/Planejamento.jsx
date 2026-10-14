@@ -10,9 +10,9 @@ import { useEffect, useRef, useState } from 'react';
 import SeloSituacao from './SeloSituacao.jsx';
 import ListaHistorico from './ListaHistorico.jsx';
 import { deslocarData, formatarData } from './datas.js';
-import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, ListRestart, CircleStop, RefreshCw, House, Dumbbell, ArrowUpRight } from 'lucide-react';
+import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, ListRestart, CircleStop, RefreshCw, House, Dumbbell, ArrowUpRight, Utensils } from 'lucide-react';
 
-export default function Planejamento({ semanal = false, historico = false, casa = false, aoAbrirTreino }) {
+export default function Planejamento({ semanal = false, historico = false, casa = false, aoAbrirTreino, aoAbrirRefeicao }) {
   const [diaSelecao, definirDiaSelecao] = useState(null);
   const [selecionados, definirSelecionados] = useState([]);
   const [confirmarLote, definirConfirmarLote] = useState(false);
@@ -90,6 +90,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
   }, [tarefaMovida]);
 
   async function abrirFormulario(tarefa = null, dia = data, serie = false) {
+    if (tarefa?.refeicao_id) { aoAbrirRefeicao?.(tarefa); return; }
     definirConfiguracaoSerie(null); definirFimSerie(''); definirTipoSerieAntiga('');
     if (serie) {
       definirAtualizando(ids => [...ids, tarefa.id]);
@@ -286,11 +287,12 @@ export default function Planejamento({ semanal = false, historico = false, casa 
       {diaSelecao === tarefa.data_prevista && !atrasada ? <button type="button" className="marcador-selecao" aria-label={'Selecionar: ' + tarefa.titulo} aria-pressed={selecionados.includes(tarefa.id)} disabled={salvando || carregando} onClick={() => { definirConfirmarLote(false); definirSelecionados(ids => ids.includes(tarefa.id) ? ids.filter(id => id !== tarefa.id) : [...ids, tarefa.id]); }}>{selecionados.includes(tarefa.id) && <Check size={16} aria-hidden="true" />}</button> : tarefa.situacao !== 'pulada' && <input type="checkbox" aria-label={`${tarefa.situacao === 'concluida' ? 'Desfazer conclusão' : 'Concluir'}: ${tarefa.titulo}`} checked={tarefa.situacao === 'concluida'} disabled={diaSelecao !== null || aberto || salvando || atualizando.includes(tarefa.id)} onChange={() => alternar(tarefa)} />}
       <div className="tarefa-conteudo"><div className="tarefa-cabecalho"><span className="tarefa-titulo" id={`titulo-tarefa-${tarefa.id}`}>{tarefa.treino_sessao_id ? tarefa.titulo.replace(/^Treino — /, '') : tarefa.titulo}</span></div>
         {tarefa.observacao && <p className="observacao">{tarefa.observacao}</p>}
-        <div className="detalhes">{tarefa.treino_sessao_id && <span className="selo-treino"><Dumbbell size={13} aria-hidden="true" />Treino</span>}{tarefa.area === 'casa' && <span className="selo-casa"><House size={13} aria-hidden="true" />Casa · {tarefa.ambiente}</span>}{tarefa.serie_id && <span><RefreshCw size={13} style={{ flexShrink: 0 }} aria-hidden="true" />Repetição</span>}{atrasada === true && <span>Prevista para {formatarData(tarefa.data_prevista, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario ? tarefa.horario + (tarefa.horario_final ? ' às ' + tarefa.horario_final + (tarefa.horario_final < tarefa.horario ? ' (dia seguinte)' : '') : '') : 'Sem horário'}</span>
+        <div className="detalhes">{tarefa.refeicao_id && <span className="selo-alimentacao"><Utensils size={13} aria-hidden="true" />Alimentação</span>}{tarefa.treino_sessao_id && <span className="selo-treino"><Dumbbell size={13} aria-hidden="true" />Treino</span>}{tarefa.area === 'casa' && <span className="selo-casa"><House size={13} aria-hidden="true" />Casa · {tarefa.ambiente}</span>}{tarefa.serie_id && <span><RefreshCw size={13} style={{ flexShrink: 0 }} aria-hidden="true" />Repetição</span>}{atrasada === true && <span>Prevista para {formatarData(tarefa.data_prevista, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario ? tarefa.horario + (tarefa.horario_final ? ' às ' + tarefa.horario_final + (tarefa.horario_final < tarefa.horario ? ' (dia seguinte)' : '') : '') : 'Sem horário'}</span>
           {tarefa.prioridade && <span className="prioridade"><Star size={13} aria-hidden="true" />Prioridade</span>}</div>
       </div>
       <SeloSituacao situacao={tarefa.situacao} id={`situacao-tarefa-${tarefa.id}`} />
-      <div className={`acoes-tarefa${tarefa.treino_sessao_id ? ' acoes-com-treino' : ''}`}>
+      <div className={`acoes-tarefa${(tarefa.treino_sessao_id || tarefa.refeicao_id) ? ' acoes-com-treino' : ''}`}>
+        {diaSelecao === null && tarefa.refeicao_id && <button type="button" className="abrir-treino-rotina" aria-label={`Abrir refeição: ${tarefa.titulo}`} title="Abrir refeição" disabled={bloqueado} onClick={() => aoAbrirRefeicao?.(tarefa)}><ArrowUpRight size={18} aria-hidden="true" /></button>}
         {diaSelecao === null && tarefa.treino_sessao_id && <button type="button" className="abrir-treino-rotina" aria-label={`Abrir treino: ${tarefa.titulo}`} title="Abrir treino" disabled={bloqueado} onClick={() => aoAbrirTreino?.(tarefa.treino_sessao_id)}><ArrowUpRight size={18} aria-hidden="true" /></button>}
       {casa && diaSelecao === null && !historico && !atrasada && ordem === 'manual' && <AlcaOrdenacao tarefa={tarefa} lista={grupoDoDia(tarefa)} cartoes={cartoesRef} bloqueado={diaSelecao !== null || aberto || salvando || atualizando.length > 0 || carregando || Boolean(excluindo || encerrando)} mover={mover} indicar={definirArrasto} />}
         {diaSelecao === null && <>{tarefa.situacao === 'pendente' && <button type="button" className="editar-desktop" title="Editar esta tarefa" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Editar: ${tarefa.titulo}`} onClick={() => abrirFormulario(tarefa)}><Pencil size={17} aria-hidden="true" /></button>}
@@ -311,7 +313,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
         <button type="button" disabled={diaSelecao !== null || aberto || salvando || atualizando.length > 0} onClick={() => encerrarSerie(tarefa)}>Confirmar encerramento</button>
       </div>}
       {excluindo === tarefa.id && <div className="confirmacao-exclusao" role="group" aria-label="Confirmar exclusão">
-        <p>{tarefa.treino_sessao_id ? 'Excluir este treino e seu registro de séries? Não pode ser desfeito.' : 'Excluir só esta tarefa? Não pode ser desfeito.'}</p>
+        <p>{tarefa.refeicao_id ? 'Excluir esta refeição e sua anotação também da Alimentação? Não pode ser desfeito.' : tarefa.treino_sessao_id ? 'Excluir este treino e seu registro de séries? Não pode ser desfeito.' : 'Excluir só esta tarefa? Não pode ser desfeito.'}</p>
         <button type="button" disabled={diaSelecao !== null || atualizando.includes(tarefa.id)} onClick={() => definirExcluindo(null)}>Cancelar</button>
         <button type="button" disabled={diaSelecao !== null || aberto || salvando || atualizando.includes(tarefa.id)} onClick={() => excluir(tarefa)}>{atualizando.includes(tarefa.id) ? 'Excluindo…' : 'Confirmar exclusão'}</button>
       </div>}

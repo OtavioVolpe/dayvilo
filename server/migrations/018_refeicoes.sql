@@ -1,0 +1,9 @@
+CREATE TABLE refeicoes (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tarefa_id INT UNSIGNED NOT NULL UNIQUE,
+  mostrar_rotina BOOLEAN NOT NULL DEFAULT FALSE,
+  nota VARCHAR(2000) NOT NULL DEFAULT '',
+  versao INT UNSIGNED NOT NULL DEFAULT 1,
+  CONSTRAINT refeicoes_tarefa_fk FOREIGN KEY (tarefa_id) REFERENCES tarefas(id) ON DELETE CASCADE,
+  CONSTRAINT refeicoes_rotina_booleana CHECK (mostrar_rotina IN (0, 1))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

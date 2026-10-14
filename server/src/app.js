@@ -8,6 +8,7 @@ import { instalarContas } from './rotas/contas.js';
 import { criarRotasTarefas } from './rotas/tarefas.js';
 import { criarRotasTreinos } from './rotas/treinos.js';
 import { criarRotasFinanceiro } from './rotas/financeiro.js';
+import { criarRotasAlimentacao } from './rotas/alimentacao.js';
 import { restringirOrigemLocal } from './middlewares/origem-local.js';
 import { instalarTratamentoErros } from './middlewares/erros.js';
 
@@ -35,6 +36,7 @@ export function criarAplicacao({ banco, porta = 3001, modoEmail = 'local', envia
   aplicacao.use('/api', criarRotasTarefas(banco));
   aplicacao.use('/api/treinos', criarRotasTreinos(banco));
   aplicacao.use('/api/financeiro', criarRotasFinanceiro(banco));
+  aplicacao.use('/api/alimentacao', criarRotasAlimentacao(banco));
   instalarTratamentoErros(aplicacao);
   return aplicacao;
 }

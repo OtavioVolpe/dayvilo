@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
-const colunas = '(SELECT id FROM sessoes_treino WHERE tarefa_id = tarefas.id) AS treino_sessao_id, id, titulo, observacao, area, ambiente, data_prevista, horario, horario_final, prioridade, situacao, ordem, (SELECT serie_id FROM ocorrencias_series WHERE tarefa_id = tarefas.id) AS serie_id';
+const colunas = '(SELECT id FROM refeicoes WHERE tarefa_id = tarefas.id) AS refeicao_id, (SELECT id FROM sessoes_treino WHERE tarefa_id = tarefas.id) AS treino_sessao_id, id, titulo, observacao, area, ambiente, data_prevista, horario, horario_final, prioridade, situacao, ordem, (SELECT serie_id FROM ocorrencias_series WHERE tarefa_id = tarefas.id) AS serie_id';
+export const visivelNaRotina = 'NOT EXISTS (SELECT 1 FROM refeicoes WHERE tarefa_id = tarefas.id AND mostrar_rotina = FALSE)';
 
 function apresentarTarefa(tarefa) {
   return { ...tarefa, prioridade: Boolean(tarefa.prioridade), horario: tarefa.horario?.slice(0, 5) ?? null, horario_final: tarefa.horario_final?.slice(0, 5) ?? null };
@@ -10,14 +11,14 @@ export function criarRepositorioTarefas(banco) {
   return {
     async listar(usuarioId, data) {
       const [tarefas] = await banco.execute(
-        `SELECT ${colunas} FROM tarefas WHERE usuario_id = ? AND data_prevista <=> ? ORDER BY ordem = 0, ordem, id`,
+        `SELECT ${colunas} FROM tarefas WHERE ${visivelNaRotina} AND usuario_id = ? AND data_prevista <=> ? ORDER BY ordem = 0, ordem, id`,
         [usuarioId, data],
       );
       return tarefas.map(apresentarTarefa);
     },
     async listarAtrasadas(usuarioId, hoje) {
       const [tarefas] = await banco.execute(
-        'SELECT ' + colunas + " FROM tarefas WHERE usuario_id = ? AND situacao = 'pendente' AND data_prevista < ? ORDER BY data_prevista, horario IS NULL, horario, id",
+        'SELECT ' + colunas + ` FROM tarefas WHERE ${visivelNaRotina} AND usuario_id = ? AND situacao = 'pendente' AND data_prevista < ? ORDER BY data_prevista, horario IS NULL, horario, id`,
         [usuarioId, hoje],
       );
       return tarefas.map(apresentarTarefa);
@@ -32,7 +33,7 @@ export function criarRepositorioTarefas(banco) {
     },
     async listarPeriodo(usuarioId, inicio, fim) {
       const [tarefas] = await banco.execute(
-        'SELECT ' + colunas + ' FROM tarefas WHERE usuario_id = ? AND data_prevista BETWEEN ? AND ? ORDER BY data_prevista, horario IS NULL, horario, ordem, id',
+        'SELECT ' + colunas + ` FROM tarefas WHERE ${visivelNaRotina} AND usuario_id = ? AND data_prevista BETWEEN ? AND ? ORDER BY data_prevista, horario IS NULL, horario, ordem, id`,
         [usuarioId, inicio, fim],
       );
       return tarefas.map(apresentarTarefa);
