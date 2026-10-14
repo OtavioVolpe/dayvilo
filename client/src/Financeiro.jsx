@@ -15,7 +15,7 @@ const dataCurta = d => d ? d.split('-').reverse().join('/') : '—';
 const json = (method, body) => ({ method, headers: { 'Content-Type':'application/json' }, body:JSON.stringify(body) });
 const detalhesFixos = () => ({produto:'CDB',emissor:'',indice:'cdi',taxa:'',vencimento:'',liquidez:'Diária'});
 const detalhesVariaveis = () => ({codigo:'',classe:'acao',quantidade:'',preco_medio_centavos:''});
-const categorias = ['Moradia','Alimentação','Transporte','Saúde','Beleza','Lazer','Educação','Trabalho','Investimentos','Outros'];
+const categorias = ['Moradia','Alimentação','Transporte','Saúde','Beleza','Lazer','Assinaturas','Educação','Trabalho','Investimentos','Outros'];
 const nomeRegistro = {aporte:'Aporte / compra',resgate:'Resgate / venda',saldo:'Valor da posição'};
 const nomeClasse = {acao:'Ação',fii:'FII',etf:'ETF',outro:'Outro'};
 function moverMes(mes, n) {
