@@ -337,7 +337,11 @@ export default function Planejamento({ semanal = false, historico = false, casa 
   };
   const grupoConcluidas = itens => itens.length > 0 && <details className="tarefas-concluidas grupo-concluidas" open><summary><span className="grupo-titulo"><ChevronRight className="grupo-seta" size={17} aria-hidden="true" /><CircleCheck size={18} aria-hidden="true" />Concluídas<span className="grupo-contagem">{itens.length}</span></span></summary><ul className="lista-tarefas">{itens.map(tarefa => linha(tarefa))}</ul></details>;
   return <section className={`planejamento ${casa ? 'planejamento-casa' : ''}`} aria-label={casa ? "Tarefas de casa" : historico ? "Histórico de tarefas" : semanal ? "Tarefas da semana" : "Tarefas do dia"} aria-busy={carregando}>
-    {observacaoAberta && <ObservacaoTarefa tarefa={observacaoAberta} fechar={() => definirObservacaoAberta(null)} />}
+    {observacaoAberta && <ObservacaoTarefa tarefa={observacaoAberta} fechar={() => definirObservacaoAberta(null)} aoSalvar={tarefa => {
+      definirObservacaoAberta(tarefa);
+      definirTarefas(lista => lista.map(t => t.id === tarefa.id ? tarefa : t));
+      definirAtrasadas(lista => lista.map(t => t.id === tarefa.id ? tarefa : t));
+    }} />}
     <div className="lista-cabecalho"><div><h1>{casa ? "Minha casa" : historico ? "Meu histórico" : semanal ? "Minha semana" : "Minha rotina"}</h1>{!historico && data && <p className="data-planejamento">{casa ? 'Planeje aqui. Acompanhe também na Rotina.' : semanal ? 'Sua rotina, dia a dia.' : formatarData(data, { weekday: 'long', day: 'numeric', month: 'long' })}</p>}</div>{!historico && <button className="botao-principal" disabled={diaSelecao !== null || salvando || carregando || !data} onClick={() => abrirFormulario(null, casa ? diaCasa : data)} aria-expanded={aberto}><Plus size={17} aria-hidden="true" />Nova tarefa</button>}</div>
     {historico && periodoConsultado && <FiltroPeriodo hoje={hoje} periodo={periodoConsultado} bloqueado={bloqueado} aoConsultar={consultarPeriodo} />}
     {!historico && <div className="controles-planejamento">

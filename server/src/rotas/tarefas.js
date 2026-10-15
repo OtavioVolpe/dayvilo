@@ -5,6 +5,7 @@ export function criarRotasTarefas(banco) {
   const rotas = Router();
   const controlador = criarControladorTarefas(banco);
   rotas.get('/perfil', controlador.perfil);
+  rotas.patch('/tarefas/:id/observacao', controlador.observacao);
   rotas.get('/tarefas/atrasadas', controlador.atrasadas);
   rotas.patch('/tarefas/:id/situacao', controlador.situacao);
   rotas.patch('/tarefas/:id/agendamento', controlador.reagendar);

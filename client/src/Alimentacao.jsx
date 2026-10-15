@@ -85,7 +85,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
       <button aria-label={aba === 'hoje' ? 'Dia anterior' : 'Semana anterior'} disabled={!dia || ocupado} onClick={() => navegar(() => setData(deslocarData(dia, aba === 'semana' ? -7 : -1)))}><ChevronLeft size={20} /></button>
       <label><span className="ali-sr">Data consultada</span><input type="date" min="1001-01-01" max="9998-12-31" value={dia} disabled={ocupado} onInput={e => { const v = e.target.value; if (v) navegar(() => setData(v)); }} /></label>
       <button aria-label={aba === 'hoje' ? 'Próximo dia' : 'Próxima semana'} disabled={!dia || ocupado} onClick={() => navegar(() => setData(deslocarData(dia, aba === 'semana' ? 7 : 1)))}><ChevronRight size={20} /></button>
-      <button disabled={!dados || ocupado} onClick={() => navegar(() => setData(dados.hoje))}>Hoje</button>
+      <button className="atalho-hoje" disabled={!dados || ocupado || dia === dados.hoje} onClick={() => navegar(() => setData(dados.hoje))}>Hoje</button>
     </div>
     {erro && <div className="mensagem-erro" role="alert">{erro} <button disabled={ocupado} onClick={() => navegar(() => setTentativa(n => n + 1))}>Atualizar lista</button></div>}
     {aviso && <p className="ali-aviso" role="status">{aviso}</p>}

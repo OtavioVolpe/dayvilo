@@ -9,6 +9,10 @@ function apresentarTarefa(tarefa) {
 
 export function criarRepositorioTarefas(banco) {
   return {
+    async definirObservacao(usuarioId, id, observacao) {
+      await banco.execute('UPDATE tarefas SET observacao = ? WHERE usuario_id = ? AND id = ?', [observacao, usuarioId, id]);
+      return this.buscar(usuarioId, id);
+    },
     async listar(usuarioId, data) {
       const [tarefas] = await banco.execute(
         `SELECT ${colunas} FROM tarefas WHERE ${visivelNaRotina} AND usuario_id = ? AND data_prevista <=> ? ORDER BY ordem = 0, ordem, id`,

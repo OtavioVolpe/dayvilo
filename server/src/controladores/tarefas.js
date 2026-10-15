@@ -5,6 +5,10 @@ import { obterDataHoje } from '../validacoes/tarefas.js';
 export function criarControladorTarefas(banco) {
   const tarefas = criarServicoTarefas(banco);
   return {
+    async observacao(requisicao, resposta) {
+      if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });
+      resposta.json(await tarefas.observacao(requisicao.usuario, requisicao.body, requisicao.params.id));
+    },
     async selecao(requisicao, resposta) {
       if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });
       resposta.json(await alterarSelecao(banco, requisicao.usuario.id, requisicao.body));

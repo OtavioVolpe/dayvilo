@@ -19,6 +19,17 @@ export function criarServicoTarefas(banco) {
     });
   }
   return {
+    async observacao(usuario, entrada, parametroId) {
+      validarObjeto(entrada, ['observacao', 'anterior']);
+      for (const campo of ['observacao', 'anterior']) {
+        if (typeof entrada[campo] !== 'string' || entrada[campo].length > 4000) throw new ErroValidacao('A observação deve ter até 4000 caracteres.');
+      }
+      return alterar(usuario, validarId(parametroId), ['pendente', 'concluida', 'pulada'], async (repositorio, atual) => {
+        if (atual.refeicao_id) throw new ErroValidacao('Edite os alimentos pela Alimentação.');
+        if ((atual.observacao ?? '') !== entrada.anterior) throw new ErroAplicacao(409, 'A observação mudou. Feche a janela e atualize a lista antes de editar novamente.');
+        return { tarefa: await repositorio.definirObservacao(usuario.id, atual.id, entrada.observacao.trim() || null) };
+      });
+    },
     async atrasadas(usuario) {
       const hoje = obterDataHoje(usuario.fuso_horario);
       return { hoje, tarefas: await tarefas.listarAtrasadas(usuario.id, hoje) };
