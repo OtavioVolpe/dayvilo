@@ -1,6 +1,7 @@
 import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
 import Treino from './Treino.jsx';
 import Financeiro from './Financeiro.jsx';
+import Leitura from './Leitura.jsx';
 import Alimentacao from './Alimentacao.jsx';
 import MinhaConta from './MinhaConta.jsx';
 import ConfirmarEmail, { AvisoConfirmacao } from './ConfirmarEmail.jsx';
@@ -38,6 +39,7 @@ export default function App() {
   const { sessao, cadastroAberto, erro, aviso, saindo, entrar, sair, atualizar, atualizarNome, encerrar } = useSessao();
   const [view, setView] = useState('Hoje');
   const [treinoSessao, setTreinoSessao] = useState(null);
+  const [livroInicial, setLivroInicial] = useState(null);
   const [refeicaoInicial, setRefeicaoInicial] = useState(null);
   const [treinoSujo, setTreinoSujo] = useState(false);
   const [confirmacaoTreino, setConfirmacaoTreino] = useState(null);
@@ -61,20 +63,20 @@ export default function App() {
         <nav className="areas" aria-label="Áreas pessoais">
           <p className="areas-label">Seu espaço</p>
           {areas.map(({ name, label = name, icon: Icon }) => (
-            <button key={name} disabled={!['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação'].includes(name)} aria-current={(['Casa', 'Treino', 'Financeiro', 'Alimentação'].includes(name) ? view === name : name === 'Rotina' && !['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Conta'].includes(view)) ? 'page' : undefined} aria-label={['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação'].includes(name) ? label : `${label}, em breve`} title={['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação'].includes(name) ? label : `${label} — em breve`} onClick={() => navegar(['Casa', 'Treino', 'Financeiro', 'Alimentação'].includes(name) ? name : 'Hoje')}>
+            <button key={name} disabled={!['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name)} aria-current={(['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? view === name : name === 'Rotina' && !['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura', 'Conta'].includes(view)) ? 'page' : undefined} aria-label={['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? label : `${label}, em breve`} title={['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? label : `${label} — em breve`} onClick={() => navegar(['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? name : 'Hoje')}>
               <Icon size={20} aria-hidden="true" /><span>{name}</span>
-              {!['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação'].includes(name) && <LockKeyhole className="area-cadeado" size={12} aria-hidden="true" />}
+              {!['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) && <LockKeyhole className="area-cadeado" size={12} aria-hidden="true" />}
             </button>
           ))}
         </nav>
         <main>
           {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
           {view === 'Conta' ? <MinhaConta key={sessao.id} sessao={sessao} atualizarNome={atualizarNome} encerrar={encerrar} voltar={() => setView('Hoje')} /> : <><AvisoConfirmacao key={sessao.id} sessao={sessao} atualizar={atualizar} aviso={aviso} />
-          {!['Casa', 'Treino', 'Financeiro', 'Alimentação'].includes(view) && <nav className="routine-tabs" aria-label="Visualizações da rotina">
+          {!['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(view) && <nav className="routine-tabs" aria-label="Visualizações da rotina">
             {['Hoje', 'Semana', 'Histórico'].map(item => <button key={item} aria-pressed={view === item} onClick={() => setView(item)}>{item}</button>)}
           </nav>}
 
-          {view === 'Alimentação' ? <Alimentacao key={sessao.id} inicial={refeicaoInicial} aoConsumirInicial={() => setRefeicaoInicial(null)} aoAlterarSujo={setTreinoSujo} /> : view === 'Financeiro' ? <Financeiro key={sessao.id} aoAlterarSujo={setTreinoSujo} /> : view === 'Treino' ? <Treino sessaoInicial={treinoSessao} aoConsumirSessao={() => setTreinoSessao(null)} aoAlterarSujo={setTreinoSujo} /> : <Planejamento aoAbrirRefeicao={r => { setRefeicaoInicial({ id: r.refeicao_id, data: r.data_prevista }); navegar('Alimentação'); }} aoAbrirTreino={id => { setTreinoSessao(id); navegar('Treino'); }} key={`${sessao.id}-${view}`} casa={view === 'Casa'} semanal={view === 'Semana' || view === 'Casa'} historico={view === 'Histórico'} />}</>}
+          {view === 'Leitura' ? <Leitura key={sessao.id} inicial={livroInicial} aoConsumirInicial={() => setLivroInicial(null)} aoAlterarSujo={setTreinoSujo} /> : view === 'Alimentação' ? <Alimentacao key={sessao.id} inicial={refeicaoInicial} aoConsumirInicial={() => setRefeicaoInicial(null)} aoAlterarSujo={setTreinoSujo} /> : view === 'Financeiro' ? <Financeiro key={sessao.id} aoAlterarSujo={setTreinoSujo} /> : view === 'Treino' ? <Treino sessaoInicial={treinoSessao} aoConsumirSessao={() => setTreinoSessao(null)} aoAlterarSujo={setTreinoSujo} /> : <Planejamento aoAbrirLivro={id => { setLivroInicial(id); navegar('Leitura'); }} aoAbrirRefeicao={r => { setRefeicaoInicial({ id: r.refeicao_id, data: r.data_prevista }); navegar('Alimentação'); }} aoAbrirTreino={id => { setTreinoSessao(id); navegar('Treino'); }} key={`${sessao.id}-${view}`} casa={view === 'Casa'} semanal={view === 'Semana' || view === 'Casa'} historico={view === 'Histórico'} />}</>}
         </main>
       </div>}
     </div>

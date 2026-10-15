@@ -341,3 +341,15 @@ Criar uma ficha não agenda tarefas. Agendar começa sem dias selecionados e cri
 ### Excluir ficha de treino
 
 Excluir ficha remove também suas ocorrências de hoje em diante que estejam pendentes ou puladas e sem registros de execução. Passados, concluídos e ocorrências com cargas (inclusive zero), repetições, séries marcadas ou notas são preservados, consultáveis pela data em Treino ou pelo Histórico da Rotina. Outras fichas não são afetadas. A referência interna da ficha permanece para preservar esses registros, sem permitir novos agendamentos. A confirmação explica a remoção sem desfazer. Não exige migration.
+
+## Leitura
+
+A estante separa **Quero ler**, **Lendo** e **Lidos**. Título é obrigatório; autor, total de páginas e página atual são opcionais. Começar ou concluir preenche a data vazia com hoje, permitindo informar uma data anterior. Reabrir mantém as anotações e o progresso; não cria um histórico separado de releituras. Chegar à última página não conclui o livro automaticamente: escolha Lido e salve.
+
+Abra o livro para atualizar progresso, editar seus dados e guardar anotações ou trechos com página opcional. Notas podem ser editadas e excluídas. Escritas exigem sessão, CSRF e a versão atual do livro, evitando sobrescrever alterações de outra aba.
+
+**Agendar leitura** está disponível para livros em Lendo. Escolha explicitamente os dias da semana, início, término (até 366 dias por agendamento) e horário opcional. Criar um livro não agenda nada. Datas já existentes para o mesmo livro não são duplicadas. A Rotina mostra uma tarefa com identificação Leitura e uma seta para abrir o livro; concluir essa tarefa não altera as páginas nem o estado do livro.
+
+Em Próximas leituras, **Desagendar por período** remove somente tarefas pendentes de hoje em diante nos dias escolhidos. Ao concluir um livro, é possível encerrar os agendamentos futuros pendentes ou mantê-los. Passados, concluídos e pulados são preservados. **Excluir livro** pede confirmação: apaga livro, anotações e tarefas futuras pendentes, mantendo o histórico da Rotina sem o vínculo de abertura do livro. Não há expiração automática do histórico.
+
+Antes de publicar esta versão, aplique as migrações **019–021**, após backup online e verificação em instância descartável. São três tabelas novas; não alteram as tabelas existentes. O teste `server/test/leitura.integration.js` cobre páginas opcionais, isolamento de contas, conflitos, agenda, conclusão independente da Rotina, preservação de histórico e proteções HTTP. Execute integrações somente em banco descartável.
