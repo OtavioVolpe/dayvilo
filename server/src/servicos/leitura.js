@@ -96,7 +96,7 @@ export function criarServicoLeitura(banco) {
           } else {
             const [[existe]] = await c.execute('SELECT t.id FROM tarefas t JOIN leituras_agendadas a ON a.tarefa_id = t.id WHERE t.usuario_id = ? AND a.livro_id = ? AND t.data_prevista = ? LIMIT 1', [u.id, l.id, data]);
             if (existe) continue;
-            const [t] = await c.execute('INSERT INTO tarefas (usuario_id, titulo, data_prevista, horario) VALUES (?, ?, ?, ?)', [u.id, `Ler — ${l.titulo}`, data, v.horario]);
+            const [t] = await c.execute('INSERT INTO tarefas (usuario_id, titulo, data_prevista, horario) VALUES (?, ?, ?, ?)', [u.id, `Ler - ${l.titulo}`, data, v.horario]);
             await c.execute('INSERT INTO leituras_agendadas (tarefa_id, livro_id) VALUES (?, ?)', [t.insertId, l.id]); quantidade++;
           }
         }

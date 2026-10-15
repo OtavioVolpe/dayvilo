@@ -36,9 +36,6 @@ export default function AlcaOrdenacao({ tarefa, lista, cartoes, bloqueado, mover
     aria-label={'Reordenar: ' + tarefa.titulo} aria-describedby="ajuda-ordenacao"
     title="Segure e arraste para organizar" onKeyDown={evento => {
       if (evento.key === 'Escape') { cancelar(); return; }
-      if (['ArrowUp', 'ArrowDown'].includes(evento.key)) {
-        evento.preventDefault(); cancelar(); mover(tarefa, evento.key === 'ArrowUp' ? -1 : 1);
-      }
     }} onPointerDown={evento => {
       if (evento.button !== 0 || !evento.isPrimary) return;
       evento.currentTarget.focus();

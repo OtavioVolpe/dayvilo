@@ -4,6 +4,8 @@ const colunas = '(SELECT livro_id FROM leituras_agendadas WHERE tarefa_id = tare
 export const visivelNaRotina = 'NOT EXISTS (SELECT 1 FROM refeicoes WHERE tarefa_id = tarefas.id AND mostrar_rotina = FALSE)';
 
 function apresentarTarefa(tarefa) {
+  // Padroniza também agendamentos antigos, sem reescrever o histórico no banco.
+  if (tarefa.leitura) tarefa = { ...tarefa, titulo: tarefa.titulo.replace(/^Ler — /, 'Ler - ') };
   return { ...tarefa, prioridade: Boolean(tarefa.prioridade), horario: tarefa.horario?.slice(0, 5) ?? null, horario_final: tarefa.horario_final?.slice(0, 5) ?? null };
 }
 

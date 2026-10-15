@@ -385,7 +385,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
     </form>
     {carregando ? <p role="status" className="estado-lista">Carregando sua rotina…</p> : data && consultaValida && <>
       {!historico && tarefas.length > 0 && <div className="progresso"><div><span>{concluidas.length} de {totalAtivas} concluídas · {puladas.length} puladas</span><span>{totalAtivas ? Math.round(concluidas.length / totalAtivas * 100) : 0}%</span></div><progress aria-label={semanal ? "Progresso da semana" : "Progresso do dia"} value={concluidas.length} max={totalAtivas || 1} /></div>}
-      {!historico && diaSelecao === null && ordem === 'manual' && tarefas.length > 0 && <p id="ajuda-ordenacao" className="ajuda-ordenacao">Arraste pelos seis pontos ou use ↑ e ↓, dentro do mesmo grupo e dia.</p>}
+      {!historico && diaSelecao === null && ordem === 'manual' && tarefas.length > 0 && <p id="ajuda-ordenacao" className="ajuda-ordenacao">Arraste as tarefas para mudar a ordem.</p>}
       {!historico && !semanal && diaSelecao === data && barraSelecao(data)}
       {!historico && ((casa && dias.includes(hoje)) || (!semanal && data === hoje)) && atrasadas.length > 0 && <section className="tarefas-atrasadas" aria-label="Pendências anteriores">
         <h3>Pendências anteriores ({atrasadas.length})</h3><p>Conclua, reagende ou pule.</p>
