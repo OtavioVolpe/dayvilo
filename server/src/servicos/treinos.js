@@ -1,4 +1,5 @@
 import { ErroConta, transacionar } from './autenticacao.js';
+import { encontrarReferencias } from './referencia-treino.js';
 import { validarObjeto, validarData, validarId, obterDataHoje, ErroValidacao } from '../validacoes/tarefas.js';
 const json = valor => typeof valor === 'string' ? JSON.parse(valor) : valor;
 const temRegistro = realizado => json(realizado).some(e => e.observacao.trim() || e.series.some(r => r.feita || r.carga !== null || r.repeticoes !== null));
@@ -115,7 +116,11 @@ export function criarServicoTreinos(banco) {
         return { quantidade, preservados };
       });
     },
-    async consultar(usuario, id) { return { sessao: await sessao(banco, usuario, id) }; },
+    async consultar(usuario, id) {
+      const atual = await sessao(banco, usuario, id);
+      const [anteriores] = await banco.execute("SELECT s.planejado, s.realizado, t.data_prevista FROM sessoes_treino s JOIN tarefas t ON t.id = s.tarefa_id WHERE s.ficha_id = ? AND t.usuario_id = ? AND t.data_prevista < ? AND t.data_prevista <= ? AND t.situacao <> 'pulada' ORDER BY t.data_prevista DESC, s.id DESC", [atual.ficha_id, usuario.id, atual.data_prevista, obterDataHoje(usuario.fuso_horario)]);
+      return { sessao: { ...atual, referencias: encontrarReferencias(atual.planejado, anteriores) } };
+    },
     async registrar(usuario, id, dados) {
       validarObjeto(dados, ['versao', 'realizado', 'concluir']);
       if (typeof dados.concluir !== 'boolean') throw new ErroValidacao('Informe a ação do treino.');

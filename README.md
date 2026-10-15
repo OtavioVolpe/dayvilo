@@ -342,6 +342,16 @@ Criar uma ficha não agenda tarefas. Agendar começa sem dias selecionados e cri
 
 Excluir ficha remove também suas ocorrências de hoje em diante que estejam pendentes ou puladas e sem registros de execução. Passados, concluídos e ocorrências com cargas (inclusive zero), repetições, séries marcadas ou notas são preservados, consultáveis pela data em Treino ou pelo Histórico da Rotina. Outras fichas não são afetadas. A referência interna da ficha permanece para preservar esses registros, sem permitir novos agendamentos. A confirmação explica a remoção sem desfazer. Não exige migration.
 
+### Referência de cargas e repetições
+
+Ao abrir um treino, cada exercício mostra o último registro com carga ou repetições, anterior à data consultada, da mesma ficha e conta. Treinos pulados e datas futuras em relação a hoje são ignorados. Registros parciais salvos também podem servir de referência; a data é exibida e séries vazias não são preenchidas com dados de outras sessões.
+
+A associação usa o nome único do exercício, desconsiderando maiúsculas e espaços extras, para suportar reordenação da ficha. Nomes duplicados ou renomeados não são associados por posição. Por enquanto, não há referência compartilhada entre fichas diferentes.
+
+**Copiar último registro** preenche somente carga e repetições vazias nas séries ainda não marcadas. Mantém valores já digitados (inclusive zero), notas e séries feitas. Não marca séries como realizadas nem salva automaticamente: confira e use Salvar registro. Não requer migração; consulta o histórico já existente.
+
+
+
 ## Leitura
 
 A estante separa **Quero ler**, **Lendo** e **Lidos**. Título é obrigatório; autor, total de páginas e página atual são opcionais. Começar ou concluir preenche a data vazia com hoje, permitindo informar uma data anterior. Reabrir mantém as anotações e o progresso; não cria um histórico separado de releituras. Chegar à última página não conclui o livro automaticamente: escolha Lido e salve.
