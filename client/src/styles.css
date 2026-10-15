@@ -99,5 +99,8 @@
 .areas button{position:relative}.areas button>svg{flex-shrink:0}.areas .area-cadeado{margin-left:auto}
 @media(max-width:650px){.areas .area-cadeado{position:absolute;top:5px;right:5px;margin:0;width:10px;height:10px}.areas button{font-size:clamp(.625rem,2.5vw,.75rem)}}
 
-.treino .treino-navegacao .atalho-hoje,.alimentacao .ali-periodo .atalho-hoje,.financeiro .fin-periodo .atalho-hoje{background:transparent;border-color:transparent;color:var(--accent)}
-.treino .treino-navegacao .atalho-hoje:disabled,.alimentacao .ali-periodo .atalho-hoje:disabled,.financeiro .fin-periodo .atalho-hoje:disabled{color:var(--muted);opacity:.6}
+/* Mesmo atalho de período em Rotina, Casa, Treino, Alimentação e Financeiro. */
+:is(.navegacao-datas,.treino-navegacao,.ali-periodo,.fin-periodo) button:is(.voltar-hoje,.atalho-hoje){min-height:44px;padding:8px;border:0;border-radius:8px;background:transparent;color:var(--accent);font-size:.8rem;font-weight:400;line-height:normal;letter-spacing:normal}
+:is(.navegacao-datas,.treino-navegacao,.ali-periodo,.fin-periodo) button:is(.voltar-hoje,.atalho-hoje):hover:not(:disabled){background:var(--soft)}
+:is(.navegacao-datas,.treino-navegacao,.ali-periodo,.fin-periodo) button:is(.voltar-hoje,.atalho-hoje):disabled{color:var(--muted);opacity:1}
+@media(max-width:650px){:is(.navegacao-datas,.treino-navegacao,.ali-periodo,.fin-periodo) button:is(.voltar-hoje,.atalho-hoje){padding:8px 4px}}
