@@ -1,4 +1,5 @@
 import './casa.css';
+import ObservacaoTarefa from './ObservacaoTarefa.jsx';
 import BarraSelecao from './BarraSelecao.jsx';
 import NavegacaoDatas from './NavegacaoDatas.jsx';
 import FiltroPeriodo from './FiltroPeriodo.jsx';
@@ -10,9 +11,10 @@ import { useEffect, useRef, useState } from 'react';
 import SeloSituacao from './SeloSituacao.jsx';
 import ListaHistorico from './ListaHistorico.jsx';
 import { deslocarData, formatarData } from './datas.js';
-import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, ListRestart, CircleStop, RefreshCw, House, Dumbbell, ArrowUpRight, Utensils } from 'lucide-react';
+import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, ListRestart, CircleStop, RefreshCw, House, Dumbbell, ArrowUpRight, Utensils, NotebookText } from 'lucide-react';
 
 export default function Planejamento({ semanal = false, historico = false, casa = false, aoAbrirTreino, aoAbrirRefeicao }) {
+  const [observacaoAberta, definirObservacaoAberta] = useState(null);
   const [diaSelecao, definirDiaSelecao] = useState(null);
   const [selecionados, definirSelecionados] = useState([]);
   const [confirmarLote, definirConfirmarLote] = useState(false);
@@ -286,12 +288,12 @@ export default function Planejamento({ semanal = false, historico = false, casa 
       {!casa && diaSelecao === null && !historico && !atrasada && ordem === 'manual' && <AlcaOrdenacao tarefa={tarefa} lista={grupoDoDia(tarefa)} cartoes={cartoesRef} bloqueado={diaSelecao !== null || aberto || salvando || atualizando.length > 0 || carregando || Boolean(excluindo || encerrando)} mover={mover} indicar={definirArrasto} />}
       {diaSelecao === tarefa.data_prevista && !atrasada ? <button type="button" className="marcador-selecao" aria-label={'Selecionar: ' + tarefa.titulo} aria-pressed={selecionados.includes(tarefa.id)} disabled={salvando || carregando} onClick={() => { definirConfirmarLote(false); definirSelecionados(ids => ids.includes(tarefa.id) ? ids.filter(id => id !== tarefa.id) : [...ids, tarefa.id]); }}>{selecionados.includes(tarefa.id) && <Check size={16} aria-hidden="true" />}</button> : tarefa.situacao !== 'pulada' && <input type="checkbox" aria-label={`${tarefa.situacao === 'concluida' ? 'Desfazer conclusão' : 'Concluir'}: ${tarefa.titulo}`} checked={tarefa.situacao === 'concluida'} disabled={diaSelecao !== null || aberto || salvando || atualizando.includes(tarefa.id)} onChange={() => alternar(tarefa)} />}
       <div className="tarefa-conteudo"><div className="tarefa-cabecalho"><span className="tarefa-titulo" id={`titulo-tarefa-${tarefa.id}`}>{tarefa.treino_sessao_id ? tarefa.titulo.replace(/^Treino — /, '') : tarefa.titulo}</span></div>
-        {!tarefa.refeicao_id && tarefa.observacao && <p className="observacao">{tarefa.observacao}</p>}
         <div className="detalhes">{tarefa.refeicao_id && <span className="selo-alimentacao"><Utensils size={13} aria-hidden="true" />Alimentação</span>}{tarefa.treino_sessao_id && <span className="selo-treino"><Dumbbell size={13} aria-hidden="true" />Treino</span>}{tarefa.area === 'casa' && <span className="selo-casa"><House size={13} aria-hidden="true" />Casa · {tarefa.ambiente}</span>}{tarefa.serie_id && <span><RefreshCw size={13} style={{ flexShrink: 0 }} aria-hidden="true" />Repetição</span>}{atrasada === true && <span>Prevista para {formatarData(tarefa.data_prevista, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}<span><Clock size={13} aria-hidden="true" />{tarefa.horario ? tarefa.horario + (tarefa.horario_final ? ' às ' + tarefa.horario_final + (tarefa.horario_final < tarefa.horario ? ' (dia seguinte)' : '') : '') : 'Sem horário'}</span>
           {tarefa.prioridade && <span className="prioridade"><Star size={13} aria-hidden="true" />Prioridade</span>}</div>
       </div>
       <SeloSituacao situacao={tarefa.situacao} id={`situacao-tarefa-${tarefa.id}`} />
-      <div className={`acoes-tarefa${(tarefa.treino_sessao_id || tarefa.refeicao_id) ? ' acoes-com-treino' : ''}`}>
+      <div className={`acoes-tarefa${(tarefa.treino_sessao_id || tarefa.refeicao_id) ? ' acoes-com-treino' : ''}${!tarefa.refeicao_id && tarefa.observacao?.trim() ? ' acoes-com-observacao' : ''}`}>
+        {diaSelecao === null && !tarefa.refeicao_id && tarefa.observacao?.trim() && <button type="button" title="Ver observação" aria-label={`Ver observação: ${tarefa.titulo}`} aria-haspopup="dialog" disabled={bloqueado} onClick={() => definirObservacaoAberta(tarefa)}><NotebookText size={18} aria-hidden="true" /></button>}
         {diaSelecao === null && tarefa.refeicao_id && <button type="button" className="abrir-treino-rotina" aria-label={`Abrir refeição: ${tarefa.titulo}`} title="Abrir refeição" disabled={bloqueado} onClick={() => aoAbrirRefeicao?.(tarefa)}><ArrowUpRight size={18} aria-hidden="true" /></button>}
         {diaSelecao === null && tarefa.treino_sessao_id && <button type="button" className="abrir-treino-rotina" aria-label={`Abrir treino: ${tarefa.titulo}`} title="Abrir treino" disabled={bloqueado} onClick={() => aoAbrirTreino?.(tarefa.treino_sessao_id)}><ArrowUpRight size={18} aria-hidden="true" /></button>}
       {casa && diaSelecao === null && !historico && !atrasada && ordem === 'manual' && <AlcaOrdenacao tarefa={tarefa} lista={grupoDoDia(tarefa)} cartoes={cartoesRef} bloqueado={diaSelecao !== null || aberto || salvando || atualizando.length > 0 || carregando || Boolean(excluindo || encerrando)} mover={mover} indicar={definirArrasto} />}
@@ -335,6 +337,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
   };
   const grupoConcluidas = itens => itens.length > 0 && <details className="tarefas-concluidas grupo-concluidas" open><summary><span className="grupo-titulo"><ChevronRight className="grupo-seta" size={17} aria-hidden="true" /><CircleCheck size={18} aria-hidden="true" />Concluídas<span className="grupo-contagem">{itens.length}</span></span></summary><ul className="lista-tarefas">{itens.map(tarefa => linha(tarefa))}</ul></details>;
   return <section className={`planejamento ${casa ? 'planejamento-casa' : ''}`} aria-label={casa ? "Tarefas de casa" : historico ? "Histórico de tarefas" : semanal ? "Tarefas da semana" : "Tarefas do dia"} aria-busy={carregando}>
+    {observacaoAberta && <ObservacaoTarefa tarefa={observacaoAberta} fechar={() => definirObservacaoAberta(null)} />}
     <div className="lista-cabecalho"><div><h1>{casa ? "Minha casa" : historico ? "Meu histórico" : semanal ? "Minha semana" : "Minha rotina"}</h1>{!historico && data && <p className="data-planejamento">{casa ? 'Planeje aqui. Acompanhe também na Rotina.' : semanal ? 'Sua rotina, dia a dia.' : formatarData(data, { weekday: 'long', day: 'numeric', month: 'long' })}</p>}</div>{!historico && <button className="botao-principal" disabled={diaSelecao !== null || salvando || carregando || !data} onClick={() => abrirFormulario(null, casa ? diaCasa : data)} aria-expanded={aberto}><Plus size={17} aria-hidden="true" />Nova tarefa</button>}</div>
     {historico && periodoConsultado && <FiltroPeriodo hoje={hoje} periodo={periodoConsultado} bloqueado={bloqueado} aoConsultar={consultarPeriodo} />}
     {!historico && <div className="controles-planejamento">
