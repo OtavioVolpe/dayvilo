@@ -300,12 +300,12 @@ export default function Planejamento({ semanal = false, historico = false, casa 
         {diaSelecao === null && tarefa.refeicao_id && <button type="button" className="abrir-treino-rotina" aria-label={`Abrir refeição: ${tarefa.titulo}`} title="Abrir refeição" disabled={bloqueado} onClick={() => aoAbrirRefeicao?.(tarefa)}><ArrowUpRight size={18} aria-hidden="true" /></button>}
         {diaSelecao === null && tarefa.treino_sessao_id && <button type="button" className="abrir-treino-rotina" aria-label={`Abrir treino: ${tarefa.titulo}`} title="Abrir treino" disabled={bloqueado} onClick={() => aoAbrirTreino?.(tarefa.treino_sessao_id)}><ArrowUpRight size={18} aria-hidden="true" /></button>}
       {casa && diaSelecao === null && !historico && !atrasada && ordem === 'manual' && <AlcaOrdenacao tarefa={tarefa} lista={grupoDoDia(tarefa)} cartoes={cartoesRef} bloqueado={diaSelecao !== null || aberto || salvando || atualizando.length > 0 || carregando || Boolean(excluindo || repeticaoAberta)} mover={mover} indicar={definirArrasto} />}
-        {diaSelecao === null && <>{tarefa.situacao === 'pendente' && <button type="button" className="editar-desktop" title="Editar esta tarefa" disabled={aberto || salvando || atualizando.includes(tarefa.id)} aria-label={`Editar: ${tarefa.titulo}`} onClick={() => abrirFormulario(tarefa)}><Pencil size={17} aria-hidden="true" /></button>}
+        {diaSelecao === null && <>
         <MenuTarefa titulo={tarefa.titulo} bloqueado={diaSelecao !== null || aberto || salvando || atualizando.includes(tarefa.id)} opcoes={[
-          ...(tarefa.situacao === 'pendente' ? [{ texto: 'Editar tarefa', Icone: Pencil, apenasMobile: true, executar: () => abrirFormulario(tarefa) }] : []),
+          ...(tarefa.situacao === 'pendente' ? [{ texto: 'Editar tarefa', Icone: Pencil, executar: () => abrirFormulario(tarefa) }] : []),
           ...(atrasada === true ? [{ texto: 'Trazer para hoje', Icone: CalendarArrowUp, executar: () => alterarTarefa(tarefa, 'hoje') }] : []),
           ...(tarefa.situacao !== 'concluida' ? [{ texto: tarefa.situacao === 'pulada' ? 'Restaurar tarefa' : 'Pular esta tarefa', Icone: tarefa.situacao === 'pulada' ? RotateCcw : SkipForward, executar: () => alterarTarefa(tarefa, tarefa.situacao === 'pulada' ? 'pendente' : 'pulada') }] : []),
-          ...(tarefa.serie_id ? [{ texto: 'Ver repetição', Icone: RefreshCw, separador: true, executar: () => definirRepeticaoAberta(tarefa) }] : []),
+          ...(tarefa.serie_id ? [{ texto: 'Ver repetição', Icone: RefreshCw, executar: () => definirRepeticaoAberta(tarefa) }] : []),
           { texto: 'Excluir tarefa', Icone: Trash2, separador: true, executar: () => definirExcluindo(tarefa.id) },
         ]} /></>}
       </div>

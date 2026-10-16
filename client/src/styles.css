@@ -59,7 +59,8 @@
 .tarefa>input{grid-column:1;grid-row:1;margin:0;align-self:center}
 .tarefa>.tarefa-conteudo{grid-column:2;grid-row:1}
 .tarefa>.acoes-tarefa{grid-column:3;grid-row:1;align-items:center;align-self:center}
-.tarefa-com-alca{grid-template-columns:auto 20px minmax(0,1fr) auto}
+/* Compensa o espaço interno do ícone sem reduzir a área de arraste de 32px. */
+.tarefa-com-alca{grid-template-columns:20px 20px minmax(0,1fr) auto}
 .tarefa-com-alca>input{grid-column:2}.tarefa-com-alca>.tarefa-conteudo{grid-column:3}.tarefa-com-alca>.acoes-tarefa{grid-column:4}
 .tarefa>.confirmacao-exclusao{grid-column:1/-1;grid-row:2}
 .dia-semana .tarefa{grid-template-columns:20px minmax(0,1fr)}
