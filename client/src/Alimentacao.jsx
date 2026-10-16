@@ -1,5 +1,7 @@
+import DestinosAlimentacao from './DestinosAlimentacao.jsx';
+import { destinosAlimentacao } from './destinos-alimentacao.js';
 import { useEffect, useRef, useState } from 'react';
-import { Plus, ChevronLeft, ChevronRight, Copy, Utensils, Clock, Pencil, Trash2, SkipForward, Circle, CircleCheck, NotebookPen, RotateCcw, X } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Copy, Utensils, Clock, Pencil, Trash2, SkipForward, Circle, CircleCheck, NotebookPen, RotateCcw } from 'lucide-react';
 import { solicitar } from './api.js';
 import { deslocarData, formatarData } from './datas.js';
 import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
@@ -71,8 +73,10 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
   function excluir(r) {
     setConfirmacao({ mensagem: `Excluir “${r.titulo}” deste dia, incluindo sua anotação e sua presença na Rotina? Não pode ser desfeito.`, executar: () => executar(() => solicitar('/alimentacao/' + r.id, json('DELETE', { revisao: r.revisao })), 'Refeição excluída.') });
   }
+  const selecaoCopia = form?.modo === 'copiar' && dados ? destinosAlimentacao(form, dia, dados.hoje, dados.refeicoes.length) : { destinos: [], erro: '' };
   async function copiar(confirmar = false) {
-    const body = { origem: dia, destinos: form.destinos, modo: form.tipo, ...(confirmar ? { confirmacao: form.previa.confirmacao } : {}) };
+    if (selecaoCopia.erro || !selecaoCopia.destinos.length || (confirmar && !form.previa)) return;
+    const body = { origem: dia, destinos: selecaoCopia.destinos, modo: form.tipo, ...(confirmar ? { confirmacao: form.previa.confirmacao } : {}) };
     const r = await executar(() => solicitar('/alimentacao/copiar', json('POST', body)), confirmar ? 'Planejamento copiado. As novas refeições começam pendentes, sem anotações.' : '', confirmar);
     if (r && !confirmar) setForm(v => ({ ...v, previa: r }));
   }
@@ -90,16 +94,14 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
     {erro && <div className="mensagem-erro" role="alert">{erro} <button disabled={ocupado} onClick={() => navegar(() => setTentativa(n => n + 1))}>Atualizar lista</button></div>}
     {aviso && <p className="ali-aviso" role="status">{aviso}</p>}
     {carregando ? <p role="status">Carregando refeições…</p> : form ? <div ref={formulario}>
-      {form.modo === 'copiar' ? <section className="ali-form" aria-label="Copiar planejamento">
-        <h2>Copiar planejamento de {formatarData(dia)}</h2><p className="ali-ajuda">Copie apenas o planejado. As novas refeições ficam pendentes, sem anotações.</p>
-        <fieldset disabled={ocupado}><legend>Dias de destino</legend>
-          <div className="ali-destinos">{Array.from({ length: 7 }, (_, i) => deslocarData(dados.hoje, i)).filter(d => d !== dia).map(d => <label className="ali-check" key={d}><input type="checkbox" checked={form.destinos.includes(d)} onChange={e => alterar('destinos', e.target.checked ? [...form.destinos, d].sort() : form.destinos.filter(v => v !== d))} />{formatarData(d, { weekday: 'short', day: '2-digit', month: '2-digit' })}</label>)}</div>
-          <div className="ali-outro-dia"><label>Outra data<input type="date" min={dados.hoje} max={deslocarData(dados.hoje, 365)} value={form.destino} onInput={e => setForm(v => ({ ...v, destino: e.target.value }))} /></label><button disabled={!form.destino || form.destino === dia || form.destinos.includes(form.destino) || form.destinos.length >= 31} onClick={() => alterar('destinos', [...form.destinos, form.destino].sort())}><Plus size={16} />Adicionar dia</button></div>
-          {!!form.destinos.length && <ul className="ali-dias-escolhidos">{form.destinos.map(d => <li key={d}>{dataLonga(d)}<button aria-label={'Remover ' + dataLonga(d)} onClick={() => alterar('destinos', form.destinos.filter(v => v !== d))}><X size={16} /></button></li>)}</ul>}
+      {form.modo === 'copiar' ? <section className="ali-form ali-copiar" aria-label="Copiar planejamento">
+        <h2>Copiar planejamento</h2><p className="ali-copia-origem">Refeições de {formatarData(dia)}</p><p className="ali-ajuda">Copia as refeições planejadas, sem marcações ou anotações do dia.</p>
+        <fieldset disabled={ocupado}><legend className="ali-sr">Destino da cópia</legend>
+          <DestinosAlimentacao form={form} alterar={alterar} hoje={dados.hoje} selecao={selecaoCopia} />
           <label>Se já houver refeições<select value={form.tipo} onChange={e => alterar('tipo', e.target.value)}><option value="adicionar">Manter e adicionar as novas</option><option value="substituir">Substituir somente as pendentes</option></select></label>
-          <p className="ali-ajuda">Refeições feitas ou puladas são sempre preservadas. Adicionar mantém as existentes, mesmo com o mesmo nome.</p>
+          <p className="ali-ajuda">Refeições feitas ou puladas são preservadas. {form.tipo === 'adicionar' && 'Adicionar pode criar refeições com o mesmo nome.'}</p>
           {form.previa && <div className="ali-previa"><h3>Confira antes de copiar</h3>{form.previa.resumo.map(r => <p key={r.data}><strong>{formatarData(r.data)}</strong> · {r.adicionar} novas · {r.remover} removidas · {r.existentes - r.remover} mantidas</p>)}</div>}
-          <div className="ali-acoes"><button onClick={() => navegar(() => {})}>Cancelar</button>{form.previa ? <button className="botao-principal" onClick={() => copiar(true)}>Confirmar cópia</button> : <button className="botao-principal" disabled={!form.destinos.length} onClick={() => copiar()}>Revisar cópia</button>}</div>
+          <div className="ali-acoes"><button onClick={() => navegar(() => {})}>Cancelar</button>{form.previa ? <button className="botao-principal" onClick={() => copiar(true)}>Confirmar cópia</button> : <button className="botao-principal" disabled={Boolean(selecaoCopia.erro) || !selecaoCopia.destinos.length} onClick={() => copiar()}>Revisar cópia</button>}</div>
         </fieldset>
       </section> : <form className="ali-form" onSubmit={salvar}><fieldset disabled={ocupado}><legend>{form.modo === 'nota' ? 'O que mudou?' : form.id ? 'Editar refeição' : 'Nova refeição'}</legend>
         {form.modo === 'nota' ? <><p className="ali-ajuda">{form.titulo} · {formatarData(form.data_prevista)}. O planejamento original será mantido.</p><label>Anotação<textarea maxLength={2000} value={form.nota} onChange={e => alterar('nota', e.target.value)} placeholder="Ex.: troquei o frango por peixe" /></label></> : <>
@@ -120,7 +122,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
         </button>;
       })}</div>
     </> : <>
-      <div className="ali-resumo"><div><h2>{dataLonga(dia)}</h2><span>{dados.refeicoes.filter(r => r.situacao === 'concluida').length} de {dados.refeicoes.length} feitas · {dados.refeicoes.filter(r => r.situacao === 'pulada').length} puladas</span></div><button disabled={desabilitado || !dados.refeicoes.length} className="ali-discreto" onClick={() => abrir({ modo: 'copiar', destinos: [], destino: '', tipo: 'adicionar', previa: null })}><Copy size={17} />Copiar dia</button></div>
+      <div className="ali-resumo"><div><h2>{dataLonga(dia)}</h2><span>{dados.refeicoes.filter(r => r.situacao === 'concluida').length} de {dados.refeicoes.length} feitas · {dados.refeicoes.filter(r => r.situacao === 'pulada').length} puladas</span></div><button disabled={desabilitado || !dados.refeicoes.length} className="ali-discreto" onClick={() => abrir({ modo: 'copiar', frequencia: 'unica', destino: '', inicio: dados.hoje, fim: deslocarData(dados.hoje, 27), dias: [], tipo: 'adicionar', previa: null })}><Copy size={17} />Copiar dia</button></div>
       {!dados.refeicoes.length && <div className="ali-vazio"><Utensils size={25} /><h2>O que vai ter neste dia?</h2><p>Adicione sua primeira refeição ou copie o planejamento de outro dia.</p><button className="botao-principal" onClick={nova}><Plus size={18} />Adicionar refeição</button></div>}
       <div className="ali-refeicoes">{dados.refeicoes.map(r => <article key={r.id} className="ali-refeicao">
         <header><div><h3><Utensils size={18} />{r.titulo}</h3><div className="ali-meta"><span><Clock size={13} />{r.horario || 'Sem horário'}</span>{r.mostrar_rotina && <span className="ali-verde">Na Rotina</span>}</div></div><button disabled={desabilitado} className="ali-icone" aria-label={'Editar ' + r.titulo} title="Editar refeição" onClick={() => abrir({ modo: 'refeicao', ...r, horario: r.horario || '' })}><Pencil size={18} /></button></header>
