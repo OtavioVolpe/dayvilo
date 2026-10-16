@@ -2,9 +2,10 @@ import { ErroConta, transacionar } from './autenticacao.js';
 import { encontrarReferencias } from './referencia-treino.js';
 import { createHash } from 'node:crypto';
 import { adaptarRegistro } from './atualizar-treino.js';
+import { cardio, registroPreenchido, registroVazio } from './registro-treino.js';
 import { validarObjeto, validarData, validarId, obterDataHoje, ErroValidacao } from '../validacoes/tarefas.js';
 const json = valor => typeof valor === 'string' ? JSON.parse(valor) : valor;
-const temRegistro = realizado => json(realizado).some(e => e.observacao.trim() || e.series.some(r => r.feita || r.carga !== null || r.repeticoes !== null));
+const temRegistro = realizado => json(realizado).some(registroPreenchido);
 const texto = (valor, max, obrigatorio = false) => {
   if (typeof valor !== 'string' || valor.length > max || (obrigatorio && !valor.trim())) throw new ErroValidacao('Preencha os textos dentro do limite indicado.');
   return valor.trim();
@@ -21,7 +22,16 @@ export function validarFicha(dados) {
   const nome = texto(dados.nome, 120, true);
   if (!Array.isArray(dados.exercicios) || !dados.exercicios.length || dados.exercicios.length > 30) throw new ErroValidacao('Inclua de 1 a 30 exercícios.');
   const exercicios = dados.exercicios.map(e => {
-    validarObjeto(e, ['nome', 'series', 'repeticoes', 'carga', 'descanso', 'observacao']);
+    validarObjeto(e, ['tipo', 'nome', 'series', 'repeticoes', 'carga', 'descanso', 'observacao', 'modalidade', 'duracao', 'distancia']);
+    if (e.tipo !== undefined && !['musculacao', 'cardio'].includes(e.tipo)) throw new ErroValidacao('Tipo de exercício inválido.');
+    if (cardio(e)) {
+      validarObjeto(e, ['tipo', 'nome', 'modalidade', 'duracao', 'distancia', 'observacao']);
+      if (!['bicicleta', 'esteira', 'escada', 'corrida', 'caminhada', 'outro'].includes(e.modalidade)) throw new ErroValidacao('Escolha a modalidade do cardio.');
+      const duracao = numero(e.duracao, 1440, false);
+      if (!duracao) throw new ErroValidacao('Informe a duração planejada do cardio.');
+      return { tipo: 'cardio', nome: texto(e.nome, 120, true), modalidade: e.modalidade, duracao, distancia: numero(e.distancia, 2000, false, true), observacao: texto(e.observacao, 500) };
+    }
+    validarObjeto(e, ['tipo', 'nome', 'series', 'repeticoes', 'carga', 'descanso', 'observacao']);
     const series = numero(e.series, 10, true);
     if (!series) throw new ErroValidacao('Inclua ao menos uma série.');
     return { nome: texto(e.nome, 120, true), series, repeticoes: texto(e.repeticoes, 40, true), carga: numero(e.carga, 2000, false, true), descanso: numero(e.descanso, 3600, true, true), observacao: texto(e.observacao, 500) };
@@ -106,7 +116,7 @@ export function criarServicoTreinos(banco) {
           const [[existe]] = await c.execute('SELECT s.id FROM sessoes_treino s JOIN tarefas t ON t.id = s.tarefa_id WHERE s.ficha_id = ? AND t.usuario_id = ? AND t.data_prevista = ?', [f.id, usuario.id, data]);
           if (existe) continue;
           const [t] = await c.execute('INSERT INTO tarefas (usuario_id, titulo, data_prevista) VALUES (?, ?, ?)', [usuario.id, 'Treino — ' + f.nome, data]);
-          const realizado = f.exercicios.map(e => ({ series: Array.from({ length: e.series }, () => ({ carga: null, repeticoes: null, feita: false })), observacao: '' }));
+          const realizado = f.exercicios.map(registroVazio);
           await c.execute('INSERT INTO sessoes_treino (tarefa_id, ficha_id, planejado, realizado) VALUES (?, ?, ?, ?)', [t.insertId, f.id, JSON.stringify({ nome: f.nome, exercicios: f.exercicios }), JSON.stringify(realizado)]);
           quantidade++;
         }
@@ -146,6 +156,11 @@ export function criarServicoTreinos(banco) {
         if (s.situacao !== 'pendente') throw new ErroConta(409, 'Restaure o treino na Rotina antes de editar.');
         if (!Array.isArray(dados.realizado) || dados.realizado.length !== s.planejado.exercicios.length) throw new ErroValidacao('Exercícios incompatíveis com este treino.');
         const realizado = dados.realizado.map((e, i) => {
+          if (cardio(s.planejado.exercicios[i])) {
+            validarObjeto(e, ['duracao', 'distancia', 'feita', 'observacao']);
+            if (typeof e.feita !== 'boolean') throw new ErroValidacao('Indique se o cardio foi realizado.');
+            return { duracao: numero(e.duracao, 1440, false, true), distancia: numero(e.distancia, 2000, false, true), feita: e.feita, observacao: texto(e.observacao, 500) };
+          }
           validarObjeto(e, ['series', 'observacao']);
           if (!Array.isArray(e.series) || e.series.length !== s.planejado.exercicios[i].series) throw new ErroValidacao('Número de séries inválido.');
           return { observacao: texto(e.observacao, 500), series: e.series.map(r => {

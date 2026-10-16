@@ -1,5 +1,4 @@
-const chave = e => e.nome.trim().toLocaleLowerCase('pt-BR').replace(/\s+/g, ' ');
-const preenchida = s => s.feita || s.carga !== null || s.repeticoes !== null;
+import { chaveExercicio as chave, cardio, registroVazio, registroPreenchido, seriePreenchida as preenchida } from './registro-treino.js';
 export function adaptarRegistro(plano, realizado, novos) {
   const antigos = plano.exercicios.map(chave), nomes = novos.map(chave), usados = new Set(), perdas = [];
   const registros = novos.map(ex => {
@@ -8,10 +7,12 @@ export function adaptarRegistro(plano, realizado, novos) {
     const anterior = compativel && indice >= 0 ? realizado[indice] : null;
     if (anterior) {
       usados.add(indice);
+      if (cardio(ex)) return structuredClone(anterior);
       if (anterior.series.slice(ex.series).some(preenchida)) perdas.push(ex.nome);
     }
+    if (cardio(ex)) return registroVazio(ex);
     return { observacao: anterior?.observacao ?? '', series: Array.from({ length: ex.series }, (_, i) => anterior?.series[i] ?? { carga: null, repeticoes: null, feita: false }) };
   });
-  realizado.forEach((ex, i) => { if (!usados.has(i) && (ex.observacao.trim() || ex.series.some(preenchida))) perdas.push(plano.exercicios[i].nome); });
+  realizado.forEach((ex, i) => { if (!usados.has(i) && registroPreenchido(ex)) perdas.push(plano.exercicios[i].nome); });
   return { registros, perdas: [...new Set(perdas)] };
 }

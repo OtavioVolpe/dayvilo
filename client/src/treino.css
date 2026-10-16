@@ -8,3 +8,8 @@
 .treino .treino-alcance{padding:16px 20px;margin:12px 0 24px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
 .treino .treino-alcance label{flex-direction:row;align-items:flex-start;line-height:1.5;gap:10px}
 .treino .treino-alcance input[type=checkbox]{flex-shrink:0;width:20px;height:20px;min-height:20px}
+.treino-cardio-campos{grid-template-columns:repeat(2,minmax(0,1fr))}
+.treino-tipo{display:flex;align-items:center;gap:6px;color:var(--accent);font-size:.8rem;margin-bottom:6px}
+.treino select,.treino textarea{width:100%;min-width:0;max-width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--background);color:var(--ink);font:inherit}
+.treino textarea{min-height:80px;resize:vertical}
+@media(max-width:400px){.treino-cardio-campos{grid-template-columns:1fr}}
