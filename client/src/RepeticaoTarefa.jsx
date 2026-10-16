@@ -9,9 +9,18 @@ function moverMes(mes, delta) {
   const d = new Date(mes + '-01T12:00:00Z'); d.setUTCMonth(d.getUTCMonth() + delta);
   return d.toISOString().slice(0, 7);
 }
-export default function RepeticaoTarefa({ tarefa, fechar }) {
+export default function RepeticaoTarefa({ tarefa, hoje, fechar, editar, encerrar, bloqueado = false }) {
   const dialogo = useRef(null), titulo = useId();
   const [mes, setMes] = useState(tarefa.data_prevista.slice(0, 7));
+  const [confirmando, setConfirmando] = useState(false), [encerrando, setEncerrando] = useState(false), [erroAcao, setErroAcao] = useState('');
+  const inicio = tarefa.data_prevista > hoje ? tarefa.data_prevista : hoje;
+  const dataInicio = formatarData(inicio, { day: '2-digit', month: '2-digit', year: 'numeric' });
+  async function confirmarEncerramento() {
+    if (encerrando || bloqueado) return;
+    setEncerrando(true); setErroAcao('');
+    try { await encerrar(); } catch (e) { setErroAcao(e.message); }
+    finally { setEncerrando(false); }
+  }
   const [dados, setDados] = useState(null), [erro, setErro] = useState(''), [carregando, setCarregando] = useState(true), [tentativa, setTentativa] = useState(0);
   useEffect(() => {
     const anterior = document.activeElement, rolagem = document.body.style.overflow;
@@ -24,8 +33,9 @@ export default function RepeticaoTarefa({ tarefa, fechar }) {
     return () => abortar.abort();
   }, [tarefa.id, mes, tentativa]);
   const regra = dados?.configuracao;
-  return <dialog ref={dialogo} className="repeticao-janela" aria-labelledby={titulo} onCancel={e => { e.preventDefault(); fechar(); }}>
-    <header><div><span className="repeticao-etiqueta"><RefreshCw size={16} />Repetição</span><h2 id={titulo}>{tarefa.titulo}</h2></div><button type="button" aria-label="Fechar repetição" onClick={fechar}><X size={21} /></button></header>
+  return <dialog ref={dialogo} className="repeticao-janela" aria-labelledby={titulo} onCancel={e => { e.preventDefault(); if (!encerrando) fechar(); }}>
+    <header><div><span className="repeticao-etiqueta"><RefreshCw size={16} />Repetição</span><h2 id={titulo}>{tarefa.titulo}</h2></div><button type="button" disabled={encerrando} aria-label="Fechar repetição" onClick={fechar}><X size={21} /></button></header>
+    <div className="repeticao-conteudo">
     {regra && <p className="repeticao-regra">{({ diaria: 'Todos os dias', semanal: 'Toda semana', quinzenal: 'A cada duas semanas', mensal: 'Todo mês' })[regra.tipo] || 'Regra original não disponível'}{regra.dias?.length ? ' · ' + regra.dias.map(d => dias[d]).join(', ') : ''}{regra.ate ? ' · Término: ' + formatarData(regra.ate, { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}</p>}
     <nav className="repeticao-mes" aria-label="Mês das ocorrências"><button type="button" aria-label="Mês anterior" disabled={carregando || mes <= (dados?.limites.inicio?.slice(0, 7) ?? mes)} onClick={() => setMes(moverMes(mes, -1))}><ChevronLeft size={18} /></button><label><span className="repeticao-sr">Mês das repetições</span><input type="month" value={mes} min={dados?.limites.inicio?.slice(0, 7)} max={dados?.limites.fim?.slice(0, 7)} onInput={e => { if (/^\d{4}-\d{2}$/.test(e.target.value)) setMes(e.target.value); }} /></label><button type="button" aria-label="Próximo mês" disabled={carregando || mes >= (dados?.limites.fim?.slice(0, 7) ?? mes)} onClick={() => setMes(moverMes(mes, 1))}><ChevronRight size={18} /></button></nav>
     {carregando ? <p role="status">Carregando repetições…</p> : erro ? <div role="alert"><p>{erro}</p><button type="button" onClick={() => setTentativa(v => v + 1)}>Tentar novamente</button></div> : <>
@@ -33,5 +43,16 @@ export default function RepeticaoTarefa({ tarefa, fechar }) {
       <ul className="repeticao-lista">{dados.ocorrencias.map(o => <li key={o.id} className={o.id === tarefa.id ? 'repeticao-origem' : ''}><div><strong>{formatarData(o.data_prevista, { weekday: 'short', day: '2-digit', month: '2-digit' })}</strong><span><Clock size={14} />{o.horario ? o.horario + (o.horario_final ? ' às ' + o.horario_final + (o.horario_final < o.horario ? ' (dia seguinte)' : '') : '') : 'Sem horário'}</span>{o.titulo !== tarefa.titulo && <small>{o.titulo}</small>}</div><span>{({ pendente: 'Pendente', concluida: 'Concluída', pulada: 'Pulada' })[o.situacao]}</span></li>)}</ul>
       {!dados.ocorrencias.length && <p>Nenhuma ocorrência neste mês.</p>}
     </>}
+    </div>
+    <footer className="repeticao-rodape">
+      {tarefa.situacao === 'pendente' ? <>
+        <p>Alterações a partir de <strong>{dataInicio}</strong></p>
+        {confirmando ? <div role="group" aria-label="Confirmar encerramento">
+          <p>Excluir pendentes e puladas futuras desta série a partir de {dataInicio}? Não pode ser desfeito. Concluídas, dias anteriores e puladas de hoje serão preservados.</p>
+          <div className="repeticao-acoes"><button type="button" disabled={encerrando} onClick={() => { setConfirmando(false); setErroAcao(''); }}>Cancelar</button><button type="button" disabled={bloqueado || encerrando} onClick={confirmarEncerramento}>{encerrando ? 'Encerrando…' : 'Confirmar encerramento'}</button></div>
+        </div> : <div className="repeticao-acoes"><button type="button" disabled={bloqueado || carregando || !!erro} onClick={editar}>Editar próximas</button><button type="button" disabled={bloqueado || carregando || !!erro} onClick={() => setConfirmando(true)}>Encerrar repetição</button></div>}
+        {erroAcao && <p role="alert">{erroAcao}</p>}
+      </> : <p>Para editar ou encerrar esta repetição, abra uma ocorrência pendente.</p>}
+    </footer>
   </dialog>;
 }

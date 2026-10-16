@@ -81,7 +81,7 @@ Ações individuais afetam somente a ocorrência escolhida, mesmo quando ela per
 | Trazer para hoje | Reagenda somente a pendência anterior escolhida. |
 | Excluir | Apaga somente a ocorrência escolhida, inclusive do Histórico, após confirmação. Não pode ser restaurada. |
 | Editar próximas | Disponível numa pendente vinculada a uma série. Atualiza título, observação, horários e prioridade das pendentes e das puladas futuras abrangidas. As puladas continuam puladas. |
-| Ver repetição | Disponível nos três pontos de tarefas vinculadas a uma série, em qualquer situação. Abre uma consulta por mês com datas, horários e situações reais das ocorrências, incluindo alterações individuais. Não modifica a série. |
+| Ver repetição | Disponível nos três pontos de tarefas vinculadas a uma série, em qualquer situação. Abre uma consulta por mês com datas, horários e situações reais das ocorrências. Nas pendentes, o rodapé fixo reúne Editar próximas e Encerrar repetição, informa a data inicial das alterações e pede confirmação antes de encerrar. Essas ações deixam de aparecer diretamente no menu do card. |
 | Encerrar repetição | Disponível numa pendente vinculada a uma série. Exclui as pendentes e puladas futuras abrangidas, após confirmação. As excluídas não podem ser restauradas. |
 
 Nas duas ações de série, o início é a data da ocorrência selecionada ou hoje, o que vier depois. Concluídas, datas anteriores a esse início e puladas de hoje ou do passado são preservadas. Por exemplo, selecionando uma pendente de 23/10 antes dessa data, a ação abrange 23/10 em diante; selecionando uma pendência passada, começa hoje. Não existe opção de pular todas as próximas.
