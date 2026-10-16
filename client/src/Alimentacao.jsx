@@ -1,4 +1,5 @@
 import DestinosAlimentacao from './DestinosAlimentacao.jsx';
+import AguaDia from './AguaDia.jsx';
 import { destinosAlimentacao } from './destinos-alimentacao.js';
 import { useEffect, useRef, useState } from 'react';
 import { Plus, ChevronLeft, ChevronRight, Copy, Utensils, Clock, Pencil, Trash2, SkipForward, Circle, CircleCheck, NotebookPen, RotateCcw } from 'lucide-react';
@@ -93,6 +94,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
     </div>
     {erro && <div className="mensagem-erro" role="alert">{erro} <button disabled={ocupado} onClick={() => navegar(() => setTentativa(n => n + 1))}>Atualizar lista</button></div>}
     {aviso && <p className="ali-aviso" role="status">{aviso}</p>}
+    {dia && !form && <AguaDia key={dia} data={dia} bloqueado={desabilitado} aoOcupar={setOcupado} />}
     {carregando ? <p role="status">Carregando refeições…</p> : form ? <div ref={formulario}>
       {form.modo === 'copiar' ? <section className="ali-form ali-copiar" aria-label="Copiar planejamento">
         <h2>Copiar planejamento</h2><p className="ali-copia-origem">Refeições de {formatarData(dia)}</p><p className="ali-ajuda">Copia as refeições planejadas, sem marcações ou anotações do dia.</p>
