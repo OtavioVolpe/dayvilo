@@ -26,10 +26,11 @@ export function validarFicha(dados) {
     if (e.tipo !== undefined && !['musculacao', 'cardio'].includes(e.tipo)) throw new ErroValidacao('Tipo de exercício inválido.');
     if (cardio(e)) {
       validarObjeto(e, ['tipo', 'nome', 'modalidade', 'duracao', 'distancia', 'observacao']);
-      if (!['bicicleta', 'esteira', 'escada', 'corrida', 'caminhada', 'outro'].includes(e.modalidade)) throw new ErroValidacao('Escolha a modalidade do cardio.');
+      // Aceita a modalidade de fichas antigas, sem exigir esse campo no editor atual.
+      if (e.modalidade !== undefined && !['bicicleta', 'esteira', 'escada', 'corrida', 'caminhada', 'outro'].includes(e.modalidade)) throw new ErroValidacao('Modalidade de cardio inválida.');
       const duracao = numero(e.duracao, 1440, false);
       if (!duracao) throw new ErroValidacao('Informe a duração planejada do cardio.');
-      return { tipo: 'cardio', nome: texto(e.nome, 120, true), modalidade: e.modalidade, duracao, distancia: numero(e.distancia, 2000, false, true), observacao: texto(e.observacao, 500) };
+      return { tipo: 'cardio', nome: texto(e.nome, 120, true), ...(e.modalidade !== undefined ? { modalidade: e.modalidade } : {}), duracao, distancia: numero(e.distancia, 2000, false, true), observacao: texto(e.observacao, 500) };
     }
     validarObjeto(e, ['tipo', 'nome', 'series', 'repeticoes', 'carga', 'descanso', 'observacao']);
     const series = numero(e.series, 10, true);

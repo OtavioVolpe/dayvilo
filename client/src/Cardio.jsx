@@ -1,14 +1,12 @@
 import { Activity } from 'lucide-react';
 import { formatarData } from './datas.js';
 
-export const modalidadesCardio = [['bicicleta', 'Bicicleta'], ['esteira', 'Esteira'], ['escada', 'Escada'], ['corrida', 'Corrida de rua'], ['caminhada', 'Caminhada'], ['outro', 'Outro cardio']];
-export const novoCardio = () => ({ tipo: 'cardio', nome: 'Bicicleta', modalidade: 'bicicleta', duracao: 20, distancia: null, observacao: '' });
+export const novoCardio = () => ({ tipo: 'cardio', nome: '', duracao: 20, distancia: null, observacao: '' });
 const numerico = v => v === '' ? null : Number(v);
 const medida = v => v == null ? '—' : v.toLocaleString('pt-BR');
 
-export function CamposCardio({ exercicio: ex, alterar, modalidade }) {
+export function CamposCardio({ exercicio: ex, alterar }) {
   return <>
-    <label>Modalidade<select value={ex.modalidade} onChange={e => modalidade(e.target.value)}>{modalidadesCardio.map(([valor, nome]) => <option key={valor} value={valor}>{nome}</option>)}</select></label>
     <label>Nome da atividade<input required maxLength={120} value={ex.nome} onChange={e => alterar('nome', e.target.value)} placeholder="Ex.: bicicleta após o treino" /></label>
     <div className="treino-campos treino-cardio-campos">
       <label>Duração planejada (min)<input required type="number" min="0.01" max="1440" step="0.01" value={ex.duracao ?? ''} onChange={e => alterar('duracao', numerico(e.target.value))} /></label>

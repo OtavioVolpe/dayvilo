@@ -32,7 +32,7 @@ test('cardio: agenda mista, registros, conflitos, confirmação de perda e hist�
     await salvar(sessao.realizado);
     await assert.rejects(salvar(sessao.realizado), { status: 409 });
     assert.deepEqual(await servico.desagendar(usuario, agenda), { quantidade: 0, preservados: 1 });
-    const mudanca = { nome: ficha.nome, exercicios: [muscle, { ...bike, modalidade: 'esteira' }], versao: ficha.versao, aplicar_hoje: true };
+    const mudanca = { nome: ficha.nome, exercicios: [muscle, { ...bike, nome: 'Esteira' }], versao: ficha.versao, aplicar_hoje: true };
     const pendente = await servico.salvarFicha(usuario, mudanca, ficha.id);
     assert.ok(pendente.confirmacao.token);
     assert.equal((await servico.consultar(usuario, item.id)).sessao.realizado[1].duracao, 22);
@@ -47,7 +47,8 @@ test('cardio: agenda mista, registros, conflitos, confirmação de perda e hist�
     assert.equal(historico.situacao, 'concluida'); assert.equal(historico.realizado[1].duracao, 22);
     assert.equal(historico.planejado.exercicios[1].modalidade, 'bicicleta');
     // Também é possível agendar uma ficha composta somente por cardio.
-    const { ficha: soCardio } = await servico.salvarFicha(usuario, { nome: 'Corrida', exercicios: [{ ...bike, modalidade: 'corrida', nome: 'Corrida de rua' }] });
+    const { modalidade, ...semModalidade } = bike;
+    const { ficha: soCardio } = await servico.salvarFicha(usuario, { nome: 'Corrida', exercicios: [{ ...semModalidade, nome: 'Corrida de rua' }] });
     assert.equal((await servico.agendar(usuario, { ...agenda, ficha_id: soCardio.id })).quantidade, 1);
   } finally { await c.rollback(); c.release(); await pool.end(); }
 });
