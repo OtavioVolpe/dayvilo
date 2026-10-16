@@ -17,6 +17,7 @@ export function criarRotasTarefas(banco) {
   rotas.post('/tarefas/repetidas', controlador.repetir);
   rotas.post('/tarefas', controlador.criar);
   rotas.get('/tarefas/:id/serie', controlador.consultarSerie);
+  rotas.get('/tarefas/:id/serie/ocorrencias', controlador.ocorrenciasSerie);
   rotas.put('/tarefas/:id/serie', controlador.editarSerie);
   rotas.patch('/tarefas/:id/serie/encerramento', controlador.encerrarSerie);
   rotas.put('/tarefas/:id', controlador.editar);

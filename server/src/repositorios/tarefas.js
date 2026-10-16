@@ -90,6 +90,11 @@ export function criarRepositorioTarefas(banco) {
       const [[limite]] = await banco.execute('SELECT MAX(data_prevista) AS ate FROM tarefas JOIN ocorrencias_series ON tarefa_id = tarefas.id WHERE usuario_id = ? AND serie_id = ?', [usuarioId, serieId]);
       return { tipo: null, dias: null, ate: limite.ate };
     },
+    async ocorrenciasSerie(usuarioId, serieId, inicio, fim) {
+      const [[limites]] = await banco.execute('SELECT MIN(t.data_prevista) AS inicio, MAX(t.data_prevista) AS fim FROM tarefas t JOIN ocorrencias_series o ON o.tarefa_id = t.id WHERE t.usuario_id = ? AND o.serie_id = ?', [usuarioId, serieId]);
+      const [ocorrencias] = await banco.execute('SELECT t.id, t.titulo, t.data_prevista, t.horario, t.horario_final, t.situacao FROM tarefas t JOIN ocorrencias_series o ON o.tarefa_id = t.id WHERE t.usuario_id = ? AND o.serie_id = ? AND t.data_prevista BETWEEN ? AND ? ORDER BY t.data_prevista, t.horario, t.id', [usuarioId, serieId, inicio, fim]);
+      return { limites, ocorrencias: ocorrencias.map(apresentarTarefa) };
+    },
     async salvarConfiguracao(usuarioId, serieId, regra) {
       await banco.execute('UPDATE configuracoes_series SET tipo = ?, dias = ?, ate = ? WHERE usuario_id = ? AND serie_id = ?', [regra.tipo, JSON.stringify(regra.dias ?? null), regra.ate, usuarioId, serieId]);
     },

@@ -1,5 +1,6 @@
 import './casa.css';
 import ObservacaoTarefa from './ObservacaoTarefa.jsx';
+import RepeticaoTarefa from './RepeticaoTarefa.jsx';
 import BarraSelecao from './BarraSelecao.jsx';
 import NavegacaoDatas from './NavegacaoDatas.jsx';
 import FiltroPeriodo from './FiltroPeriodo.jsx';
@@ -15,6 +16,7 @@ import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, Circle
 
 export default function Planejamento({ semanal = false, historico = false, casa = false, aoAbrirTreino, aoAbrirRefeicao, aoAbrirLivro }) {
   const [observacaoAberta, definirObservacaoAberta] = useState(null);
+  const [repeticaoAberta, definirRepeticaoAberta] = useState(null);
   const [diaSelecao, definirDiaSelecao] = useState(null);
   const [selecionados, definirSelecionados] = useState([]);
   const [confirmarLote, definirConfirmarLote] = useState(false);
@@ -303,8 +305,9 @@ export default function Planejamento({ semanal = false, historico = false, casa 
           ...(tarefa.situacao === 'pendente' ? [{ texto: 'Editar tarefa', Icone: Pencil, apenasMobile: true, executar: () => abrirFormulario(tarefa) }] : []),
           ...(atrasada === true ? [{ texto: 'Trazer para hoje', Icone: CalendarArrowUp, executar: () => alterarTarefa(tarefa, 'hoje') }] : []),
           ...(tarefa.situacao !== 'concluida' ? [{ texto: tarefa.situacao === 'pulada' ? 'Restaurar tarefa' : 'Pular esta tarefa', Icone: tarefa.situacao === 'pulada' ? RotateCcw : SkipForward, executar: () => alterarTarefa(tarefa, tarefa.situacao === 'pulada' ? 'pendente' : 'pulada') }] : []),
+          ...(tarefa.serie_id ? [{ texto: 'Ver repetição', Icone: RefreshCw, separador: true, executar: () => definirRepeticaoAberta(tarefa) }] : []),
           ...(tarefa.serie_id && tarefa.situacao === 'pendente' ? [
-            { texto: 'Editar próximas', Icone: ListRestart, separador: tarefa.situacao !== 'concluida' || atrasada === true, desabilitada: atualizando.length > 0, executar: () => abrirFormulario(tarefa, data, true) },
+            { texto: 'Editar próximas', Icone: ListRestart, desabilitada: atualizando.length > 0, executar: () => abrirFormulario(tarefa, data, true) },
             { texto: 'Encerrar repetição', Icone: CircleStop, desabilitada: atualizando.length > 0, executar: () => { definirEncerrando(tarefa.id); definirExcluindo(null); } },
           ] : []),
           { texto: 'Excluir tarefa', Icone: Trash2, separador: true, executar: () => definirExcluindo(tarefa.id) },
@@ -338,6 +341,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
   };
   const grupoConcluidas = itens => itens.length > 0 && <details className="tarefas-concluidas grupo-concluidas" open><summary><span className="grupo-titulo"><ChevronRight className="grupo-seta" size={17} aria-hidden="true" /><CircleCheck size={18} aria-hidden="true" />Concluídas<span className="grupo-contagem">{itens.length}</span></span></summary><ul className="lista-tarefas">{itens.map(tarefa => linha(tarefa))}</ul></details>;
   return <section className={`planejamento ${casa ? 'planejamento-casa' : ''}`} aria-label={casa ? "Tarefas de casa" : historico ? "Histórico de tarefas" : semanal ? "Tarefas da semana" : "Tarefas do dia"} aria-busy={carregando}>
+    {repeticaoAberta && <RepeticaoTarefa tarefa={repeticaoAberta} fechar={() => definirRepeticaoAberta(null)} />}
     {observacaoAberta && <ObservacaoTarefa tarefa={observacaoAberta} fechar={() => definirObservacaoAberta(null)} aoSalvar={tarefa => {
       definirObservacaoAberta(tarefa);
       definirTarefas(lista => lista.map(t => t.id === tarefa.id ? tarefa : t));

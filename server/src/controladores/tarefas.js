@@ -58,6 +58,9 @@ export function criarControladorTarefas(banco) {
     async consultarSerie(requisicao, resposta) {
       resposta.json(await tarefas.consultarSerie(requisicao.usuario, requisicao.query, requisicao.params.id));
     },
+    async ocorrenciasSerie(requisicao, resposta) {
+      resposta.json(await tarefas.ocorrenciasSerie(requisicao.usuario, requisicao.query, requisicao.params.id));
+    },
     async editarSerie(requisicao, resposta) {
       const resultado = await tarefas.editarSerie(requisicao.usuario, requisicao.body, requisicao.params.id);
       resposta.json(resultado);

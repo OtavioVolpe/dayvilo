@@ -78,6 +78,17 @@ export function criarServicoTarefas(banco) {
       if (!referencia?.serie_id) throw new ErroAplicacao(404, 'Série não encontrada para esta tarefa.');
       return tarefas.configuracaoSerie(usuario.id, referencia.serie_id);
     },
+    async ocorrenciasSerie(usuario, entrada, parametroId) {
+      validarObjeto(entrada, ['mes']);
+      const referencia = await tarefas.buscar(usuario.id, validarId(parametroId));
+      if (!referencia?.serie_id) throw new ErroAplicacao(404, 'Série não encontrada para esta tarefa.');
+      const mes = entrada.mes ?? referencia.data_prevista.slice(0, 7);
+      if (typeof mes !== 'string' || !/^\d{4}-\d{2}$/.test(mes)) throw new ErroValidacao('Informe um mês válido.');
+      const inicio = validarData(mes + '-01');
+      const final = new Date(inicio + 'T12:00:00Z'); final.setUTCMonth(final.getUTCMonth() + 1, 0);
+      const lista = await tarefas.ocorrenciasSerie(usuario.id, referencia.serie_id, inicio, final.toISOString().slice(0, 10));
+      return { mes, configuracao: await tarefas.configuracaoSerie(usuario.id, referencia.serie_id), ...lista };
+    },
     async editarSerie(usuario, entrada, parametroId) {
       const id = validarId(parametroId);
       validarObjeto(entrada, ['titulo', 'observacao', 'horario', 'horario_final', 'prioridade', 'ate', 'regra', 'area', 'ambiente']);
