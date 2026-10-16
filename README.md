@@ -342,6 +342,12 @@ Criar uma ficha não agenda tarefas. Agendar começa sem dias selecionados e cri
 
 Excluir ficha remove também suas ocorrências de hoje em diante que estejam pendentes ou puladas e sem registros de execução. Passados, concluídos e ocorrências com cargas (inclusive zero), repetições, séries marcadas ou notas são preservados, consultáveis pela data em Treino ou pelo Histórico da Rotina. Outras fichas não são afetadas. A referência interna da ficha permanece para preservar esses registros, sem permitir novos agendamentos. A confirmação explica a remoção sem desfazer. Não exige migration.
 
+### Aplicar edição da ficha aos agendamentos
+
+Ao editar a ficha, a interface permite atualizar treinos pendentes a partir de amanhã que ainda não tenham pesos, repetições, séries feitas ou notas. Essa opção começa marcada. Aplicar ao treino de hoje é uma escolha separada, inicialmente desmarcada, que também pode atualizar uma sessão iniciada. Desmarcar ambas mantém os agendamentos existentes e altera somente novos agendamentos.
+
+Exercícios com nome único mantêm seus registros mesmo após reordenação; séries novas começam vazias. Remover ou renomear exercícios, ou reduzir séries com dados, exige confirmação que identifica os exercícios afetados. Nenhuma mudança é salva antes dessa confirmação. Se os registros mudarem em outra aba, a confirmação deve ser refeita. Nomes duplicados não são associados automaticamente. Passados, concluídos e pulados permanecem intactos. A versão das sessões atualizadas é incrementada para bloquear gravações antigas. Não requer migração.
+
 ### Referência de cargas e repetições
 
 Ao abrir um treino, cada exercício mostra o último registro com carga ou repetições, anterior à data consultada, da mesma ficha e conta. Treinos pulados e datas futuras em relação a hoje são ignorados. Registros parciais salvos também podem servir de referência; a data é exibida e séries vazias não são preenchidas com dados de outras sessões.
@@ -358,7 +364,7 @@ A estante separa **Quero ler**, **Lendo** e **Lidos**. Título é obrigatório; 
 
 Abra o livro para atualizar progresso, editar seus dados e guardar anotações ou trechos com página opcional. Notas podem ser editadas e excluídas. Escritas exigem sessão, CSRF e a versão atual do livro, evitando sobrescrever alterações de outra aba.
 
-**Agendar leitura** está disponível para livros em Lendo. Escolha explicitamente os dias da semana, início, término (até 366 dias por agendamento) e horário opcional. Criar um livro não agenda nada. Datas já existentes para o mesmo livro não são duplicadas. A Rotina mostra uma tarefa com identificação Leitura e uma seta para abrir o livro; concluir essa tarefa não altera as páginas nem o estado do livro.
+**Agendar leitura** está disponível para livros em Lendo. Escolha **Uma vez** para uma data (inicialmente hoje) e horário opcional, ou **Repetir** para selecionar explicitamente dias da semana, início, término (até 366 dias por agendamento) e horário opcional. Desagendar também permite escolher uma única data. Criar um livro não agenda nada. Datas já existentes para o mesmo livro não são duplicadas. A Rotina mostra uma tarefa com identificação Leitura e uma seta para abrir o livro; concluir essa tarefa não altera as páginas nem o estado do livro.
 
 Em Próximas leituras, **Desagendar por período** remove somente tarefas pendentes de hoje em diante nos dias escolhidos. Ao concluir um livro, é possível encerrar os agendamentos futuros pendentes ou mantê-los. Passados, concluídos e pulados são preservados. **Excluir livro** pede confirmação: apaga livro, anotações e tarefas futuras pendentes, mantendo o histórico da Rotina sem o vínculo de abertura do livro. Não há expiração automática do histórico.
 

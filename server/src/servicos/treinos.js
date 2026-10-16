@@ -1,5 +1,7 @@
 import { ErroConta, transacionar } from './autenticacao.js';
 import { encontrarReferencias } from './referencia-treino.js';
+import { createHash } from 'node:crypto';
+import { adaptarRegistro } from './atualizar-treino.js';
 import { validarObjeto, validarData, validarId, obterDataHoje, ErroValidacao } from '../validacoes/tarefas.js';
 const json = valor => typeof valor === 'string' ? JSON.parse(valor) : valor;
 const temRegistro = realizado => json(realizado).some(e => e.observacao.trim() || e.series.some(r => r.feita || r.carga !== null || r.repeticoes !== null));
@@ -13,7 +15,9 @@ function numero(valor, max, inteiro = false, opcional = false) {
   return valor;
 }
 export function validarFicha(dados) {
-  validarObjeto(dados, ['nome', 'exercicios', 'versao']);
+  validarObjeto(dados, ['nome', 'exercicios', 'versao', 'atualizar_proximos', 'aplicar_hoje', 'confirmacao']);
+  for (const campo of ['atualizar_proximos', 'aplicar_hoje']) if (dados[campo] !== undefined && typeof dados[campo] !== 'boolean') throw new ErroValidacao('Escolha quais agendamentos atualizar.');
+  if (dados.confirmacao !== undefined && (typeof dados.confirmacao !== 'string' || !/^[a-f0-9]{64}$/.test(dados.confirmacao))) throw new ErroValidacao('Confirmação inválida.');
   const nome = texto(dados.nome, 120, true);
   if (!Array.isArray(dados.exercicios) || !dados.exercicios.length || dados.exercicios.length > 30) throw new ErroValidacao('Inclua de 1 a 30 exercícios.');
   const exercicios = dados.exercicios.map(e => {
@@ -47,14 +51,26 @@ export function criarServicoTreinos(banco) {
     async salvarFicha(usuario, dados, id) {
       const validada = validarFicha(dados);
       return transacionar(banco, async c => {
+        let atualizados = 0;
         if (id) {
           const anterior = await ficha(c, usuario, id, true);
           if (dados.versao !== anterior.versao) throw new ErroConta(409, 'A ficha mudou. Reabra antes de salvar.');
+          const hoje = obterDataHoje(usuario.fuso_horario);
+          const [candidatos] = await c.execute("SELECT s.id, s.tarefa_id, s.versao, s.planejado, s.realizado, t.data_prevista FROM sessoes_treino s JOIN tarefas t ON t.id = s.tarefa_id WHERE s.ficha_id = ? AND t.usuario_id = ? AND t.data_prevista >= ? AND t.situacao = 'pendente' ORDER BY s.id FOR UPDATE", [anterior.id, usuario.id, hoje]);
+          const alteracoes = candidatos.filter(s => s.data_prevista === hoje ? dados.aplicar_hoje : dados.atualizar_proximos && !temRegistro(s.realizado)).map(s => ({ ...s, ...adaptarRegistro(json(s.planejado), json(s.realizado), validada.exercicios) }));
+          const perdas = [...new Set(alteracoes.flatMap(s => s.perdas))];
+          const token = createHash('sha256').update(JSON.stringify([usuario.id, anterior.id, anterior.versao, validada, alteracoes])).digest('hex');
+          if (perdas.length && dados.confirmacao !== token) return { confirmacao: { token, mensagem: `A alteração de hoje removerá registros de exercícios ou séries de: ${perdas.join(', ')}. Os registros dos exercícios mantidos serão preservados. Deseja descartar esses registros e salvar?` } };
+          for (const s of alteracoes) {
+            await c.execute('UPDATE sessoes_treino SET planejado = ?, realizado = ?, versao = versao + 1 WHERE id = ?', [JSON.stringify(validada), JSON.stringify(s.registros), s.id]);
+            await c.execute('UPDATE tarefas SET titulo = ? WHERE id = ? AND usuario_id = ?', ['Treino — ' + validada.nome, s.tarefa_id, usuario.id]);
+          }
+          atualizados = alteracoes.length;
           await c.execute('UPDATE fichas_treino SET nome = ?, exercicios = ?, versao = versao + 1 WHERE id = ?', [validada.nome, JSON.stringify(validada.exercicios), anterior.id]);
         } else {
           const [r] = await c.execute('INSERT INTO fichas_treino (usuario_id, nome, exercicios) VALUES (?, ?, ?)', [usuario.id, validada.nome, JSON.stringify(validada.exercicios)]); id = r.insertId;
         }
-        return { ficha: await ficha(c, usuario, id) };
+        return { ficha: await ficha(c, usuario, id), atualizados };
       });
     },
     async excluirFicha(usuario, id) {

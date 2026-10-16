@@ -5,3 +5,6 @@
 .treino-referencia-topo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:16px 0;color:var(--muted);font-size:.8rem}
 .treino .treino-referencia-topo button{background:transparent;color:var(--accent);font-size:.8rem}
 .treino-anterior-serie{grid-column:2 / 4;text-align:left;color:var(--muted);font-size:.78rem;line-height:1.5;margin-top:-6px}
+.treino .treino-alcance{padding:16px 20px;margin:12px 0 24px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.treino .treino-alcance label{flex-direction:row;align-items:flex-start;line-height:1.5;gap:10px}
+.treino .treino-alcance input[type=checkbox]{flex-shrink:0;width:20px;height:20px;min-height:20px}
