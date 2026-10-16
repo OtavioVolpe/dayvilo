@@ -85,6 +85,23 @@ export function criarServicoLeitura(banco) {
       return { id: r.insertId };
     },
     async agendar(u, id, d, remover = false) {
+      if (remover && d?.tarefas !== undefined) {
+        validarObjeto(d, ['versao', 'tarefas']);
+        if (!Array.isArray(d.tarefas) || !d.tarefas.length || d.tarefas.length > 366) throw new ErroValidacao('Selecione de 1 a 366 leituras.');
+        const ids = d.tarefas.map(validarId).sort((a, b) => a - b);
+        if (new Set(ids).size !== ids.length) throw new ErroValidacao('Não repita leituras na seleção.');
+        return mudar(u, id, d, async (c, l) => {
+          let quantidade = 0;
+          for (const tarefa of ids) {
+            const [[atual]] = await c.execute('SELECT t.id, t.data_prevista, t.situacao FROM tarefas t JOIN leituras_agendadas a ON a.tarefa_id = t.id WHERE t.id = ? AND t.usuario_id = ? AND a.livro_id = ? FOR UPDATE', [tarefa, u.id, l.id]);
+            if (!atual) throw new ErroConta(409, 'Os agendamentos mudaram. Atualize os dados e selecione novamente.');
+            if (atual.data_prevista < obterDataHoje(u.fuso_horario) || atual.situacao !== 'pendente') continue;
+            await c.execute('DELETE FROM tarefas WHERE id = ? AND usuario_id = ?', [atual.id, u.id]);
+            quantidade++;
+          }
+          return { quantidade, preservados: ids.length - quantidade };
+        });
+      }
       const v = validarAgenda(d, obterDataHoje(u.fuso_horario));
       return mudar(u, id, d, async (c, l) => {
         if (!remover && l.estado !== 'lendo') throw new ErroValidacao('Passe o livro para Lendo antes de agendar.');

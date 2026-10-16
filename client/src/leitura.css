@@ -42,9 +42,6 @@
 .leitura-nota > span { color: var(--accent); font-size: .9rem; }
 .leitura-nota p { white-space: pre-wrap; line-height: 1.7; margin: 12px 0 16px; }
 .leitura-excluir { margin-top: 30px; }
-.leitura-agendamentos { margin-top: 24px; }
-.leitura-agendamentos summary { cursor: pointer; color: var(--accent); }
-.leitura-agendamentos ul { max-height: 180px; overflow: auto; padding-left: 20px; line-height: 1.8; }
 @media(max-width: 600px) {
   .leitura-topo { align-items: start; flex-direction: column; }
   .leitura-janela { padding: 22px 18px; border-radius: 20px; }
@@ -52,3 +49,16 @@
   .leitura .routine-tabs { gap: 0; }
   .leitura .routine-tabs button { padding-inline: 10px; }
 }
+.leitura-ver-agendamentos{margin-top:16px;color:var(--accent)}
+.leitura-agenda-ferramentas{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:20px 0}
+.leitura-agenda-mes h3{text-transform:capitalize;font-size:.95rem;margin:22px 0 8px;color:var(--accent)}
+.leitura-agenda-mes ul{list-style:none;padding:0;margin:0}
+.leitura-agenda-mes li{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding:14px 0}
+.leitura-agenda-data{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+.leitura-agenda-data strong{font-size:.9rem;font-weight:500;text-transform:capitalize}
+.leitura-agenda-data span{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted)}
+.leitura-agenda-situacao{font-size:.8rem;color:var(--muted)}
+.leitura-agenda-lista input[type=checkbox]{width:20px;height:20px;flex-shrink:0;accent-color:var(--accent)}
+.leitura-agenda-vazia{display:flex;align-items:center;gap:10px;padding:24px 0;color:var(--muted)}
+.leitura-agenda-lista .leitura-acoes{align-items:center;justify-content:space-between;margin-top:24px}
+.leitura-agenda-lista .leitura-acoes>span{font-size:.85rem;color:var(--muted)}
