@@ -15,3 +15,10 @@
 .financeiro .fin-entrada,.fin-linha-entrada>.fin-valor,.financeiro .fin-linha-entrada>.fin-simbolo,.fin-linha-entrada .fin-direcao{color:var(--fin-cor-entrada)}
 .financeiro .fin-saida,.fin-linha-saida>.fin-valor,.financeiro .fin-linha-saida>.fin-simbolo,.fin-linha-saida .fin-direcao{color:var(--fin-cor-saida)}
 .financeiro .fin-lembrete-opcao{flex-direction:row;align-items:center;gap:10px}.financeiro .fin-lembrete-opcao input{width:20px;height:20px;flex-shrink:0}.fin-lembrete{border-top:1px solid var(--line);padding-top:12px;margin-top:16px}
+
+.financeiro{--fin-cor-aporte:#216fa5}
+:root[data-tema=escuro] .financeiro{--fin-cor-aporte:#8dc6ed}
+@media(prefers-color-scheme:dark){:root:not([data-tema=claro]) .financeiro{--fin-cor-aporte:#8dc6ed}}
+.financeiro .fin-aporte,.fin-linha-aporte>.fin-valor,.financeiro .fin-linha-aporte>.fin-simbolo,.fin-linha-aporte .fin-direcao{color:var(--fin-cor-aporte)}
+.fin-resumo-movimentos{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:800px){.fin-resumo-movimentos{grid-template-columns:repeat(2,minmax(0,1fr))}.fin-resumo-movimentos>div:last-child{grid-column:auto}}

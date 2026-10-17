@@ -43,8 +43,8 @@ function pagamento(data, usuario) {
   return data;
 }
 function lancamento(d, usuario) {
-  validarObjeto(d, ['tipo','descricao','categoria','valor_centavos','data_prevista','data_pagamento','observacao','repetir_ate','escopo','versao','lembrar_rotina','horario_lembrete']);
-  return { tipo: escolher(d.tipo, ['receita','despesa']), descricao: texto(d.descricao,120), categoria: texto(d.categoria,60), valor_centavos: centavos(d.valor_centavos), data_prevista: validarData(d.data_prevista), data_pagamento: pagamento(d.data_pagamento, usuario), observacao: texto(d.observacao,1000,false) };
+  validarObjeto(d, ['tipo','descricao','categoria','valor_centavos','data_prevista','data_pagamento','observacao','repetir_ate','escopo','versao','lembrar_rotina','horario_lembrete','investimento_id','registro_id']);
+  return { tipo: escolher(d.tipo, ['receita','despesa','aporte']), descricao: texto(d.descricao,120), categoria: d.tipo==='aporte'?'Investimentos':texto(d.categoria,60), valor_centavos: centavos(d.valor_centavos), data_prevista: validarData(d.data_prevista), data_pagamento: pagamento(d.data_pagamento, usuario), observacao: texto(d.observacao,1000,false) };
 }
 function investimento(d) {
   validarObjeto(d, ['tipo','nome','instituicao','detalhes','versao']);
@@ -68,6 +68,33 @@ export function criarServicoFinanceiro(banco) {
     return r;
   }
   function versao(d, r) { if (d.versao !== r.versao) throw new ErroConta(409,'O registro mudou. Feche e abra novamente antes de alterar.'); }
+  async function sincronizarAporte(c, usuario, id, destino, registroId) {
+    const l=await obter(c,'financeiro_lancamentos',usuario,id);
+    const [[anterior]]=await c.execute('SELECT * FROM financeiro_registros WHERE lancamento_id=? FOR UPDATE',[id]);
+    const investimentoId=l.tipo==='aporte' ? validarId(destino === undefined ? l.investimento_id : destino) : null;
+    if(investimentoId) await obter(c,'financeiro_investimentos',usuario,investimentoId);
+    if(registroId && (l.tipo!=='aporte'||!l.data_pagamento||anterior)) throw new ErroValidacao('Vincule um registro existente apenas a um aporte realizado ainda sem vínculo.');
+    await c.execute('UPDATE financeiro_lancamentos SET investimento_id=? WHERE id=?',[investimentoId,id]);
+    const alterados=new Set(anterior?[anterior.investimento_id]:[]);
+    if(l.tipo==='aporte' && l.data_pagamento){
+      alterados.add(investimentoId);
+      if(registroId){
+        const [[existente]]=await c.execute('SELECT * FROM financeiro_registros WHERE id=? AND investimento_id=? FOR UPDATE',[validarId(registroId),investimentoId]);
+        if(!existente || existente.tipo!=='aporte' || existente.lancamento_id || Number(existente.valor_centavos)!==Number(l.valor_centavos) || existente.data!==l.data_pagamento) throw new ErroValidacao('O aporte existente deve ter o mesmo investimento, valor e data realizada, sem outro vínculo.');
+        await c.execute('UPDATE financeiro_registros SET lancamento_id=? WHERE id=?',[id,existente.id]);
+      }else if(anterior){
+        await c.execute('UPDATE financeiro_registros SET investimento_id=?,valor_centavos=?,data=?,observacao=? WHERE id=?',[investimentoId,l.valor_centavos,l.data_pagamento,l.observacao,anterior.id]);
+      }else{
+        await c.execute("INSERT INTO financeiro_registros (investimento_id,tipo,valor_centavos,data,observacao,lancamento_id) VALUES (?,'aporte',?,?,?,?)",[investimentoId,l.valor_centavos,l.data_pagamento,l.observacao,id]);
+      }
+    }else if(anterior) await c.execute('DELETE FROM financeiro_registros WHERE id=?',[anterior.id]);
+    for(const investimento of alterados) await c.execute('UPDATE financeiro_investimentos SET versao=versao+1 WHERE id=?',[investimento]);
+  }
+  async function prepararExclusao(c, ids) {
+    for(const id of ids){
+      await c.execute('UPDATE financeiro_investimentos i JOIN financeiro_registros r ON r.investimento_id=i.id SET i.versao=i.versao+1 WHERE r.lancamento_id=?',[id]);
+    }
+  }
   return {
     async consultarLancamento(usuario, id) {
       const [[l]] = await banco.execute('SELECT l.*, EXISTS(SELECT 1 FROM financeiro_lembretes f WHERE f.lancamento_id=l.id) AS lembrar_rotina, (SELECT t.horario FROM financeiro_lembretes f JOIN tarefas t ON t.id=f.tarefa_id WHERE f.lancamento_id=l.id) AS horario_lembrete FROM financeiro_lancamentos l WHERE l.usuario_id=? AND l.id=?', [usuario.id,validarId(id)]);
@@ -79,10 +106,10 @@ export function criarServicoFinanceiro(banco) {
       const mes = query.mes || obterDataHoje(usuario.fuso_horario).slice(0,7), [inicio,fim] = mesPeriodo(mes);
       const [lancamentos] = await banco.execute('SELECT l.*, EXISTS(SELECT 1 FROM financeiro_lembretes f WHERE f.lancamento_id=l.id) AS lembrar_rotina, (SELECT t.horario FROM financeiro_lembretes f JOIN tarefas t ON t.id=f.tarefa_id WHERE f.lancamento_id=l.id) AS horario_lembrete FROM financeiro_lancamentos l WHERE usuario_id = ? AND data_prevista BETWEEN ? AND ? ORDER BY data_prevista, id', [usuario.id,inicio,fim]);
       // O mês é o da data prevista, inclusive para lançamentos quitados em outra data.
-      const resumo = { recebido:0, pago:0, receber:0, pagar:0, categorias:Object.create(null) };
+      const resumo = { recebido:0, pago:0, receber:0, pagar:0, aportado:0, aportar:0, categorias:Object.create(null) };
       for (const l of lancamentos) {
         l.valor_centavos = Number(l.valor_centavos); l.lembrar_rotina = Boolean(l.lembrar_rotina); l.horario_lembrete = l.horario_lembrete?.slice(0,5) ?? null;
-        const chave = l.tipo === 'receita' ? (l.data_pagamento ? 'recebido':'receber') : (l.data_pagamento ? 'pago':'pagar');
+        const chave = l.tipo === 'aporte' ? (l.data_pagamento ? 'aportado':'aportar') : l.tipo === 'receita' ? (l.data_pagamento ? 'recebido':'receber') : (l.data_pagamento ? 'pago':'pagar');
         resumo[chave] += l.valor_centavos;
         if (chave === 'pago') resumo.categorias[l.categoria] = (Object.hasOwn(resumo.categorias,l.categoria) ? resumo.categorias[l.categoria] : 0) + l.valor_centavos;
       }
@@ -90,6 +117,7 @@ export function criarServicoFinanceiro(banco) {
     },
     async salvarLancamento(usuario, d, id) {
       const v = lancamento(d,usuario); validarLembrete(d);
+      if(d.registro_id && (d.escopo==='proximos'||d.repetir_ate)) throw new ErroValidacao('Vincule registros existentes um lançamento por vez.');
       return transacionar(banco, async c => {
         await c.execute('SELECT id FROM usuarios WHERE id=? FOR UPDATE', [usuario.id]);
         if (id) {
@@ -103,7 +131,7 @@ export function criarServicoFinanceiro(banco) {
           const [alvos] = escopo === 'proximos'
             ? await c.execute('SELECT id FROM financeiro_lancamentos WHERE usuario_id=? AND serie=? AND data_prevista>=? AND data_pagamento IS NULL', [usuario.id,r.serie,r.data_prevista])
             : [[{ id:r.id }]];
-          for (const alvo of alvos) await sincronizarLembrete(c, usuario, alvo.id, d);
+          for (const alvo of alvos) { await sincronizarLembrete(c, usuario, alvo.id, d); await sincronizarAporte(c,usuario,alvo.id,d.investimento_id,d.registro_id); }
           return { mensagem:'Lançamento atualizado.' };
         }
         const datas = d.repetir_ate ? datasMensais(v.data_prevista,d.repetir_ate) : [v.data_prevista];
@@ -111,6 +139,7 @@ export function criarServicoFinanceiro(banco) {
         for (let i=0;i<datas.length;i++) {
           const [novo] = await c.execute('INSERT INTO financeiro_lancamentos (usuario_id,tipo,descricao,categoria,valor_centavos,data_prevista,data_pagamento,observacao,serie) VALUES (?,?,?,?,?,?,?,?,?)',[usuario.id,v.tipo,v.descricao,v.categoria,v.valor_centavos,datas[i],i===0?v.data_pagamento:null,v.observacao,serie]);
           await sincronizarLembrete(c, usuario, novo.insertId, d);
+          await sincronizarAporte(c,usuario,novo.insertId,d.investimento_id,d.registro_id);
         }
         return { mensagem:`${datas.length} lançamento(s) criado(s).` };
       });
@@ -122,6 +151,7 @@ export function criarServicoFinanceiro(banco) {
         const r = await obter(c,'financeiro_lancamentos',usuario,id); versao(d,r);
         await c.execute('UPDATE financeiro_lancamentos SET data_pagamento=?, versao=versao+1 WHERE id=? AND usuario_id=?',[data,r.id,usuario.id]);
         await sincronizarLembrete(c, usuario, r.id);
+        await sincronizarAporte(c,usuario,r.id);
         return { mensagem:data?'Pagamento/recebimento registrado.':'Lançamento voltou a pendente.' };
       });
     },
@@ -131,6 +161,7 @@ export function criarServicoFinanceiro(banco) {
         await c.execute('SELECT id FROM usuarios WHERE id=? FOR UPDATE', [usuario.id]);
         const r = await obter(c,'financeiro_lancamentos',usuario,id); versao(d,r);
         if (escopo==='este') {
+          await prepararExclusao(c,[r.id]);
           await removerLembretes(c, usuario, [r.id]);
           await c.execute('DELETE FROM financeiro_lancamentos WHERE id=? AND usuario_id=?',[r.id,usuario.id]);
         }
@@ -138,6 +169,7 @@ export function criarServicoFinanceiro(banco) {
           if (!r.serie) throw new ErroValidacao('Este lançamento não tem repetição.');
           const inicio = r.data_prevista > obterDataHoje(usuario.fuso_horario) ? r.data_prevista : obterDataHoje(usuario.fuso_horario);
           const [alvos] = await c.execute('SELECT id FROM financeiro_lancamentos WHERE usuario_id=? AND serie=? AND data_prevista>=? AND data_pagamento IS NULL', [usuario.id,r.serie,inicio]);
+          await prepararExclusao(c,alvos.map(l=>l.id));
           await removerLembretes(c, usuario, alvos.map(l => l.id));
           await c.execute('DELETE FROM financeiro_lancamentos WHERE usuario_id=? AND serie=? AND data_prevista>=? AND data_pagamento IS NULL',[usuario.id,r.serie,inicio]);
         }
@@ -156,32 +188,47 @@ export function criarServicoFinanceiro(banco) {
     async salvarInvestimento(usuario,d,id) {
       const v=investimento(d);
       return transacionar(banco,async c=>{
+        await c.execute('SELECT id FROM usuarios WHERE id=? FOR UPDATE',[usuario.id]);
         if(id){const r=await obter(c,'financeiro_investimentos',usuario,id);versao(d,r);await c.execute('UPDATE financeiro_investimentos SET tipo=?, nome=?, instituicao=?, detalhes=?, versao=versao+1 WHERE id=? AND usuario_id=?',[v.tipo,v.nome,v.instituicao,JSON.stringify(v.detalhes),r.id,usuario.id]);}
         else {const [r]=await c.execute('INSERT INTO financeiro_investimentos (usuario_id,tipo,nome,instituicao,detalhes) VALUES (?,?,?,?,?)',[usuario.id,v.tipo,v.nome,v.instituicao,JSON.stringify(v.detalhes)]);id=r.insertId;}
         return { id:Number(id),mensagem:'Investimento salvo. Registre os aportes e o valor atual separadamente.' };
       });
     },
     async registrar(usuario,id,d) {
-      validarObjeto(d,['versao','tipo','data','valor_centavos','observacao']);
+      validarObjeto(d,['versao','tipo','data','valor_centavos','observacao','incluir_movimentacao']);
+      if(d.incluir_movimentacao!==undefined && typeof d.incluir_movimentacao!=='boolean') throw new ErroValidacao('Informe se deseja incluir nas movimentações.');
+      if(d.incluir_movimentacao && d.tipo!=='aporte') throw new ErroValidacao('Apenas aportes podem ser incluídos nas movimentações.');
       const tipo=escolher(d.tipo,['aporte','resgate','saldo']), valor=centavos(d.valor_centavos,tipo==='saldo'), data=pagamento(d.data,usuario), obs=texto(d.observacao,500,false);
       if(!data) throw new ErroValidacao('Informe a data do registro.');
       return transacionar(banco,async c=>{
+        await c.execute('SELECT id FROM usuarios WHERE id=? FOR UPDATE',[usuario.id]);
         const r=await obter(c,'financeiro_investimentos',usuario,id);versao(d,r);
-        await c.execute('INSERT INTO financeiro_registros (investimento_id,tipo,valor_centavos,data,observacao) VALUES (?,?,?,?,?)',[r.id,tipo,valor,data,obs]);
+        let lancamentoId=null;
+        if(d.incluir_movimentacao){
+          const [novo]=await c.execute("INSERT INTO financeiro_lancamentos (usuario_id,tipo,descricao,categoria,valor_centavos,data_prevista,data_pagamento,observacao,investimento_id) VALUES (?,'aporte',?,'Investimentos',?,?,?,?,?)",[usuario.id,r.nome,valor,data,data,obs,r.id]);
+          lancamentoId=novo.insertId;
+        }
+        await c.execute('INSERT INTO financeiro_registros (investimento_id,tipo,valor_centavos,data,observacao,lancamento_id) VALUES (?,?,?,?,?,?)',[r.id,tipo,valor,data,obs,lancamentoId]);
         await c.execute('UPDATE financeiro_investimentos SET versao=versao+1 WHERE id=?',[r.id]);
-        return { mensagem:'Registro salvo. Não altera entradas ou despesas.' };
+        return { mensagem:d.incluir_movimentacao?'Aporte registrado também nas movimentações do mês.':'Registro salvo somente no investimento.' };
       });
     },
     async excluirInvestimento(usuario,id,d) {
       validarObjeto(d,['versao']);return transacionar(banco,async c=>{
+        await c.execute('SELECT id FROM usuarios WHERE id=? FOR UPDATE',[usuario.id]);
         const r=await obter(c,'financeiro_investimentos',usuario,id);versao(d,r);
+        const [[vinculo]]=await c.execute('SELECT id FROM financeiro_lancamentos WHERE investimento_id=? LIMIT 1',[r.id]);
+        if(vinculo) throw new ErroConta(409,'Este investimento tem lançamentos vinculados. Remova ou altere esses lançamentos antes de excluir.');
         await c.execute('DELETE FROM financeiro_investimentos WHERE id=? AND usuario_id=?',[r.id,usuario.id]);
         return { mensagem:'Investimento e seus registros excluídos.' };
       });
     },
     async excluirRegistro(usuario,id,registro,d) {
       validarObjeto(d,['versao']);return transacionar(banco,async c=>{
+        await c.execute('SELECT id FROM usuarios WHERE id=? FOR UPDATE',[usuario.id]);
         const r=await obter(c,'financeiro_investimentos',usuario,id);versao(d,r);
+        const [[vinculo]]=await c.execute('SELECT lancamento_id FROM financeiro_registros WHERE id=? AND investimento_id=?',[validarId(registro),r.id]);
+        if(vinculo?.lancamento_id) throw new ErroConta(409,'Este aporte está vinculado a uma movimentação. Edite ou exclua pela aba Movimentações.');
         const [resultado]=await c.execute('DELETE FROM financeiro_registros WHERE id=? AND investimento_id=?',[validarId(registro),r.id]);
         if(!resultado.affectedRows) throw new ErroConta(404,'Registro não encontrado.');
         await c.execute('UPDATE financeiro_investimentos SET versao=versao+1 WHERE id=?',[r.id]);
