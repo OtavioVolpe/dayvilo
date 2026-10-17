@@ -1,0 +1,11 @@
+dialog.confirmacao-treino.confirmacao-padrao{--excluir-fundo:#a63d35;--excluir-texto:#fff;--excluir-icone:#a63d35;box-sizing:border-box;width:calc(100% - 32px);max-width:480px;max-height:85dvh;overflow:auto;padding:24px;border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--ink)}
+dialog.confirmacao-treino.confirmacao-padrao::backdrop{background:#0009}
+dialog.confirmacao-treino.confirmacao-padrao h2{display:flex;align-items:center;gap:10px;margin:0 0 16px;font-size:1.15rem;overflow-wrap:anywhere}dialog.confirmacao-treino.confirmacao-padrao h2 svg{flex-shrink:0}
+dialog.confirmacao-treino.confirmacao-padrao p{font-size:.9rem;line-height:1.6;white-space:pre-line;overflow-wrap:anywhere;margin:0 0 12px}
+dialog.confirmacao-treino.confirmacao-padrao>div{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:12px;margin-top:24px}
+dialog.confirmacao-treino.confirmacao-padrao button{min-height:44px;padding:10px 16px;border:1px solid var(--line);border-radius:10px;background:var(--background);color:var(--ink);font-size:.875rem}
+dialog.confirmacao-treino.confirmacao-padrao .confirmacao-alerta{color:var(--excluir-icone)}
+dialog.confirmacao-treino.confirmacao-padrao button.confirmacao-perigo{background:var(--excluir-fundo);color:var(--excluir-texto);border-color:var(--excluir-fundo)}
+:root[data-tema=escuro] dialog.confirmacao-treino.confirmacao-padrao{--excluir-fundo:#efa39a;--excluir-texto:#351815;--excluir-icone:#efa39a}
+@media(prefers-color-scheme:dark){:root:not([data-tema=claro]) dialog.confirmacao-treino.confirmacao-padrao{--excluir-fundo:#efa39a;--excluir-texto:#351815;--excluir-icone:#efa39a}}
+@media(max-width:480px){dialog.confirmacao-treino.confirmacao-padrao{padding:20px}dialog.confirmacao-treino.confirmacao-padrao>div>button{flex:1 1 120px}}

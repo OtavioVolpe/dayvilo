@@ -1,3 +1,4 @@
+import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
 import { useEffect, useId, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, RefreshCw, X, Clock } from 'lucide-react';
 import { solicitar } from './api.js';
@@ -47,10 +48,8 @@ export default function RepeticaoTarefa({ tarefa, hoje, fechar, editar, encerrar
     <footer className="repeticao-rodape">
       {tarefa.situacao === 'pendente' ? <>
         <p>Alterações a partir de <strong>{dataInicio}</strong></p>
-        {confirmando ? <div role="group" aria-label="Confirmar encerramento">
-          <p>Excluir pendentes e puladas futuras desta série a partir de {dataInicio}? Não pode ser desfeito. Concluídas, dias anteriores e puladas de hoje serão preservados.</p>
-          <div className="repeticao-acoes"><button type="button" disabled={encerrando} onClick={() => { setConfirmando(false); setErroAcao(''); }}>Cancelar</button><button type="button" disabled={bloqueado || encerrando} onClick={confirmarEncerramento}>{encerrando ? 'Encerrando…' : 'Confirmar encerramento'}</button></div>
-        </div> : <div className="repeticao-acoes"><button type="button" disabled={bloqueado || carregando || !!erro} onClick={editar}>Editar próximas</button><button type="button" disabled={bloqueado || carregando || !!erro} onClick={() => setConfirmando(true)}>Encerrar repetição</button></div>}
+        {confirmando && <ConfirmacaoTreino destrutiva rotulo="Encerrar repetição" ocupado={encerrando} erro={erroAcao} cancelar={() => { setConfirmando(false); setErroAcao(''); }} confirmar={confirmarEncerramento} mensagem={`“${tarefa.titulo}”: remover pendentes e puladas futuras a partir de ${dataInicio}.\n\nConcluídas, dias anteriores e puladas de hoje serão preservados. Não pode ser desfeito.`} />}
+        <div className="repeticao-acoes"><button type="button" disabled={bloqueado || carregando || !!erro} onClick={editar}>Editar próximas</button><button type="button" disabled={bloqueado || carregando || !!erro} onClick={() => setConfirmando(true)}>Encerrar repetição</button></div>
         {erroAcao && <p role="alert">{erroAcao}</p>}
       </> : <p>Para editar ou encerrar esta repetição, abra uma ocorrência pendente.</p>}
     </footer>

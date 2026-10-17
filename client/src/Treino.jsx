@@ -66,7 +66,7 @@ export default function Treino({ sessaoInicial = null, aoConsumirSessao, aoAlter
     e.preventDefault();
     if (agenda.desagendar) {
       const { desagendar, ...selecao } = agenda;
-      setConfirmacao({ mensagem: `Desagendar ${dados.fichas.find(f => f.id === agenda.ficha_id)?.nome} de ${formatarData(agenda.inicio)} a ${formatarData(agenda.fim)}, nos dias ${diasSemana.filter(([n]) => agenda.dias.includes(n)).map(([, nome]) => nome).join(', ')}? Remove também da Rotina, sem desfazer. Passados, concluídos e treinos com registros serão mantidos.`, acao: () => executar(async () => {
+      setConfirmacao({ rotulo: 'Desagendar treinos', destrutiva: true, mensagem: `Desagendar ${dados.fichas.find(f => f.id === agenda.ficha_id)?.nome} de ${formatarData(agenda.inicio)} a ${formatarData(agenda.fim)}, nos dias ${diasSemana.filter(([n]) => agenda.dias.includes(n)).map(([, nome]) => nome).join(', ')}? Remove também da Rotina, sem desfazer. Passados, concluídos e treinos com registros serão mantidos.`, acao: () => executar(async () => {
         const r = await solicitar('/treinos/agenda/desagendar', enviar('POST', selecao));
         setAgenda(null); setSujo(false); setRevisao(v => v + 1);
         setAviso(`${r.quantidade} treino(s) desagendado(s).${r.preservados ? ` ${r.preservados} preservado(s) por histórico ou registros.` : ''}`);
@@ -106,7 +106,7 @@ export default function Treino({ sessaoInicial = null, aoConsumirSessao, aoAlter
   const editando = Boolean(ficha || agenda || sessao), bloqueado = ocupado || carregando;
   const dias = data ? (visao === 'Hoje' ? [data] : Array.from({ length: 7 }, (_, i) => deslocarData(inicioSemana(data), i))) : [];
   return <section className="treino" aria-label="Treinos" aria-busy={ocupado || carregando}>
-    {confirmacao && <ConfirmacaoTreino mensagem={confirmacao.mensagem} cancelar={() => setConfirmacao(null)} confirmar={() => { const acao = confirmacao.acao; setConfirmacao(null); acao(); }} />}
+    {confirmacao && <ConfirmacaoTreino rotulo={confirmacao.rotulo} destrutiva={confirmacao.destrutiva} mensagem={confirmacao.mensagem} cancelar={() => setConfirmacao(null)} confirmar={() => { const acao = confirmacao.acao; setConfirmacao(null); acao(); }} />}
     <header className="treino-topo"><div><h1>Meu treino</h1><p>Planeje. Registre. Acompanhe.</p></div>{!editando && <button className="botao-principal" disabled={bloqueado || !data} onClick={() => { setFicha({ nome: '', exercicios: [novoExercicio()] }); setSujo(false); setAviso(''); }}><Plus size={17} />Nova ficha</button>}</header>
     {erro && <p className="mensagem-erro" role="alert">{erro}</p>}{aviso && <p className="mensagem-sucesso" role="status">{aviso}</p>}
     {!editando && <>
@@ -119,7 +119,7 @@ export default function Treino({ sessaoInicial = null, aoConsumirSessao, aoAlter
         agendar={() => { setAgenda({ ficha_id: f.id, inicio: data, fim: deslocarData(data, 27), dias: [] }); setAviso(''); }}
         desagendar={() => { setAgenda({ ficha_id: f.id, inicio: data, fim: deslocarData(data, 27), dias: [], desagendar: true }); setAviso(''); }}
         editar={() => { setFicha(structuredClone(f)); setSujo(false); setAviso(''); }}
-        excluir={() => { setConfirmacao({ mensagem: 'Excluir esta ficha e os treinos de hoje em diante sem registros? Passados, concluídos e treinos com registros serão mantidos. Não pode ser desfeito.', acao: () => executar(async () => { const r = await solicitar('/treinos/fichas/' + f.id, { method: 'DELETE' }); setAviso(r.mensagem); setRevisao(v => v + 1); }) }); }}
+        excluir={() => { setConfirmacao({ rotulo: 'Excluir ficha', destrutiva: true, mensagem: `Excluir a ficha “${f.nome}” e seus treinos de hoje em diante sem registros? Passados, concluídos e treinos com registros serão mantidos. Não pode ser desfeito.`, acao: () => executar(async () => { const r = await solicitar('/treinos/fichas/' + f.id, { method: 'DELETE' }); setAviso(r.mensagem); setRevisao(v => v + 1); }) }); }}
       />)}</div>
     </>}
     {ficha && <form onSubmit={salvarFicha}><fieldset disabled={ocupado}><legend>{ficha.id ? 'Editar ficha' : 'Nova ficha'}</legend>{ficha.id ? <div className="treino-alcance"><p className="treino-ajuda">Escolha onde aplicar. Treinos passados, concluídos e pulados serão mantidos.</p><label><input type="checkbox" checked={ficha.atualizar_proximos ?? true} onChange={e => { setFicha({ ...ficha, atualizar_proximos: e.target.checked }); setSujo(true); }} />Atualizar próximos treinos sem registros (a partir de amanhã)</label><label><input type="checkbox" checked={ficha.aplicar_hoje ?? false} onChange={e => { setFicha({ ...ficha, aplicar_hoje: e.target.checked }); setSujo(true); }} />Aplicar também ao treino de hoje, mesmo se já comecei</label><p className="treino-ajuda">Os exercícios mantidos conservam pesos, repetições, tempo, distância e notas. Se algum registro precisar ser removido, você confirma antes. Desmarque ambas para alterar somente novos agendamentos.</p></div> : <p className="treino-ajuda">Criar a ficha não agenda treinos.</p>}<label>Nome da ficha<input required maxLength={120} value={ficha.nome} placeholder="A — Peito e tríceps" onChange={e => { setFicha({ ...ficha, nome: e.target.value }); setSujo(true); }} /></label>

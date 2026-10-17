@@ -1,3 +1,4 @@
+import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
 import './casa.css';
 import ObservacaoTarefa from './ObservacaoTarefa.jsx';
 import RepeticaoTarefa from './RepeticaoTarefa.jsx';
@@ -286,7 +287,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
   const barraSelecao = dia => <BarraSelecao compacto={semanal} dia={dia} tarefas={tarefas.filter(t => t.data_prevista === dia)} ativo={diaSelecao === dia} selecionados={selecionados}
     bloqueado={salvando || carregando || aberto || atualizando.length > 0 || (diaSelecao !== null && diaSelecao !== dia)}
     iniciar={() => { definirDiaSelecao(dia); definirSelecionados([]); definirExcluindo(null); definirConfirmarLote(false); definirPuladasAbertas(estado => ({ ...estado, [dia]: true })); }}
-    selecionar={ids => { definirSelecionados(ids); definirConfirmarLote(false); }} cancelar={cancelarSelecao} executar={executarLote} confirmar={confirmarLote} definirConfirmar={definirConfirmarLote} />;
+    selecionar={ids => { definirSelecionados(ids); definirConfirmarLote(false); }} cancelar={cancelarSelecao} executar={executarLote} erro={erro} confirmar={confirmarLote} definirConfirmar={definirConfirmarLote} />;
   const linha = (tarefa, atrasada = false) => (
     <li className={`tarefa ${diaSelecao === tarefa.data_prevista && !atrasada ? 'modo-selecao' : ''} ${selecionados.includes(tarefa.id) ? 'tarefa-selecionada' : ''} ${diaSelecao === null && !historico && !atrasada && ordem === 'manual' ? 'tarefa-com-alca' : ''} tarefa-${tarefa.situacao} ${tarefa.situacao === 'concluida' ? 'concluida' : ''} ${arrasto?.origem === tarefa.id ? 'tarefa-arrastando' : ''} ${arrasto?.destino === tarefa.id && arrasto.origem !== tarefa.id ? (arrasto.depois ? 'destino-depois' : 'destino-antes') : ''}`} key={tarefa.id} tabIndex={-1} aria-labelledby={`titulo-tarefa-${tarefa.id} situacao-tarefa-${tarefa.id}`} ref={elemento => { if (elemento) cartoesRef.current.set(tarefa.id, elemento); else cartoesRef.current.delete(tarefa.id); }}>
       {!casa && diaSelecao === null && !historico && !atrasada && ordem === 'manual' && <AlcaOrdenacao tarefa={tarefa} lista={grupoDoDia(tarefa)} cartoes={cartoesRef} bloqueado={diaSelecao !== null || aberto || salvando || atualizando.length > 0 || carregando || Boolean(excluindo || repeticaoAberta)} mover={mover} indicar={definirArrasto} />}
@@ -309,14 +310,10 @@ export default function Planejamento({ semanal = false, historico = false, casa 
           ...(atrasada === true && !tarefa.financeiro_id ? [{ texto: 'Trazer para hoje', Icone: CalendarArrowUp, executar: () => alterarTarefa(tarefa, 'hoje') }] : []),
           ...(!tarefa.financeiro_id && tarefa.situacao !== 'concluida' ? [{ texto: tarefa.situacao === 'pulada' ? 'Restaurar tarefa' : 'Pular esta tarefa', Icone: tarefa.situacao === 'pulada' ? RotateCcw : SkipForward, executar: () => alterarTarefa(tarefa, tarefa.situacao === 'pulada' ? 'pendente' : 'pulada') }] : []),
           ...(tarefa.serie_id ? [{ texto: 'Ver repetição', Icone: RefreshCw, executar: () => definirRepeticaoAberta(tarefa) }] : []),
-          { texto: tarefa.financeiro_id ? 'Remover lembrete' : 'Excluir tarefa', Icone: Trash2, separador: true, executar: () => definirExcluindo(tarefa.id) },
+          { texto: tarefa.financeiro_id ? 'Remover lembrete' : 'Excluir tarefa', Icone: Trash2, separador: true, executar: () => { definirErro(''); definirExcluindo(tarefa.id); } },
         ]} /></>}
       </div>
-      {excluindo === tarefa.id && <div className="confirmacao-exclusao" role="group" aria-label="Confirmar exclusão">
-        <p>{tarefa.financeiro_id ? 'Remover só o lembrete da Rotina? A conta e seu pagamento continuam no Financeiro.' : tarefa.refeicao_id ? 'Excluir esta refeição e sua anotação também da Alimentação? Não pode ser desfeito.' : tarefa.treino_sessao_id ? 'Excluir este treino e seu registro de séries? Não pode ser desfeito.' : 'Excluir só esta tarefa? Não pode ser desfeito.'}</p>
-        <button type="button" disabled={diaSelecao !== null || atualizando.includes(tarefa.id)} onClick={() => definirExcluindo(null)}>Cancelar</button>
-        <button type="button" disabled={diaSelecao !== null || aberto || salvando || atualizando.includes(tarefa.id)} onClick={() => excluir(tarefa)}>{atualizando.includes(tarefa.id) ? 'Excluindo…' : 'Confirmar exclusão'}</button>
-      </div>}
+      {excluindo === tarefa.id && <ConfirmacaoTreino destrutiva rotulo={tarefa.financeiro_id ? 'Remover lembrete' : 'Excluir tarefa'} ocupado={atualizando.includes(tarefa.id)} erro={erro} cancelar={() => definirExcluindo(null)} confirmar={() => excluir(tarefa)} mensagem={`“${tarefa.titulo}” · ${formatarData(tarefa.data_prevista)}.\n\n${tarefa.financeiro_id ? 'Remove apenas o lembrete da Rotina. A conta e seu pagamento permanecem no Financeiro.' : tarefa.refeicao_id ? 'A refeição e sua anotação também serão excluídas da Alimentação. Não pode ser desfeito.' : tarefa.treino_sessao_id ? 'Este treino e seus registros de execução serão excluídos. A ficha e os demais treinos permanecem. Não pode ser desfeito.' : (tarefa.serie_id ? 'As outras ocorrências da repetição serão mantidas. ' : '') + 'Esta ação não pode ser desfeita.'}`} />}
     </li>
   );
 

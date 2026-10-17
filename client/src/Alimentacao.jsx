@@ -72,7 +72,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
   }
   function situacao(r, valor) { executar(() => solicitar(`/alimentacao/${r.id}/situacao`, json('PATCH', { situacao: valor, revisao: r.revisao })), 'Refeição atualizada.'); }
   function excluir(r) {
-    setConfirmacao({ mensagem: `Excluir “${r.titulo}” deste dia, incluindo sua anotação e sua presença na Rotina? Não pode ser desfeito.`, executar: () => executar(() => solicitar('/alimentacao/' + r.id, json('DELETE', { revisao: r.revisao })), 'Refeição excluída.') });
+    setConfirmacao({ rotulo: 'Excluir refeição', destrutiva: true, mensagem: `Excluir “${r.titulo}” deste dia, incluindo sua anotação e sua presença na Rotina? Não pode ser desfeito.`, executar: () => executar(() => solicitar('/alimentacao/' + r.id, json('DELETE', { revisao: r.revisao })), 'Refeição excluída.') });
   }
   const selecaoCopia = form?.modo === 'copiar' && dados ? destinosAlimentacao(form, dia, dados.hoje, dados.refeicoes.length) : { destinos: [], erro: '' };
   async function copiar(confirmar = false) {
@@ -83,7 +83,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
   }
   const desabilitado = ocupado || carregando;
   return <section className="alimentacao">
-    {confirmacao && <ConfirmacaoTreino mensagem={confirmacao.mensagem} cancelar={() => setConfirmacao(null)} confirmar={() => { const acao = confirmacao.executar; setConfirmacao(null); acao(); }} />}
+    {confirmacao && <ConfirmacaoTreino rotulo={confirmacao.rotulo} destrutiva={confirmacao.destrutiva} mensagem={confirmacao.mensagem} cancelar={() => setConfirmacao(null)} confirmar={() => { const acao = confirmacao.executar; setConfirmacao(null); acao(); }} />}
     <header className="ali-topo"><div><h1>Minha alimentação</h1><p>Seu dia, refeição por refeição.</p></div><button className="botao-principal" disabled={desabilitado || !dados} onClick={nova}><Plus size={18} />Refeição</button></header>
     <nav className="routine-tabs" aria-label="Visualizações da alimentação">{[['hoje', 'Hoje'], ['semana', 'Semana']].map(([a, nome]) => <button key={a} disabled={ocupado} aria-pressed={aba === a} onClick={() => navegar(() => setAba(a))}>{nome}</button>)}</nav>
     <div className="ali-periodo">
