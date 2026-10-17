@@ -15,12 +15,14 @@
 @media(max-width:400px){.treino-cardio-campos{grid-template-columns:1fr}}
 .treino-ficha-card{display:flex;flex-direction:column}
 .treino-ficha-cabecalho{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.treino-ficha-cabecalho h3{padding-top:10px}
+.treino-ficha-cabecalho h3{padding:0}
 .treino .treino-ficha-icone{padding:10px;border-color:transparent;background:transparent;color:var(--muted);flex-shrink:0}
 .treino .treino-ficha-icone:hover,.treino .treino-ficha-icone[aria-expanded=true]{background:var(--background);color:var(--accent)}
-.treino-ficha-rodape{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;padding-top:4px}
+.treino-ficha-rodape{display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:center;gap:8px;margin-top:auto;padding-top:4px}
+.treino-ficha-opcoes>.treino-ficha-icone{width:44px;height:44px}
 .treino .treino-ficha-agendar{color:var(--accent);background:transparent}
 .treino-ficha-opcoes{position:relative}
 .treino-ficha-menu{position:absolute;right:0;bottom:calc(100% + 6px);width:180px;padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:0 8px 24px #0003;z-index:10}
 .treino .treino-ficha-menu button{width:100%;border:0;justify-content:flex-start;background:transparent;font-size:.85rem}
 .treino .treino-ficha-menu button:hover{background:var(--background)}
+.treino .treino-ficha-menu .treino-ficha-excluir{border-top:1px solid var(--line);border-radius:0 0 8px 8px;margin-top:5px;padding-top:14px}
