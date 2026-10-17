@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-const colunas = '(SELECT livro_id FROM leituras_agendadas WHERE tarefa_id = tarefas.id) AS livro_id, EXISTS(SELECT 1 FROM leituras_agendadas WHERE tarefa_id = tarefas.id) AS leitura, (SELECT id FROM refeicoes WHERE tarefa_id = tarefas.id) AS refeicao_id, (SELECT id FROM sessoes_treino WHERE tarefa_id = tarefas.id) AS treino_sessao_id, id, titulo, observacao, area, ambiente, data_prevista, horario, horario_final, prioridade, situacao, ordem, (SELECT serie_id FROM ocorrencias_series WHERE tarefa_id = tarefas.id) AS serie_id';
+const colunas = '(SELECT lancamento_id FROM financeiro_lembretes WHERE tarefa_id = tarefas.id) AS financeiro_id, (SELECT livro_id FROM leituras_agendadas WHERE tarefa_id = tarefas.id) AS livro_id, EXISTS(SELECT 1 FROM leituras_agendadas WHERE tarefa_id = tarefas.id) AS leitura, (SELECT id FROM refeicoes WHERE tarefa_id = tarefas.id) AS refeicao_id, (SELECT id FROM sessoes_treino WHERE tarefa_id = tarefas.id) AS treino_sessao_id, id, titulo, observacao, area, ambiente, data_prevista, horario, horario_final, prioridade, situacao, ordem, (SELECT serie_id FROM ocorrencias_series WHERE tarefa_id = tarefas.id) AS serie_id';
 export const visivelNaRotina = 'NOT EXISTS (SELECT 1 FROM refeicoes WHERE tarefa_id = tarefas.id AND mostrar_rotina = FALSE)';
 
 function apresentarTarefa(tarefa) {
@@ -129,6 +129,7 @@ export function criarRepositorioTarefas(banco) {
       return this.buscar(usuarioId, id);
     },
     async excluir(usuarioId, id) {
+      await banco.execute('UPDATE financeiro_lancamentos l JOIN financeiro_lembretes f ON f.lancamento_id=l.id SET l.versao=l.versao+1 WHERE f.tarefa_id=? AND l.usuario_id=?', [id, usuarioId]);
       const [resultado] = await banco.execute('DELETE FROM tarefas WHERE usuario_id = ? AND id = ?', [usuarioId, id]);
       return resultado.affectedRows > 0;
     },

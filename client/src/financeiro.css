@@ -14,3 +14,4 @@
 @media(prefers-color-scheme:dark){:root:not([data-tema=claro]) .financeiro{--fin-cor-saida:#efa39a}}
 .financeiro .fin-entrada,.fin-linha-entrada>.fin-valor,.financeiro .fin-linha-entrada>.fin-simbolo,.fin-linha-entrada .fin-direcao{color:var(--fin-cor-entrada)}
 .financeiro .fin-saida,.fin-linha-saida>.fin-valor,.financeiro .fin-linha-saida>.fin-simbolo,.fin-linha-saida .fin-direcao{color:var(--fin-cor-saida)}
+.financeiro .fin-lembrete-opcao{flex-direction:row;align-items:center;gap:10px}.financeiro .fin-lembrete-opcao input{width:20px;height:20px;flex-shrink:0}.fin-lembrete{border-top:1px solid var(--line);padding-top:12px;margin-top:16px}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight, ArrowDownLeft, ArrowUpRight, Landmark, ChartNoAxesCombined, RefreshCw } from 'lucide-react';
 import { solicitar } from './api.js';
 import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
@@ -22,13 +22,14 @@ function moverMes(mes, n) {
   const [ano,m] = mes.split('-').map(Number), d=new Date(Date.UTC(ano,m-1+n,1));
   return d.toISOString().slice(0,7);
 }
-export default function Financeiro({aoAlterarSujo}) {
+export default function Financeiro({aoAlterarSujo, inicial, aoConsumirInicial}) {
   const [hoje,setHoje]=useState(''),[mes,setMes]=useState(''),[aba,setAba]=useState('movimentos');
   const [dados,setDados]=useState(null),[investimentos,setInvestimentos]=useState([]),[revisao,setRevisao]=useState(0);
   const [carregando,setCarregando]=useState(true),[ocupado,setOcupado]=useState(false),[erro,setErro]=useState(''),[aviso,setAviso]=useState('');
   const [filtro,setFiltro]=useState('todos'),[form,setForm]=useState(null),[sujo,setSujo]=useState(false),[confirmacao,setConfirmacao]=useState(null);
   const [expandido,setExpandido]=useState(null);
-  useEffect(()=>{aoAlterarSujo?.(sujo);return()=>aoAlterarSujo?.(false);},[sujo,aoAlterarSujo]);
+  const abrirInicial=useRef(inicial);
+  useEffect(()=>{aoAlterarSujo?.(sujo || ocupado);return()=>aoAlterarSujo?.(false);},[sujo,ocupado,aoAlterarSujo]);
   useEffect(()=>{if(!sujo)return;const sair=e=>{e.preventDefault();e.returnValue='';};window.addEventListener('beforeunload',sair);return()=>window.removeEventListener('beforeunload',sair);},[sujo]);
   useEffect(()=>{
     const controle=new AbortController();setCarregando(true);setErro('');
@@ -38,6 +39,14 @@ export default function Financeiro({aoAlterarSujo}) {
       const [lista,carteira]=await Promise.all([solicitar('/financeiro?mes='+atual,{signal:controle.signal}),solicitar('/financeiro/investimentos',{signal:controle.signal})]);
       if(controle.signal.aborted)return;
       setHoje(perfil.data_hoje);if(!mes)setMes(atual);setDados(lista);setInvestimentos(carteira.investimentos);
+      if(abrirInicial.current){
+        const pedido=abrirInicial.current;
+        const l=await solicitar('/financeiro/lancamentos/'+pedido.id,{signal:controle.signal});
+        if(controle.signal.aborted)return;
+        abrirInicial.current=null;aoConsumirInicial?.();setMes(l.data_prevista.slice(0,7));
+        if(pedido.acao==='pagar'&&!l.data_pagamento) abrir('pagamento',{...l,data_pagamento:perfil.data_hoje});
+        else editarLancamento(l);
+      }
     })().catch(e=>{if(!controle.signal.aborted){setDados(null);setErro(e.message);}}).finally(()=>{if(!controle.signal.aborted)setCarregando(false);});
     return()=>controle.abort();
   },[mes,revisao]);
@@ -48,14 +57,14 @@ export default function Financeiro({aoAlterarSujo}) {
   function sairFormulario(acao=()=>{}){if(sujo){setConfirmacao({mensagem:'Descartar alterações não salvas?',acao:()=>{setForm(null);setSujo(false);acao();}});}else{setForm(null);acao();}}
   async function executar(acao){if(ocupado)return;setOcupado(true);setErro('');setAviso('');try{const r=await acao();setAviso(r.mensagem);setForm(null);setSujo(false);setRevisao(v=>v+1);}catch(e){setErro(e.message);}finally{setOcupado(false);}}
   function confirmar(mensagem,acao){setConfirmacao({mensagem,acao:()=>executar(acao)});}
-  function novoLancamento(){abrir('lancamento',{tipo:'despesa',descricao:'',categoria:'',valor:'',data_prevista:mes===hoje.slice(0,7)?hoje:mes+'-01',data_pagamento:null,observacao:'',repetir_ate:'',escopo:'este'});}
+  function novoLancamento(){abrir('lancamento',{tipo:'despesa',descricao:'',categoria:'',valor:'',data_prevista:mes===hoje.slice(0,7)?hoje:mes+'-01',data_pagamento:null,observacao:'',lembrar_rotina:false,horario_lembrete:'',repetir_ate:'',escopo:'este'});}
   function editarLancamento(l){abrir('lancamento',{...l,valor:decimal(l.valor_centavos),repetir_ate:'',escopo:'este'});}
   function editarInvestimento(i){abrir('investimento',{...i,detalhes:{...i.detalhes,...(i.tipo==='variavel'?{preco_medio_centavos:decimal(i.detalhes.preco_medio_centavos),quantidade:i.detalhes.quantidade??''}:{taxa:i.detalhes.taxa??'',vencimento:i.detalhes.vencimento??''})}});}
   async function salvar(e){
     e.preventDefault(); const v=form.value;
     await executar(async()=>{
       if(form.kind==='lancamento'){
-        const body={tipo:v.tipo,descricao:v.descricao,categoria:v.categoria,valor_centavos:emCentavos(v.valor),data_prevista:v.data_prevista,data_pagamento:v.data_pagamento,observacao:v.observacao,...(v.id?{versao:v.versao,escopo:v.escopo}:{repetir_ate:v.repetir_ate||null})};
+        const body={tipo:v.tipo,descricao:v.descricao,categoria:v.categoria,valor_centavos:emCentavos(v.valor),data_prevista:v.data_prevista,data_pagamento:v.data_pagamento,observacao:v.observacao,lembrar_rotina:v.tipo==='despesa'&&Boolean(v.lembrar_rotina),horario_lembrete:v.tipo==='despesa'&&v.lembrar_rotina?(v.horario_lembrete||null):null,...(v.id?{versao:v.versao,escopo:v.escopo}:{repetir_ate:v.repetir_ate||null})};
         return solicitar('/financeiro/lancamentos'+(v.id?'/'+v.id:''),json(v.id?'PUT':'POST',body));
       }
       if(form.kind==='pagamento')return solicitar('/financeiro/lancamentos/'+v.id,json('PATCH',{versao:v.versao,data_pagamento:v.data_pagamento}));
@@ -80,11 +89,12 @@ export default function Financeiro({aoAlterarSujo}) {
         {v.id&&v.serie&&!v.data_pagamento&&v.data_prevista>=hoje&&<label>Aplicar em<select value={v.escopo} onChange={e=>alterar('escopo',e.target.value)}><option value="este">Só este lançamento</option><option value="proximos">Este e próximos pendentes</option></select></label>}
         <div className="fin-campos"><label>Tipo<select value={v.tipo} onChange={e=>alterar('tipo',e.target.value)}><option value="despesa">Despesa</option><option value="receita">Receita</option></select></label><label>Valor (R$)<input type="number" required min="0.01" max="1000000000" step="0.01" value={v.valor} onChange={e=>alterar('valor',e.target.value)}/></label></div>
         <label>Descrição<input autoFocus required maxLength={120} value={v.descricao} onChange={e=>alterar('descricao',e.target.value)}/></label>
-        <div className="fin-campos"><label>Categoria<input list="fin-categorias" placeholder="Escolha ou digite" required maxLength={60} value={v.categoria} onChange={e=>alterar('categoria',e.target.value)}/><datalist id="fin-categorias">{categorias.map(c=><option key={c} value={c}/>)}</datalist></label><label>Data prevista<input type="date" required disabled={v.escopo==='proximos'} value={v.data_prevista} onInput={e=>alterar('data_prevista',e.target.value)}/></label></div>
+        <div className="fin-campos"><label>Categoria<input list="fin-categorias" placeholder="Escolha ou digite" required maxLength={60} value={v.categoria} onChange={e=>alterar('categoria',e.target.value)}/><datalist id="fin-categorias">{categorias.map(c=><option key={c} value={c}/>)}</datalist></label><label>{v.tipo==='despesa'?'Vencimento':'Data prevista'}<input type="date" required disabled={v.escopo==='proximos'} value={v.data_prevista} onInput={e=>alterar('data_prevista',e.target.value)}/></label></div>
         {v.escopo!=='proximos'&&<div className="fin-campos"><label>Situação<select value={v.data_pagamento?'realizado':'pendente'} onChange={e=>alterar('data_pagamento',e.target.value==='realizado'?hoje:null)}><option value="pendente">Pendente</option><option value="realizado">{v.tipo==='receita'?'Recebido':'Pago'}</option></select></label>{v.data_pagamento!==null&&<label>Data {v.tipo==='receita'?'do recebimento':'do pagamento'}<input type="date" required max={hoje} value={v.data_pagamento} onInput={e=>alterar('data_pagamento',e.target.value)}/></label>}</div>}
         {!v.id&&<div className="fin-campos"><label>Repetição<select value={v.repetir_ate?'mensal':'nao'} onChange={e=>alterar('repetir_ate',e.target.value==='mensal'?v.data_prevista:'')}><option value="nao">Não repetir</option><option value="mensal">Mensal</option></select></label>{v.repetir_ate&&<label>Repetir até<input type="date" required min={v.data_prevista} value={v.repetir_ate} onInput={e=>alterar('repetir_ate',e.target.value)}/></label>}</div>}
         {v.repetir_ate&&<p className="fin-ajuda">Até 366 dias. Nos meses curtos, usa o último dia. Só o primeiro pode começar pago/recebido.</p>}
         {v.escopo==='proximos'&&<p className="fin-ajuda">Atualiza os próximos pendentes, inclusive edições individuais. Datas e pagamentos são mantidos.</p>}
+        {v.tipo==='despesa'&&<div className="fin-lembrete"><label className="fin-lembrete-opcao"><input type="checkbox" checked={Boolean(v.lembrar_rotina)} onChange={e=>alterar('lembrar_rotina',e.target.checked)}/>Lembrar na Rotina</label>{v.lembrar_rotina&&<><p className="fin-ajuda">Aparece na data de vencimento. Contas mensais terão um lembrete por ocorrência. Confirmar o pagamento conclui o lembrete.</p><label>Horário do lembrete (opcional)<input type="time" value={v.horario_lembrete||''} onChange={e=>alterar('horario_lembrete',e.target.value)}/></label></>}</div>}
         <label>Observação (opcional)<textarea maxLength={1000} value={v.observacao} onChange={e=>alterar('observacao',e.target.value)}/></label>
       </>}
       {form.kind==='pagamento'&&<><h2>{v.descricao} · {moeda(v.valor_centavos)}</h2><label>Data realizada<input type="date" required max={hoje} value={v.data_pagamento} onInput={e=>alterar('data_pagamento',e.target.value)}/></label></>}

@@ -40,6 +40,7 @@ export default function App() {
   const [view, setView] = useState('Hoje');
   const [treinoSessao, setTreinoSessao] = useState(null);
   const [livroInicial, setLivroInicial] = useState(null);
+  const [financeiroInicial, setFinanceiroInicial] = useState(null);
   const [refeicaoInicial, setRefeicaoInicial] = useState(null);
   const [treinoSujo, setTreinoSujo] = useState(false);
   const [confirmacaoTreino, setConfirmacaoTreino] = useState(null);
@@ -76,7 +77,7 @@ export default function App() {
             {['Hoje', 'Semana', 'Histórico'].map(item => <button key={item} aria-pressed={view === item} onClick={() => setView(item)}>{item}</button>)}
           </nav>}
 
-          {view === 'Leitura' ? <Leitura key={sessao.id} inicial={livroInicial} aoConsumirInicial={() => setLivroInicial(null)} aoAlterarSujo={setTreinoSujo} /> : view === 'Alimentação' ? <Alimentacao key={sessao.id} inicial={refeicaoInicial} aoConsumirInicial={() => setRefeicaoInicial(null)} aoAlterarSujo={setTreinoSujo} /> : view === 'Financeiro' ? <Financeiro key={sessao.id} aoAlterarSujo={setTreinoSujo} /> : view === 'Treino' ? <Treino sessaoInicial={treinoSessao} aoConsumirSessao={() => setTreinoSessao(null)} aoAlterarSujo={setTreinoSujo} /> : <Planejamento aoAbrirLivro={id => { setLivroInicial(id); navegar('Leitura'); }} aoAbrirRefeicao={r => { setRefeicaoInicial({ id: r.refeicao_id, data: r.data_prevista }); navegar('Alimentação'); }} aoAbrirTreino={id => { setTreinoSessao(id); navegar('Treino'); }} key={`${sessao.id}-${view}`} casa={view === 'Casa'} semanal={view === 'Semana' || view === 'Casa'} historico={view === 'Histórico'} />}</>}
+          {view === 'Leitura' ? <Leitura key={sessao.id} inicial={livroInicial} aoConsumirInicial={() => setLivroInicial(null)} aoAlterarSujo={setTreinoSujo} /> : view === 'Alimentação' ? <Alimentacao key={sessao.id} inicial={refeicaoInicial} aoConsumirInicial={() => setRefeicaoInicial(null)} aoAlterarSujo={setTreinoSujo} /> : view === 'Financeiro' ? <Financeiro key={sessao.id} inicial={financeiroInicial} aoConsumirInicial={() => setFinanceiroInicial(null)} aoAlterarSujo={setTreinoSujo} /> : view === 'Treino' ? <Treino sessaoInicial={treinoSessao} aoConsumirSessao={() => setTreinoSessao(null)} aoAlterarSujo={setTreinoSujo} /> : <Planejamento aoAbrirFinanceiro={(id, acao) => { setFinanceiroInicial({ id, acao }); navegar('Financeiro'); }} aoAbrirLivro={id => { setLivroInicial(id); navegar('Leitura'); }} aoAbrirRefeicao={r => { setRefeicaoInicial({ id: r.refeicao_id, data: r.data_prevista }); navegar('Alimentação'); }} aoAbrirTreino={id => { setTreinoSessao(id); navegar('Treino'); }} key={`${sessao.id}-${view}`} casa={view === 'Casa'} semanal={view === 'Semana' || view === 'Casa'} historico={view === 'Histórico'} />}</>}
         </main>
       </div>}
     </div>

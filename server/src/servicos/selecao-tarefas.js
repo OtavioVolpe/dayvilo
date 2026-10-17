@@ -16,11 +16,13 @@ export async function alterarSelecao(banco, usuarioId, entrada) {
   }
   if (new Set(itens.map(item => item.id)).size !== itens.length) throw new ErroValidacao('Seleção duplicada.');
   return transacionar(banco, async conexao => {
+    await conexao.execute('SELECT id FROM usuarios WHERE id=? FOR UPDATE', [usuarioId]);
     const repo = criarRepositorioTarefas(conexao);
     const ordenadas = [...itens].sort((a,b) => a.id-b.id);
     for (const item of ordenadas) {
       const atual = await repo.buscar(usuarioId, item.id, true);
       if (!atual || atual.data_prevista !== data || atual.situacao !== item.situacao) throw new ErroAplicacao(409, 'A lista mudou. Recarregue e selecione novamente.');
+      if (atual.financeiro_id && entrada.acao !== 'excluir') throw new ErroAplicacao(409, 'Contas a pagar precisam de confirmação individual no Financeiro. Remova os lembretes financeiros da seleção.');
       if (regras[entrada.acao] && atual.situacao !== regras[entrada.acao][0]) throw new ErroAplicacao(409, 'Selecione tarefas com a mesma situação para esta ação.');
     }
     for (const item of ordenadas) {

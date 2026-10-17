@@ -4,6 +4,7 @@ export function criarRotasFinanceiro(banco) {
   const r=Router(), s=criarServicoFinanceiro(banco);
   r.use((req,res,next)=>{if(['POST','PUT','PATCH','DELETE'].includes(req.method)&&!req.is('application/json'))return res.status(415).json({erro:'Use conteúdo JSON.'});next();});
   r.get('/',async(req,res)=>res.json(await s.listar(req.usuario,req.query)));
+  r.get('/lancamentos/:id',async(req,res)=>res.json(await s.consultarLancamento(req.usuario,req.params.id)));
   r.post('/lancamentos',async(req,res)=>res.status(201).json(await s.salvarLancamento(req.usuario,req.body)));
   r.put('/lancamentos/:id',async(req,res)=>res.json(await s.salvarLancamento(req.usuario,req.body,req.params.id)));
   r.patch('/lancamentos/:id',async(req,res)=>res.json(await s.situacao(req.usuario,req.params.id,req.body)));

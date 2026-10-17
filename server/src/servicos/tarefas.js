@@ -11,9 +11,11 @@ export function criarServicoTarefas(banco) {
   const tarefas = criarRepositorioTarefas(banco);
   async function alterar(usuario, id, permitidas, executar) {
     return transacionar(banco, async conexao => {
+      await conexao.execute('SELECT id FROM usuarios WHERE id=? FOR UPDATE', [usuario.id]);
       const repositorio = criarRepositorioTarefas(conexao);
       const atual = await repositorio.buscar(usuario.id, id, true);
       if (!atual) throw new ErroAplicacao(404, 'Tarefa não encontrada.');
+      if (atual.financeiro_id) throw new ErroAplicacao(409, 'Abra o lançamento no Financeiro para alterar vencimento ou confirmar o pagamento.');
       if (!permitidas.includes(atual.situacao)) throw new ErroAplicacao(409, 'Restaure a tarefa para pendente antes de realizar esta ação.');
       return executar(repositorio, atual);
     });
@@ -150,8 +152,11 @@ export function criarServicoTarefas(banco) {
       });
     },
     async excluir(usuario, entrada, parametroId) {
-      if (!await tarefas.excluir(usuario.id, validarId(parametroId))) throw new ErroAplicacao(404, 'Tarefa não encontrada.');
-      return { excluida: true };
+      return transacionar(banco, async c => {
+        await c.execute('SELECT id FROM usuarios WHERE id=? FOR UPDATE', [usuario.id]);
+        if (!await criarRepositorioTarefas(c).excluir(usuario.id, validarId(parametroId))) throw new ErroAplicacao(404, 'Tarefa não encontrada.');
+        return { excluida: true };
+      });
     },
     async concluir(usuario, entrada, parametroId) {
       const id = validarId(parametroId);
