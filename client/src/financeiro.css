@@ -8,3 +8,9 @@
   .fin-acoes-linha>button:nth-child(2),.fin-acoes-linha>button:nth-child(3){width:44px;height:44px;padding:8px}
   .fin-acoes-linha>.fin-encerrar{grid-column:1/-1;grid-row:2;justify-self:start;padding:8px 0;text-align:left;justify-content:flex-start}
 }
+/* Direção do dinheiro: texto e sinais acompanham a cor em ambos os temas. */
+.financeiro{--fin-cor-entrada:var(--accent);--fin-cor-saida:#a63d35}
+:root[data-tema=escuro] .financeiro{--fin-cor-saida:#efa39a}
+@media(prefers-color-scheme:dark){:root:not([data-tema=claro]) .financeiro{--fin-cor-saida:#efa39a}}
+.financeiro .fin-entrada,.fin-linha-entrada>.fin-valor,.financeiro .fin-linha-entrada>.fin-simbolo,.fin-linha-entrada .fin-direcao{color:var(--fin-cor-entrada)}
+.financeiro .fin-saida,.fin-linha-saida>.fin-valor,.financeiro .fin-linha-saida>.fin-simbolo,.fin-linha-saida .fin-direcao{color:var(--fin-cor-saida)}
