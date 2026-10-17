@@ -97,18 +97,18 @@ export function criarServicoFinanceiro(banco) {
   }
   return {
     async consultarLancamento(usuario, id) {
-      const [[l]] = await banco.execute('SELECT l.*, EXISTS(SELECT 1 FROM financeiro_lembretes f WHERE f.lancamento_id=l.id) AS lembrar_rotina, (SELECT t.horario FROM financeiro_lembretes f JOIN tarefas t ON t.id=f.tarefa_id WHERE f.lancamento_id=l.id) AS horario_lembrete FROM financeiro_lancamentos l WHERE l.usuario_id=? AND l.id=?', [usuario.id,validarId(id)]);
+      const [[l]] = await banco.execute('SELECT l.*, EXISTS(SELECT 1 FROM financeiro_lancamentos proximo WHERE proximo.usuario_id=l.usuario_id AND proximo.serie=l.serie AND proximo.data_pagamento IS NULL AND proximo.data_prevista>=GREATEST(?,l.data_prevista)) AS repeticao_ativa, EXISTS(SELECT 1 FROM financeiro_lembretes f WHERE f.lancamento_id=l.id) AS lembrar_rotina, (SELECT t.horario FROM financeiro_lembretes f JOIN tarefas t ON t.id=f.tarefa_id WHERE f.lancamento_id=l.id) AS horario_lembrete FROM financeiro_lancamentos l WHERE l.usuario_id=? AND l.id=?', [obterDataHoje(usuario.fuso_horario),usuario.id,validarId(id)]);
       if (!l) throw new ErroConta(404, 'Lançamento não encontrado.');
-      return { ...l, valor_centavos:Number(l.valor_centavos), lembrar_rotina:Boolean(l.lembrar_rotina), horario_lembrete:l.horario_lembrete?.slice(0,5) ?? null };
+      return { ...l, repeticao_ativa:Boolean(l.repeticao_ativa), valor_centavos:Number(l.valor_centavos), lembrar_rotina:Boolean(l.lembrar_rotina), horario_lembrete:l.horario_lembrete?.slice(0,5) ?? null };
     },
     async listar(usuario, query) {
       validarObjeto(query,['mes']);
       const mes = query.mes || obterDataHoje(usuario.fuso_horario).slice(0,7), [inicio,fim] = mesPeriodo(mes);
-      const [lancamentos] = await banco.execute('SELECT l.*, EXISTS(SELECT 1 FROM financeiro_lembretes f WHERE f.lancamento_id=l.id) AS lembrar_rotina, (SELECT t.horario FROM financeiro_lembretes f JOIN tarefas t ON t.id=f.tarefa_id WHERE f.lancamento_id=l.id) AS horario_lembrete FROM financeiro_lancamentos l WHERE usuario_id = ? AND data_prevista BETWEEN ? AND ? ORDER BY data_prevista, id', [usuario.id,inicio,fim]);
+      const [lancamentos] = await banco.execute('SELECT l.*, EXISTS(SELECT 1 FROM financeiro_lancamentos proximo WHERE proximo.usuario_id=l.usuario_id AND proximo.serie=l.serie AND proximo.data_pagamento IS NULL AND proximo.data_prevista>=GREATEST(?,l.data_prevista)) AS repeticao_ativa, EXISTS(SELECT 1 FROM financeiro_lembretes f WHERE f.lancamento_id=l.id) AS lembrar_rotina, (SELECT t.horario FROM financeiro_lembretes f JOIN tarefas t ON t.id=f.tarefa_id WHERE f.lancamento_id=l.id) AS horario_lembrete FROM financeiro_lancamentos l WHERE usuario_id = ? AND data_prevista BETWEEN ? AND ? ORDER BY data_prevista, id', [obterDataHoje(usuario.fuso_horario),usuario.id,inicio,fim]);
       // O mês é o da data prevista, inclusive para lançamentos quitados em outra data.
       const resumo = { recebido:0, pago:0, receber:0, pagar:0, aportado:0, aportar:0, categorias:Object.create(null) };
       for (const l of lancamentos) {
-        l.valor_centavos = Number(l.valor_centavos); l.lembrar_rotina = Boolean(l.lembrar_rotina); l.horario_lembrete = l.horario_lembrete?.slice(0,5) ?? null;
+        l.repeticao_ativa = Boolean(l.repeticao_ativa); l.valor_centavos = Number(l.valor_centavos); l.lembrar_rotina = Boolean(l.lembrar_rotina); l.horario_lembrete = l.horario_lembrete?.slice(0,5) ?? null;
         const chave = l.tipo === 'aporte' ? (l.data_pagamento ? 'aportado':'aportar') : l.tipo === 'receita' ? (l.data_pagamento ? 'recebido':'receber') : (l.data_pagamento ? 'pago':'pagar');
         resumo[chave] += l.valor_centavos;
         if (chave === 'pago') resumo.categorias[l.categoria] = (Object.hasOwn(resumo.categorias,l.categoria) ? resumo.categorias[l.categoria] : 0) + l.valor_centavos;

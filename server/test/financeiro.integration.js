@@ -32,6 +32,8 @@ test('Financeiro: recorrências, edições futuras e encerramento preservam pago
   await s.salvarLancamento(u,{...base,repetir_ate:'2030-04-30'});
   const jan=(await s.listar(u,{mes:'2030-01'})).lancamentos[0],fev=(await s.listar(u,{mes:'2030-02'})).lancamentos[0];
   assert.equal(fev.data_prevista,'2030-02-28');
+  assert.equal(fev.repeticao_ativa,true);
+  assert.equal((await s.consultarLancamento(u,fev.id)).repeticao_ativa,true);
   await s.situacao(u,fev.id,{versao:1,data_pagamento:obterDataHoje(u.fuso_horario)});
   await s.salvarLancamento(u,{...base,valor_centavos:20000,versao:1,escopo:'proximos'},jan.id);
   assert.equal((await s.listar(u,{mes:'2030-02'})).lancamentos[0].valor_centavos,10999);
@@ -40,6 +42,33 @@ test('Financeiro: recorrências, edições futuras e encerramento preservam pago
   assert.equal((await s.listar(u,{mes:'2030-01'})).lancamentos.length,0);
   assert.equal((await s.listar(u,{mes:'2030-02'})).lancamentos.length,1);
   assert.equal((await s.listar(u,{mes:'2030-03'})).lancamentos.length,0);
+  const preservado=(await s.listar(u,{mes:'2030-02'})).lancamentos[0];
+  assert.equal(preservado.repeticao_ativa,false);
+  assert.equal(preservado.serie,fev.serie);
+  assert.equal((await s.consultarLancamento(u,fev.id)).repeticao_ativa,false);
+}));
+
+test('Financeiro: indicador considera a série inteira, a data do card e somente pendentes de hoje em diante',async()=>fixture(async(banco,u,outro)=>{
+  const s=criarServicoFinanceiro(banco),hoje=obterDataHoje(u.fuso_horario);
+  const ano=Number(hoje.slice(0,4))+1,mes=ano+'-01';
+  await s.salvarLancamento(u,{...base,data_prevista:mes+'-10',data_pagamento:hoje,repetir_ate:ano+'-03-10'});
+  const jan=(await s.listar(u,{mes})).lancamentos[0];
+  assert.equal(jan.repeticao_ativa,true); // A próxima ocorrência fica em outro mês.
+  const mar=(await s.listar(u,{mes:ano+'-03'})).lancamentos[0];
+  await s.excluirLancamento(u,mar.id,{versao:mar.versao,escopo:'proximos'});
+  assert.equal((await s.consultarLancamento(u,jan.id)).repeticao_ativa,true); // Fevereiro continua.
+  const fev=(await s.listar(u,{mes:ano+'-02'})).lancamentos[0];
+  await s.situacao(u,fev.id,{versao:fev.versao,data_pagamento:hoje});
+  assert.equal((await s.consultarLancamento(u,jan.id)).repeticao_ativa,false);
+  await s.situacao(u,fev.id,{versao:fev.versao+1,data_pagamento:null});
+  assert.equal((await s.consultarLancamento(u,jan.id)).repeticao_ativa,true);
+  // Não confundir pendências anteriores ao card, passadas ou de outra conta.
+  await banco.execute('UPDATE financeiro_lancamentos SET data_prevista=? WHERE id=?',['2000-01-01',fev.id]);
+  await s.salvarLancamento(outro,{...base,data_prevista:ano+'-04-10'});
+  await banco.execute('UPDATE financeiro_lancamentos SET serie=? WHERE usuario_id=?',[jan.serie,outro.id]);
+  assert.equal((await s.consultarLancamento(u,jan.id)).repeticao_ativa,false);
+  await s.salvarLancamento(u,{...base,data_prevista:mes+'-15'});
+  assert.equal((await s.listar(u,{mes})).lancamentos.find(l=>!l.serie).repeticao_ativa,false);
 }));
 test('Financeiro: posições manuais, registros, datas, concorrência e separação de despesas',async()=>fixture(async(banco,u,outro)=>{
   const s=criarServicoFinanceiro(banco),{id}=await s.salvarInvestimento(u,fixa);
