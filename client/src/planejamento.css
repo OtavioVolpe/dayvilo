@@ -80,13 +80,14 @@
 @media(max-width:650px){
   .app-layout>main{padding:20px 16px 32px}.routine-tabs{gap:8px;margin-bottom:24px}.routine-tabs button{flex:1;padding:10px 4px 14px}
   .planejamento h1{font-size:1.25rem}.planejamento .data-planejamento{display:none}.planejamento .lista-cabecalho{gap:8px;margin-bottom:18px}
-  .controles-planejamento{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 6px}
-  .navegacao-datas{display:contents}.faixa-data{grid-column:1/-1;width:100%;margin-bottom:4px}
-  .voltar-hoje{grid-column:1;grid-row:2;justify-self:start;padding:8px 4px}
-  .controles-organizacao{grid-column:2;grid-row:2;gap:8px;flex-wrap:nowrap}
-  .controles-organizacao .abrir-selecao{font-size:.75rem;padding:6px;gap:4px}
-  .controles-organizacao .abrir-selecao+label{padding-left:8px;margin-left:0}
-  .rotulo-ordenacao{display:none}.controles-organizacao select{font-size:.75rem;border:0;background:transparent;padding:6px 2px;max-width:110px}
+  .controles-planejamento{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 8px;margin-bottom:16px}
+  .navegacao-datas,.controles-organizacao{display:contents}.faixa-data{grid-column:1/-1;width:100%;margin:0}
+  .voltar-hoje{grid-column:1;grid-row:2;justify-self:stretch;padding:8px 4px;min-height:44px}
+  .controles-organizacao .abrir-selecao{grid-column:2;grid-row:2;width:100%;min-width:0;font-size:.75rem;padding:6px 2px;gap:4px;margin:0;min-height:44px}
+  .controles-organizacao>label{grid-column:3;grid-row:2;min-width:0;display:flex;align-items:center;justify-content:center}
+  .controles-organizacao .abrir-selecao+label{border:0;padding:0;margin:0}
+  .rotulo-ordenacao{display:none}.controles-organizacao select{width:100%;min-width:0;min-height:44px;font-size:.75rem;border:0;background:transparent;padding:6px 2px;max-width:none}
+  .planejamento .progresso{padding-top:16px}
   .painel-data{position:static;grid-column:1/-1;width:100%;max-width:none;box-shadow:none;margin:8px 0}
   .atalhos-periodo{display:flex}.atalhos-periodo button{flex:1;padding:8px 6px;font-size:.8rem}
   .periodo-personalizado{gap:10px}.periodo-personalizado label{flex:1 1 110px;min-width:0}.periodo-personalizado input{width:100%}
@@ -107,7 +108,12 @@
   .planejamento .tarefa-com-alca>.selo-situacao,.planejamento .dia-semana .tarefa-com-alca>.selo-situacao{grid-column:3}
   .planejamento .tarefa-com-alca>.acoes-tarefa,.planejamento .dia-semana .tarefa-com-alca>.acoes-tarefa{grid-column:4;grid-row:1/3}
   .planejamento .tarefa>.confirmacao-exclusao{grid-column:1/-1;grid-row:4}
-  .planejamento .tarefa-titulo{font-size:.9rem}.planejamento .detalhes{font-size:.75rem}
+  /* Aproxima as duas linhas para centralizar o conjunto, mesmo com duas ações à direita. */
+  .planejamento .tarefa,.planejamento .dia-semana .tarefa{row-gap:8px}
+  .planejamento .tarefa>.tarefa-conteudo,.planejamento .dia-semana .tarefa>.tarefa-conteudo{align-self:end}
+  .planejamento .tarefa>.selo-situacao,.planejamento .dia-semana .tarefa>.selo-situacao{align-self:start;margin:0}
+  .planejamento .tarefa>.acoes-tarefa,.planejamento .dia-semana .tarefa>.acoes-tarefa{flex-direction:column;gap:0}
+  .planejamento .tarefa-titulo{font-size:.9rem}.planejamento .detalhes{font-size:.75rem;margin-top:8px;gap:8px}
   .planejamento .barra-selecao .acoes-selecao{flex-basis:100%;justify-content:flex-end}
   .planejamento .barra-selecao .selecionar-todas{margin-left:auto}
   .planejamento .dia-semana{padding:12px}.planejamento .dia-semana h3{font-size:.9rem}
