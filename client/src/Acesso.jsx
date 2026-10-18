@@ -29,7 +29,7 @@ export default function Acesso({ aoEntrar, aviso, aoRecuperar, cadastroAberto = 
       const sessao = await solicitar(`/contas/${cadastro ? 'cadastro' : 'entrada'}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados),
       });
-      aoEntrar(sessao);
+      aoEntrar(sessao, { novaConta: cadastro && !vincular });
     } catch (falha) { definirErro(falha.message); }
     finally { definirEnviando(false); }
   }

@@ -10,7 +10,7 @@ export function lerTema() {
   try { const valor = localStorage.getItem('dayvilo-tema'); return ['claro', 'escuro'].includes(valor) ? valor : 'automatico'; } catch { return 'automatico'; }
 }
 
-export default function MinhaConta({ sessao, atualizarNome, encerrar, voltar }) {
+export default function MinhaConta({ sessao, atualizarNome, encerrar, voltar, aoConhecerAreas }) {
   const [nome, setNome] = useState(sessao.nome);
   const [tema, setTema] = useState(lerTema);
   const [ocupado, setOcupado] = useState(false);
@@ -25,6 +25,7 @@ export default function MinhaConta({ sessao, atualizarNome, encerrar, voltar }) 
   return <section className="minha-conta" aria-labelledby="titulo-conta">
     <button className="voltar-conta" disabled={ocupado} onClick={voltar}><ArrowLeft size={17} />Voltar à rotina</button>
     <h1 id="titulo-conta"><UserRound size={24} aria-hidden="true" />Minha conta</h1>
+    <section className="conta-painel"><h2>Seu espaço no Dayvilo</h2><p className="conta-nota">Veja o que você pode organizar em cada área e escolha por onde começar.</p><button type="button" className="botao-secundario" disabled={ocupado} onClick={aoConhecerAreas}>Conhecer as áreas</button></section>
     {erro && <p role="alert" className="mensagem-erro">{erro}</p>}
     {aviso && <p role="status" className="aviso-tarefa">{aviso}</p>}
     <section className="conta-painel"><h2>Seus dados</h2>

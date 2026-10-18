@@ -7,6 +7,7 @@ import MinhaConta from './MinhaConta.jsx';
 import ConfirmarEmail, { AvisoConfirmacao } from './ConfirmarEmail.jsx';
 import Acesso from './Acesso.jsx';
 import Apresentacao from './Apresentacao.jsx';
+import BoasVindas, { orientarNovaConta, temOrientacaoPendente, concluirOrientacao } from './BoasVindas.jsx';
 import { useSessao } from './useSessao.js';
 import RecuperarSenha from './RecuperarSenha.jsx';
 import { useEffect, useState } from 'react';
@@ -47,6 +48,14 @@ export default function App() {
     }
   }, [sessao]);
   const [view, setView] = useState('Hoje');
+  useEffect(() => {
+    if (sessao?.id && temOrientacaoPendente(sessao.id)) setView('BoasVindas');
+  }, [sessao?.id]);
+  function receberAcesso(dados, { novaConta = false } = {}) {
+    if (novaConta) orientarNovaConta(dados.usuario.id);
+    setView(novaConta || temOrientacaoPendente(dados.usuario.id) ? 'BoasVindas' : 'Hoje');
+    entrar(dados);
+  }
   const [treinoSessao, setTreinoSessao] = useState(null);
   const [livroInicial, setLivroInicial] = useState(null);
   const [financeiroInicial, setFinanceiroInicial] = useState(null);
@@ -55,6 +64,7 @@ export default function App() {
   const [confirmacaoTreino, setConfirmacaoTreino] = useState(null);
   function navegar(destino) {
     if (destino === view) return;
+    if (view === 'BoasVindas') concluirOrientacao(sessao.id);
     if (treinoSujo) { setConfirmacaoTreino({ mensagem: 'Descartar alterações não salvas?', acao: () => { setTreinoSujo(false); setView(destino); } }); return; }
     setTreinoSujo(false); setView(destino);
   }
@@ -70,11 +80,11 @@ export default function App() {
         {sessao && !recuperacao && <div className="conta-atual"><button className="abrir-minha-conta" aria-label="Minha conta" onClick={() => navegar('Conta')}><UserRound size={18} aria-hidden="true" /><span>{sessao.nome}</span></button><button className="botao-secundario" disabled={saindo} onClick={() => { if (treinoSujo) setConfirmacaoTreino({ mensagem: 'Sair e descartar alterações não salvas?', acao: sair }); else sair(); }}>{saindo ? 'Saindo…' : 'Sair'}</button></div>}
       </header>
       {recuperacao?.confirmacao ? <ConfirmarEmail key={recuperacao.token} token={recuperacao.token} atualizar={atualizar} aoVoltar={() => { window.history.replaceState(null, '', window.location.pathname + window.location.search + '#entrar'); definirRotaPublica('#entrar'); definirRecuperacao(null); atualizar(); }} /> : recuperacao ? <RecuperarSenha key={recuperacao.token ?? 'pedido'} token={recuperacao.token} aoSolicitarNovo={solicitarRecuperacao} aoVoltar={() => { window.history.replaceState(null, '', window.location.pathname + window.location.search + '#entrar'); definirRotaPublica('#entrar'); definirRecuperacao(null); atualizar(); }} /> : sessao === undefined ? <main><p className="estado-lista" role="status">{erro || 'Abrindo seu espaço…'}</p>{erro && <button className="botao-secundario" onClick={atualizar}>Tentar novamente</button>}</main>
-        : !sessao ? (mostrarAcesso ? <Acesso key={rotaPublica} cadastroInicial={rotaPublica === '#criar-conta'} cadastroAberto={cadastroAberto} aoRecuperar={solicitarRecuperacao} aoEntrar={dados => { setView('Hoje'); entrar(dados); }} aviso={aviso} /> : <Apresentacao cadastroAberto={cadastroAberto} />) : <div className={`app-layout ${view === 'Casa' ? 'layout-casa' : ''}`}>
+        : !sessao ? (mostrarAcesso ? <Acesso key={rotaPublica} cadastroInicial={rotaPublica === '#criar-conta'} cadastroAberto={cadastroAberto} aoRecuperar={solicitarRecuperacao} aoEntrar={receberAcesso} aviso={aviso} /> : <Apresentacao cadastroAberto={cadastroAberto} />) : <div className={`app-layout ${view === 'Casa' ? 'layout-casa' : ''}`}>
         <nav className="areas" aria-label="Áreas pessoais">
           <p className="areas-label">Seu espaço</p>
           {areas.map(({ name, label = name, icon: Icon }) => (
-            <button key={name} disabled={!['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name)} aria-current={(['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? view === name : name === 'Rotina' && !['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura', 'Conta'].includes(view)) ? 'page' : undefined} aria-label={['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? label : `${label}, em breve`} title={['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? label : `${label} — em breve`} onClick={() => navegar(['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? name : 'Hoje')}>
+            <button key={name} disabled={!['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name)} aria-current={(['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? view === name : name === 'Rotina' && !['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura', 'Conta', 'BoasVindas'].includes(view)) ? 'page' : undefined} aria-label={['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? label : `${label}, em breve`} title={['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? label : `${label} — em breve`} onClick={() => navegar(['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? name : 'Hoje')}>
               <Icon size={20} aria-hidden="true" /><span>{name}</span>
               {!['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) && <LockKeyhole className="area-cadeado" size={12} aria-hidden="true" />}
             </button>
@@ -82,7 +92,7 @@ export default function App() {
         </nav>
         <main>
           {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
-          {view === 'Conta' ? <MinhaConta key={sessao.id} sessao={sessao} atualizarNome={atualizarNome} encerrar={encerrar} voltar={() => setView('Hoje')} /> : <><AvisoConfirmacao key={sessao.id} sessao={sessao} atualizar={atualizar} aviso={aviso} />
+          {view === 'BoasVindas' ? <BoasVindas aoEscolher={navegar} /> : view === 'Conta' ? <MinhaConta key={sessao.id} sessao={sessao} atualizarNome={atualizarNome} encerrar={encerrar} aoConhecerAreas={() => navegar('BoasVindas')} voltar={() => setView('Hoje')} /> : <><AvisoConfirmacao key={sessao.id} sessao={sessao} atualizar={atualizar} aviso={aviso} />
           {!['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(view) && <nav className="routine-tabs" aria-label="Visualizações da rotina">
             {['Hoje', 'Semana', 'Histórico'].map(item => <button key={item} aria-pressed={view === item} onClick={() => setView(item)}>{item}</button>)}
           </nav>}
