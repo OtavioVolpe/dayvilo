@@ -1,0 +1,14 @@
+.acesso-cartao{overflow-wrap:anywhere}
+.acesso-cartao input{min-width:0}
+.acesso-cartao .campo-senha button{min-height:44px;top:0;bottom:0}
+.acesso-cartao .campo-senha input{min-height:48px}
+.acesso-cartao .acesso-senha-nova{margin:-10px 0 18px}
+.acesso-regra-senha span{display:block;margin-top:6px;color:var(--accent)}
+.acesso-cartao .acesso-confirmar-senha{margin:-10px 0 18px}
+.acesso-cartao .mensagem-erro{margin:12px 0 18px;line-height:1.6}
+.acesso-opcao-antiga{margin:4px 0 20px;border-top:1px solid var(--line);padding-top:8px}
+.acesso-opcao-antiga summary{min-height:44px;padding:12px 0;color:var(--muted);font-size:.85rem;cursor:pointer}
+.acesso-opcao-antiga>p{font-size:.8rem;color:var(--muted);line-height:1.7;margin:4px 0 16px}
+.acesso-cartao .acesso-vinculo input{min-height:20px}
+.acesso-cadastro-fechado{padding:14px;background:var(--soft);border-radius:10px;color:var(--muted);font-size:.85rem;line-height:1.6;margin-bottom:20px}
+@media(max-width:750px){.acesso-cartao input{font-size:16px}.acesso{gap:24px;padding-top:24px}.acesso-apresentacao h1{font-size:1.8rem}.acesso-cartao{padding:24px 20px}.acesso-cartao .recuperacao-acoes{display:grid;grid-template-columns:1fr}.acesso-cartao h2{font-size:1.3rem}}

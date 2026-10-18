@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import { ArrowLeft, Check, Eye, EyeOff, KeyRound } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, Check, KeyRound } from 'lucide-react';
 import { solicitar } from './api.js';
+import SenhaNova from './SenhaNova.jsx';
 
 export default function RecuperarSenha({ token, aoVoltar, aoSolicitarNovo }) {
   const redefinindo = token !== null;
@@ -10,10 +11,11 @@ export default function RecuperarSenha({ token, aoVoltar, aoSolicitarNovo }) {
   const [tentativa, definirTentativa] = useState(0);
   const [enviando, definirEnviando] = useState(false);
   const [concluido, definirConcluido] = useState(false);
-  const [mostrar, definirMostrar] = useState(false);
   const [erro, definirErro] = useState('');
   const [mensagem, definirMensagem] = useState('');
   const [entrega, definirEntrega] = useState('local');
+  const titulo = useRef(null);
+  useEffect(() => { titulo.current?.focus({ preventScroll: true }); window.scrollTo(0, 0); }, [concluido]);
 
   useEffect(() => {
     if (!redefinindo) return;
@@ -59,8 +61,8 @@ export default function RecuperarSenha({ token, aoVoltar, aoSolicitarNovo }) {
       <p className="subtitle">Recupere o acesso sem perder sua rotina.</p>
     </div>
     <section className="acesso-cartao" aria-labelledby="titulo-recuperacao" aria-busy={enviando || validando}>
-      <h2 id="titulo-recuperacao">{concluido ? redefinindo ? 'Senha atualizada' : 'Confira as instruções' : redefinindo ? 'Escolha uma nova senha' : 'Esqueceu sua senha?'}</h2>
-      <p className="subtitle">{redefinindo ? 'Uma nova senha para voltar à sua rotina.' : 'Informe o e-mail usado no cadastro.'}</p>
+      <h2 id="titulo-recuperacao" ref={titulo} tabIndex={-1}>{concluido ? redefinindo ? 'Senha atualizada' : 'Confira as instruções' : redefinindo ? 'Escolha uma nova senha' : 'Esqueceu sua senha?'}</h2>
+      <p className="subtitle">{concluido ? redefinindo ? 'Agora você já pode entrar com sua nova senha.' : 'Se houver uma conta para o e-mail informado, você receberá as instruções para recuperar o acesso.' : redefinindo ? 'Uma nova senha para voltar à sua rotina.' : 'Informe o e-mail usado no cadastro.'}</p>
       {validando && <p className="estado-lista" role="status">Conferindo seu link…</p>}
       {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
       {falhaValidacao && <div className="recuperacao-acoes">
@@ -71,17 +73,15 @@ export default function RecuperarSenha({ token, aoVoltar, aoSolicitarNovo }) {
         <p className="aviso-tarefa" role="status"><Check size={18} aria-hidden="true" /> {mensagem}</p>
         {!redefinindo && entrega === 'local' && <p className="recuperacao-nota">Modo de teste: mensagem salva no computador, sem envio de e-mail.</p>}
         {!redefinindo && entrega === 'resend' && <p className="recuperacao-nota">Confira também a pasta de spam. O link vale por 30 minutos.</p>}
+        {!redefinindo && <p className="acesso-alternar"><button type="button" onClick={() => { definirConcluido(false); definirErro(''); definirMensagem(''); }}>Corrigir o e-mail informado</button></p>}
         <button className="botao-principal acesso-enviar" onClick={aoVoltar}>Voltar para entrar</button>
       </> : !validando && (!redefinindo || linkValido) && !falhaValidacao && <form onSubmit={enviar}>
         <fieldset disabled={enviando}>
           {redefinindo ? <>
-            <label htmlFor="nova-senha">Nova senha</label>
-            <div className="campo-senha recuperacao-senha"><input id="nova-senha" name="senha" type={mostrar ? 'text' : 'password'} autoComplete="new-password" minLength={15} maxLength={128} aria-describedby="dica-nova-senha" required /><button type="button" onClick={() => definirMostrar(!mostrar)} aria-label={mostrar ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={mostrar}>{mostrar ? <EyeOff size={19} /> : <Eye size={19} />}</button></div>
-            <p className="acesso-dica" id="dica-nova-senha">Use de 15 a 128 caracteres. Uma frase longa também funciona.</p>
-            <label>Confirme a nova senha<input name="confirmacao" type={mostrar ? 'text' : 'password'} autoComplete="new-password" maxLength={128} required /></label>
+            <SenhaNova rotulo="Nova senha" />
             <p className="recuperacao-nota">Após alterar, entre novamente em todos os dispositivos.</p>
           </> : <label>E-mail<input name="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} maxLength={254} required /></label>}
-          <button className="botao-principal acesso-enviar" type="submit">{enviando ? 'Só um instante…' : redefinindo ? 'Salvar nova senha' : 'Solicitar link'}</button>
+          <button className="botao-principal acesso-enviar" type="submit">{enviando ? redefinindo ? 'Salvando nova senha…' : 'Solicitando link…' : redefinindo ? 'Salvar nova senha' : 'Solicitar link'}</button>
         </fieldset>
       </form>}
       {redefinindo && erro && !falhaValidacao && <p className="acesso-alternar"><button type="button" disabled={enviando} onClick={aoSolicitarNovo}>Solicitar novo link</button></p>}

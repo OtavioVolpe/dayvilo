@@ -4,6 +4,7 @@ import App from './App.jsx';
 import { aplicarTema, lerTema } from './MinhaConta.jsx';
 import './styles.css';
 import './planejamento.css';
+import './acesso.css';
 
 aplicarTema(lerTema());
 
