@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Eye, EyeOff, Sprout } from 'lucide-react';
 import { solicitar } from './api.js';
 
-export default function Acesso({ aoEntrar, aviso, aoRecuperar, cadastroAberto = false }) {
-  const [criandoConta, definirCadastro] = useState(false);
+export default function Acesso({ aoEntrar, aviso, aoRecuperar, cadastroAberto = false, cadastroInicial = false }) {
+  const [criandoConta, definirCadastro] = useState(cadastroInicial);
   const cadastro = criandoConta && cadastroAberto;
   const [vincular, definirVincular] = useState(false);
   const [mostrarSenha, definirMostrarSenha] = useState(false);
   const [enviando, definirEnviando] = useState(false);
   const [erro, definirErro] = useState('');
+  const titulo = useRef(null);
+  useEffect(() => { titulo.current?.focus({ preventScroll: true }); window.scrollTo(0, 0); }, []);
 
   async function enviar(evento) {
     evento.preventDefault();
@@ -37,9 +39,10 @@ export default function Acesso({ aoEntrar, aviso, aoRecuperar, cadastroAberto = 
       <p className="date-label">Um espaço para você</p>
       <h1>Seu dia, <br />no seu ritmo.</h1>
       <p className="subtitle">Organize sua rotina, no seu ritmo.</p>
+      <a className="apresentacao-voltar" href="#inicio">Voltar à apresentação</a>
     </div>
     <section className="acesso-cartao" aria-labelledby="titulo-acesso">
-      <h2 id="titulo-acesso">{cadastro ? 'Crie seu espaço' : 'Bom ter você por aqui'}</h2>
+      <h2 id="titulo-acesso" ref={titulo} tabIndex={-1}>{cadastro ? 'Crie seu espaço' : 'Bom ter você por aqui'}</h2>
       <p className="subtitle">{cadastro ? 'Comece sua rotina com uma conta pessoal.' : 'Entre para cuidar da sua rotina.'}</p>
       {aviso && <p className="aviso-tarefa" role="status">{aviso}</p>}
       <form key={cadastro ? 'cadastro' : 'entrada'} onSubmit={enviar}>
