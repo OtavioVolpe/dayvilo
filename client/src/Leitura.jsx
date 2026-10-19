@@ -5,6 +5,7 @@ import { solicitar } from './api.js';
 import { deslocarData, formatarData } from './datas.js';
 import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
 import './leitura.css';
+import LeituraVazia from './LeituraVazia.jsx';
 
 const estados = { quero_ler: 'Quero ler', lendo: 'Lendo', lido: 'Lidos' };
 const json = (method, body) => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -67,12 +68,12 @@ export default function Leitura({ inicial, aoConsumirInicial, aoAlterarSujo }) {
     } catch (e) { setErro(e.message); }
     finally { bloqueio.current = false; setOcupado(false); }
   }
-  function novo() { setId(null); setErro(''); setAviso(''); setForm({ modo: 'livro', titulo: '', autor: '', estado: 'quero_ler', pagina_atual: '', total_paginas: '', inicio: '', termino: '' }); }
+  function novo(estado = aba) { setId(null); setErro(''); setAviso(''); setForm({ modo: 'livro', titulo: '', autor: '', estado, pagina_atual: '', total_paginas: '', inicio: '', termino: '' }); }
   function editar(l, modo = 'livro') { setForm({ ...l, ...(modo === 'progresso' && l.estado !== 'lendo' ? { estado: 'lendo', termino: '' } : {}), modo, encerrar_agendamentos: true }); setErro(''); }
   function agenda(remover = false) { setForm({ modo: 'agenda', remover, frequencia: remover ? 'repetir' : 'unica', inicio: dados.hoje, fim: deslocarData(dados.hoje, 27), dias: [], horario: '' }); setErro(''); }
   function salvar(e) {
     e.preventDefault();
-    if (form.modo === 'livro' || form.modo === 'progresso') return executar('/leitura' + (form.id ? '/' + form.id : ''), form.id ? 'PUT' : 'POST', camposLivro(form), 'Livro salvo.', r => { setId(r.id); setAba(form.estado); });
+    if (form.modo === 'livro' || form.modo === 'progresso') return executar('/leitura' + (form.id ? '/' + form.id : ''), form.id ? 'PUT' : 'POST', camposLivro(form), form.id ? 'Livro salvo.' : 'Livro salvo na estante. Nenhuma leitura foi agendada automaticamente.', r => { setId(r.id); setAba(form.estado); });
     if (form.modo === 'nota') return executar(`/leitura/${id}/notas`, 'POST', { versao: detalhe.livro.versao, texto: form.texto, pagina: numero(form.pagina), ...(form.id ? { nota_id: form.id } : {}) }, 'Anotação salva.');
     const acao = () => executar(`/leitura/${id}/${form.remover ? 'desagendar' : 'agendar'}`, 'POST', { versao: detalhe.livro.versao, inicio: form.inicio, fim: form.frequencia === 'unica' ? form.inicio : form.fim, dias: form.frequencia === 'unica' ? [new Date(form.inicio + 'T12:00:00Z').getUTCDay()] : form.dias, horario: form.horario || null }, r => `${r.quantidade} leitura(s) ${form.remover ? 'desagendada(s)' : 'adicionada(s) à Rotina'}.`);
     if (form.remover) setConfirmacao({ rotulo: 'Desagendar leituras', destrutiva: true, mensagem: 'Remover as leituras pendentes nos dias e período selecionados? O histórico será mantido.', acao }); else acao();
@@ -80,7 +81,7 @@ export default function Leitura({ inicial, aoConsumirInicial, aoAlterarSujo }) {
   const livro = detalhe?.livro, aberta = Boolean(id || form);
   const erroExibido = erro && <p className="mensagem-erro" role="alert">{erro} <button type="button" disabled={ocupado} onClick={() => navegar(() => { setRevisao(n => n + 1); })}>Atualizar dados</button></p>;
   return <section className="leitura">
-    <header className="leitura-topo"><div><h1>Minha estante</h1><p>Escolha sua próxima leitura. Guarde o que ficou.</p></div><button className="botao-principal" onClick={novo} disabled={!dados}><Plus size={18} />Novo livro</button></header>
+    <header className="leitura-topo"><div><h1>Minha estante</h1><p>Escolha sua próxima leitura. Guarde o que ficou.</p></div><button className="botao-principal" onClick={() => novo()} disabled={!dados || ocupado}><Plus size={18} />Novo livro</button></header>
     <nav className="routine-tabs" aria-label="Situação dos livros">{Object.entries(estados).map(([valor, nome]) => <button key={valor} aria-pressed={aba === valor} onClick={() => setAba(valor)}>{nome}{dados && <span className="leitura-contagem">{dados.livros.filter(l => l.estado === valor).length}</span>}</button>)}</nav>
     {!aberta && erroExibido}{!aberta && aviso && <p role="status">{aviso}</p>}
     {!dados ? <p role="status">Carregando sua estante…</p> : <div className="leitura-grade">{dados.livros.filter(l => l.estado === aba).map(l => <article className="leitura-card" key={l.id}>
@@ -88,7 +89,7 @@ export default function Leitura({ inicial, aoConsumirInicial, aoAlterarSujo }) {
       <div className="leitura-progresso">{l.total_paginas && l.pagina_atual !== null ? <><progress max={l.total_paginas} value={l.pagina_atual} aria-label={`Progresso de ${l.titulo}`} /><span>{l.pagina_atual} de {l.total_paginas} páginas</span></> : <span>{l.pagina_atual !== null ? `Página ${l.pagina_atual}` : l.total_paginas ? `${l.total_paginas} páginas` : 'Sem acompanhamento de páginas'}</span>}</div>
       {l.termino && <p>Concluído em {dataCurta(l.termino)}</p>}
       <div className="leitura-acoes">{l.estado === 'lendo' && <button onClick={() => { setId(l.id); editar(l, 'progresso'); }}>Atualizar progresso</button>}<button aria-label={`Abrir livro: ${l.titulo}`} onClick={() => { setErro(''); setId(l.id); }}><span>Abrir livro</span><ArrowUpRight size={18} /></button></div>
-    </article>)}{!dados.livros.some(l => l.estado === aba) && <div className="leitura-vazio"><BookOpen size={32} /><h2>{aba === 'lendo' ? 'Qual livro está com você agora?' : aba === 'lido' ? 'Suas leituras concluídas ficam aqui' : 'Sua próxima história começa aqui'}</h2><p>{aba === 'lendo' ? 'Adicione um livro ou comece um da lista Quero ler.' : 'Guarde seus livros e acompanhe no seu ritmo.'}</p><button className="botao-principal" onClick={novo}><Plus size={18} />Adicionar livro</button></div>}</div>}
+    </article>)}{!dados.livros.some(l => l.estado === aba) && !erro && <LeituraVazia estado={aba} estanteVazia={!dados.livros.length} bloqueado={ocupado} aoCriar={novo} />}</div>}
     {aberta && <Janela fechar={fechar}>
       <span className="leitura-etiqueta"><BookOpen size={18} />Leitura</span>
       <h2>{form ? ({ livro: form.id ? 'Editar livro' : 'Novo livro', progresso: 'Atualizar progresso', nota: form.id ? 'Editar anotação' : 'Nova anotação', agendamentos: 'Agendamentos de leitura', agenda: form.remover ? 'Desagendar leitura' : 'Agendar leitura' })[form.modo] : livro?.titulo || 'Abrindo livro…'}</h2>
