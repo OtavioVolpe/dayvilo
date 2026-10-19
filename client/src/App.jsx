@@ -4,6 +4,8 @@ import Financeiro from './Financeiro.jsx';
 import Leitura from './Leitura.jsx';
 import Alimentacao from './Alimentacao.jsx';
 import MinhaConta from './MinhaConta.jsx';
+import InstalarDayvilo from './InstalarDayvilo.jsx';
+import useInstalacao from './useInstalacao.js';
 import ConfirmarEmail, { AvisoConfirmacao } from './ConfirmarEmail.jsx';
 import Acesso from './Acesso.jsx';
 import Apresentacao from './Apresentacao.jsx';
@@ -31,6 +33,7 @@ function lerRecuperacao() {
 }
 
 export default function App() {
+  const instalacao = useInstalacao();
   const [rotaPublica, definirRotaPublica] = useState(() => window.location.hash);
   const [recuperacao, definirRecuperacao] = useState(lerRecuperacao);
   useEffect(() => {
@@ -91,8 +94,9 @@ export default function App() {
           ))}
         </nav>
         <main>
+          {view === 'Hoje' && <InstalarDayvilo instalacao={instalacao} />}
           {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
-          {view === 'BoasVindas' ? <BoasVindas aoEscolher={navegar} /> : view === 'Conta' ? <MinhaConta key={sessao.id} sessao={sessao} atualizarNome={atualizarNome} encerrar={encerrar} aoConhecerAreas={() => navegar('BoasVindas')} voltar={() => setView('Hoje')} /> : <><AvisoConfirmacao key={sessao.id} sessao={sessao} atualizar={atualizar} aviso={aviso} />
+          {view === 'BoasVindas' ? <BoasVindas aoEscolher={navegar} /> : view === 'Conta' ? <MinhaConta key={sessao.id} instalacao={instalacao} sessao={sessao} atualizarNome={atualizarNome} encerrar={encerrar} aoConhecerAreas={() => navegar('BoasVindas')} voltar={() => setView('Hoje')} /> : <><AvisoConfirmacao key={sessao.id} sessao={sessao} atualizar={atualizar} aviso={aviso} />
           {!['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(view) && <nav className="routine-tabs" aria-label="Visualizações da rotina">
             {['Hoje', 'Semana', 'Histórico'].map(item => <button key={item} aria-pressed={view === item} onClick={() => setView(item)}>{item}</button>)}
           </nav>}

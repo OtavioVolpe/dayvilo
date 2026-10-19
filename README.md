@@ -369,7 +369,15 @@ A associação usa o nome único do exercício, desconsiderando maiúsculas e es
 
 A interface inclui `manifest.webmanifest`, com identidade estável `/`, nome Dayvilo, início na raiz e exibição `standalone`. O ícone mantém a marca do favicon, com PNGs de 192 e 512 pixels, uma versão maskable com margem para recortes do Android e um apple-touch-icon de 180 pixels. Para regenerá-los no Windows, execute `./client/scripts/gerar-icones.ps1`; os arquivos gerados são versionados e o build não depende desse script.
 
-Publique por HTTPS no domínio habitual. O Vite copia o manifesto e os ícones para `client/dist`, servido pelo Express antes das rotas privadas. A disponibilidade e a interface de instalação dependem do navegador e sistema. Esta etapa não inclui convite de instalação, service worker, cache offline nem mudanças na autenticação. Abrir o ícone segue o fluxo normal de sessão do site; uma sessão ausente ou expirada exige entrar novamente.
+Publique por HTTPS no domínio habitual. O Vite copia o manifesto e os ícones para `client/dist`, servido pelo Express antes das rotas privadas. A disponibilidade e a interface de instalação dependem do navegador e sistema. Não há service worker, cache offline nem mudanças na autenticação. Abrir o ícone segue o fluxo normal de sessão do site; uma sessão ausente ou expirada exige entrar novamente.
+
+### Convite e instruções de instalação
+
+Na Rotina (Hoje), o convite **Instalar Dayvilo** abre instruções. Fechá-lo guarda apenas a preferência `dayvilo-convite-instalacao-oculto` neste navegador. **Minha conta** mantém o acesso às instruções mesmo depois de dispensar o convite. Não há abertura automática do diálogo nem notificações insistentes.
+
+O listener de `beforeinstallprompt` fica no App, independente da seção aberta. Quando o navegador libera esse evento, o diálogo oferece **Instalar agora**, acionado somente por clique e consumido uma vez. Aceitar o pedido não é tratado como instalação concluída: essa confirmação depende de `appinstalled` ou do modo standalone. Cancelar ou falhar mantém as instruções disponíveis. O app não presume que ausência do evento significa instalação existente e não guarda uma marca permanente de instalado.
+
+O diálogo sugere instruções para Android, iPhone/iPad ou computador e permite trocar a seleção. A detecção do dispositivo só escolhe o texto inicial; não determina se a instalação está disponível. Em aplicativos como Instagram e WhatsApp, a orientação é abrir em navegador externo. A confirmação real de instalação deve ser feita no site publicado, incluindo abertura pelo ícone e acesso à conta. Referências: [convite personalizado](https://web.dev/articles/customize-install) e [instalação no iPhone](https://support.apple.com/en-lamr/guide/iphone/iphea86e5236/ios).
 
 Após publicar, confira no site real o carregamento de `/manifest.webmanifest` e dos ícones. No Android, valide a instalação pelo menu do navegador e a abertura pelo ícone. No iPhone, valide a opção de adicionar à tela de início pelo menu de compartilhamento do Safari. Confira nome, ícone, abertura, login e navegação nas seis áreas. Essa conferência em dispositivos permanece necessária; o build não comprova a instalação.
 
