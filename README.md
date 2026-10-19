@@ -365,6 +365,16 @@ A associação usa o nome único do exercício, desconsiderando maiúsculas e es
 
 
 
+## Instalação no celular — base
+
+A interface inclui `manifest.webmanifest`, com identidade estável `/`, nome Dayvilo, início na raiz e exibição `standalone`. O ícone mantém a marca do favicon, com PNGs de 192 e 512 pixels, uma versão maskable com margem para recortes do Android e um apple-touch-icon de 180 pixels. Para regenerá-los no Windows, execute `./client/scripts/gerar-icones.ps1`; os arquivos gerados são versionados e o build não depende desse script.
+
+Publique por HTTPS no domínio habitual. O Vite copia o manifesto e os ícones para `client/dist`, servido pelo Express antes das rotas privadas. A disponibilidade e a interface de instalação dependem do navegador e sistema. Esta etapa não inclui convite de instalação, service worker, cache offline nem mudanças na autenticação. Abrir o ícone segue o fluxo normal de sessão do site; uma sessão ausente ou expirada exige entrar novamente.
+
+Após publicar, confira no site real o carregamento de `/manifest.webmanifest` e dos ícones. No Android, valide a instalação pelo menu do navegador e a abertura pelo ícone. No iPhone, valide a opção de adicionar à tela de início pelo menu de compartilhamento do Safari. Confira nome, ícone, abertura, login e navegação nas seis áreas. Essa conferência em dispositivos permanece necessária; o build não comprova a instalação.
+
+Referências: [manifesto e ícones](https://web.dev/learn/pwa/web-app-manifest) e [exibição standalone](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/How_to/Create_a_standalone_app).
+
 ## Leitura
 
 A estante separa **Quero ler**, **Lendo** e **Lidos**. Título é obrigatório; autor, total de páginas e página atual são opcionais. Começar ou concluir preenche a data vazia com hoje, permitindo informar uma data anterior. Reabrir mantém as anotações e o progresso; não cria um histórico separado de releituras. Chegar à última página não conclui o livro automaticamente: escolha Lido e salve.
