@@ -1,5 +1,6 @@
 import DestinosAlimentacao from './DestinosAlimentacao.jsx';
 import AguaDia from './AguaDia.jsx';
+import AlimentacaoVazia from './AlimentacaoVazia.jsx';
 import { destinosAlimentacao } from './destinos-alimentacao.js';
 import { useEffect, useRef, useState } from 'react';
 import { Plus, ChevronLeft, ChevronRight, Copy, Utensils, Clock, Pencil, Trash2, SkipForward, Circle, CircleCheck, NotebookPen, RotateCcw } from 'lucide-react';
@@ -62,7 +63,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
     } catch (e) { setErro(e.message); }
     finally { bloqueio.current = false; setOcupado(false); }
   }
-  function nova() { abrir({ modo: 'refeicao', titulo: '', observacao: '', horario: '', data_prevista: dia, mostrar_rotina: false }); }
+  function nova(titulo = '') { abrir({ modo: 'refeicao', titulo, observacao: '', horario: '', data_prevista: dia, mostrar_rotina: false }); }
   async function salvar(e) {
     e.preventDefault();
     if (form.modo === 'nota') return executar(() => solicitar(`/alimentacao/${form.id}/nota`, json('PATCH', { revisao: form.revisao, nota: form.nota })), 'Anotação salva. O planejamento foi mantido.');
@@ -84,7 +85,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
   const desabilitado = ocupado || carregando;
   return <section className="alimentacao">
     {confirmacao && <ConfirmacaoTreino rotulo={confirmacao.rotulo} destrutiva={confirmacao.destrutiva} mensagem={confirmacao.mensagem} cancelar={() => setConfirmacao(null)} confirmar={() => { const acao = confirmacao.executar; setConfirmacao(null); acao(); }} />}
-    <header className="ali-topo"><div><h1>Minha alimentação</h1><p>Seu dia, refeição por refeição.</p></div><button className="botao-principal" disabled={desabilitado || !dados} onClick={nova}><Plus size={18} />Refeição</button></header>
+    <header className="ali-topo"><div><h1>Minha alimentação</h1><p>Seu dia, refeição por refeição.</p></div><button className="botao-principal" disabled={desabilitado || !dados} onClick={() => nova()}><Plus size={18} />Refeição</button></header>
     <nav className="routine-tabs" aria-label="Visualizações da alimentação">{[['hoje', 'Hoje'], ['semana', 'Semana']].map(([a, nome]) => <button key={a} disabled={ocupado} aria-pressed={aba === a} onClick={() => navegar(() => setAba(a))}>{nome}</button>)}</nav>
     <div className="ali-periodo">
       <button aria-label={aba === 'hoje' ? 'Dia anterior' : 'Semana anterior'} disabled={!dia || ocupado} onClick={() => navegar(() => setData(deslocarData(dia, aba === 'semana' ? -7 : -1)))}><ChevronLeft size={20} /></button>
@@ -111,6 +112,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
           <div className="ali-campos"><label>Data<input type="date" required min="1001-01-01" max="9998-12-31" value={form.data_prevista} onInput={e => alterar('data_prevista', e.target.value)} /></label><label>Horário · opcional<input type="time" value={form.horario} onInput={e => alterar('horario', e.target.value)} /></label></div>
           <label>Alimentos e quantidades<textarea required maxLength={4000} value={form.observacao} onChange={e => alterar('observacao', e.target.value)} placeholder="Ex.: arroz, feijão e 100 g de frango" /></label>
           <label className="ali-check"><input type="checkbox" checked={form.mostrar_rotina} onChange={e => alterar('mostrar_rotina', e.target.checked)} />Mostrar na Rotina</label>
+          <p className="ali-ajuda">Na Rotina aparece o nome da refeição, com uma seta para abrir os alimentos aqui. Deixe desmarcado para manter somente em Alimentação.</p>
         </>}
         <div className="ali-acoes"><button type="button" onClick={() => navegar(() => {})}>Cancelar</button><button type="submit" className="botao-principal">{ocupado ? 'Salvando…' : 'Salvar'}</button></div>
       </fieldset></form>}
@@ -125,7 +127,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
       })}</div>
     </> : <>
       <div className="ali-resumo"><div><h2>{dataLonga(dia)}</h2><span>{dados.refeicoes.filter(r => r.situacao === 'concluida').length} de {dados.refeicoes.length} feitas · {dados.refeicoes.filter(r => r.situacao === 'pulada').length} puladas</span></div><button disabled={desabilitado || !dados.refeicoes.length} className="ali-discreto" onClick={() => abrir({ modo: 'copiar', frequencia: 'unica', destino: '', inicio: dados.hoje, fim: deslocarData(dados.hoje, 27), dias: [], tipo: 'adicionar', previa: null })}><Copy size={17} />Copiar dia</button></div>
-      {!dados.refeicoes.length && <div className="ali-vazio"><Utensils size={25} /><h2>O que vai ter neste dia?</h2><p>Adicione sua primeira refeição ou copie o planejamento de outro dia.</p><button className="botao-principal" onClick={nova}><Plus size={18} />Adicionar refeição</button></div>}
+      {!dados.refeicoes.length && !erro && <AlimentacaoVazia dia={dia} bloqueado={desabilitado} aoCriar={nova} />}
       <div className="ali-refeicoes">{dados.refeicoes.map(r => <article key={r.id} className="ali-refeicao">
         <header><div><h3><Utensils size={18} />{r.titulo}</h3><div className="ali-meta"><span><Clock size={13} />{r.horario || 'Sem horário'}</span>{r.mostrar_rotina && <span className="ali-verde">Na Rotina</span>}</div></div><button disabled={desabilitado} className="ali-icone" aria-label={'Editar ' + r.titulo} title="Editar refeição" onClick={() => abrir({ modo: 'refeicao', ...r, horario: r.horario || '' })}><Pencil size={18} /></button></header>
         <p className="ali-alimentos">{r.observacao}</p>

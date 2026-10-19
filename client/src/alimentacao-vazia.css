@@ -1,0 +1,4 @@
+.alimentacao .alimentacao-inicio h2{margin:0 0 12px;font-size:1.3rem;line-height:1.4}
+.alimentacao-inicio>p.alimentacao-inicio-copia{margin:24px auto 0;font-size:.82rem;line-height:1.75;max-width:60ch}
+.alimentacao .alimentacao-inicio>.botao-principal{margin-top:24px}
+@media(max-width:650px){.alimentacao .alimentacao-inicio h2{font-size:1.2rem}}
