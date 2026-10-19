@@ -12,6 +12,7 @@ import { solicitar } from './api.js';
 import { useEffect, useRef, useState } from 'react';
 import SeloSituacao from './SeloSituacao.jsx';
 import ListaHistorico from './ListaHistorico.jsx';
+import RotinaVazia from './RotinaVazia.jsx';
 import { deslocarData, formatarData } from './datas.js';
 import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, RefreshCw, House, Dumbbell, ArrowUpRight, Utensils, NotebookText, BookOpen, Wallet } from 'lucide-react';
 
@@ -40,6 +41,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
   const [hoje, definirHoje] = useState('');
   const [novaData, definirNovaData] = useState('');
   const formularioRef = useRef(null);
+  const [rascunhoInicial, definirRascunhoInicial] = useState({ titulo: '', abertura: 0 });
   const [editando, definirEditando] = useState(null);
   const [excluindo, definirExcluindo] = useState(null);
   const [tarefas, definirTarefas] = useState([]);
@@ -93,7 +95,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
     return () => cancelAnimationFrame(quadro);
   }, [tarefaMovida]);
 
-  async function abrirFormulario(tarefa = null, dia = data, serie = false) {
+  async function abrirFormulario(tarefa = null, dia = data, serie = false, tituloInicial = '') {
     if (tarefa?.financeiro_id) { aoAbrirFinanceiro?.(tarefa.financeiro_id, 'editar'); return; }
     if (tarefa?.refeicao_id) { aoAbrirRefeicao?.(tarefa); return; }
     definirConfiguracaoSerie(null); definirFimSerie(''); definirTipoSerieAntiga('');
@@ -106,11 +108,12 @@ export default function Planejamento({ semanal = false, historico = false, casa 
       finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
     }
     definirModoSerie(serie);
+    definirRascunhoInicial(anterior => ({ titulo: tarefa ? '' : tituloInicial, abertura: anterior.abertura + 1 }));
     definirRepeticao(casa && !tarefa ? 'semanal' : 'nenhuma');
     definirNovaData(dia);
     definirEditando(tarefa); definirAberto(true); definirErro(''); definirAviso('');
     requestAnimationFrame(() => {
-      formularioRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      formularioRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'center' });
       formularioRef.current?.elements.titulo.focus({ preventScroll: true });
     });
   }
@@ -352,9 +355,10 @@ export default function Planejamento({ semanal = false, historico = false, casa 
     </div>}
     {aviso && <p className="aviso-tarefa" role="status">{aviso}</p>}
     {erro && <div className="mensagem-erro" role="alert">{erro} <button type="button" onClick={() => definirTentativa(valor => valor + 1)}>Recarregar lista</button></div>}
-    <form key={(editando?.id ?? `nova-${novaData || data}`) + String(modoSerie)} ref={formularioRef} onSubmit={adicionar} className="formulario-tarefa" hidden={!aberto}>
+    <form key={(editando?.id ?? `nova-${novaData || data}`) + String(modoSerie) + '-' + rascunhoInicial.abertura} ref={formularioRef} onSubmit={adicionar} className="formulario-tarefa" hidden={!aberto}>
       <fieldset disabled={diaSelecao !== null || salvando || carregando}><legend>{modoSerie ? "Editar próximas ocorrências" : editando ? "Editar tarefa" : "Nova tarefa"}</legend>
-        <label>O que você quer fazer?<input defaultValue={editando?.titulo ?? ""} name="titulo" required maxLength={200} placeholder={casa ? "Ex.: limpar o banheiro" : "Ex.: ler algumas páginas"} /></label>
+        {!editando && rascunhoInicial.titulo && <p className="rotina-sugestao-nota">Preenchemos só uma sugestão de título. Revise a data e os detalhes; a tarefa só será criada quando você salvar.</p>}
+        <label>O que você quer fazer?<input defaultValue={editando?.titulo ?? rascunhoInicial.titulo} name="titulo" required maxLength={200} placeholder={casa ? "Ex.: limpar o banheiro" : "Ex.: ler algumas páginas"} /></label>
         {(editando?.area === 'casa' || (!editando && casa)) && <label>Ambiente<input name="ambiente" defaultValue={editando?.ambiente ?? ''} required maxLength={60} list="ambientes-casa" placeholder="Ex.: banheiro" /><datalist id="ambientes-casa">{['Quarto', 'Banheiro', 'Cozinha', 'Sala', 'Lavanderia', 'Área externa', 'Casa toda'].map(ambiente => <option key={ambiente} value={ambiente} />)}</datalist></label>}
         {modoSerie && editando && <p className="inicio-alteracoes">Alterações a partir de <strong>{formatarData(editando.data_prevista > hoje ? editando.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}</strong></p>}
         <div className="campos-opcionais">{!modoSerie && <label>Data<input defaultValue={editando?.data_prevista ?? (novaData || data)} name="data_prevista" type="date" required min="1000-01-01" max="9999-12-31" /></label>}<label>Horário inicial (opcional)<input defaultValue={editando?.horario ?? ""} name="horario" type="time" /></label><label>Horário final (opcional)<input defaultValue={editando?.horario_final ?? ""} name="horario_final" type="time" /></label><label className="campo-prioridade prioridade-horarios"><input defaultChecked={editando?.prioridade ?? false} name="prioridade" type="checkbox" />Marcar como prioridade</label></div>
@@ -404,7 +408,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
         </section>;
       })}</div> : <>
       {pendentes.length > 0 && <><ul className="lista-tarefas">{pendentes.map(tarefa => linha(tarefa))}</ul></>}
-      {tarefas.length === 0 && <div className="initial-state"><ListTodo size={26} aria-hidden="true" /><h2>Um dia com espaço livre</h2><p>Nenhuma tarefa nesta data.</p></div>}
+      {tarefas.length === 0 && !aberto && (!casa && data >= hoje ? <RotinaVazia data={data} hoje={hoje} bloqueado={bloqueado} aoCriar={titulo => abrirFormulario(null, data, false, titulo)} /> : <div className="initial-state"><ListTodo size={26} aria-hidden="true" /><h2>Um dia com espaço livre</h2><p>Nenhuma tarefa nesta data.</p></div>)}
       {tarefas.length > 0 && pendentes.length === 0 && <p className="estado-lista">Nenhuma tarefa pendente nesta data.</p>}
       {grupoPuladas(puladas, data)}
       {grupoConcluidas(concluidas)}

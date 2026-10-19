@@ -1,0 +1,13 @@
+.rotina-vazia{padding:32px 24px;border:1px solid var(--line);border-radius:18px;background:var(--surface);text-align:center}
+.rotina-vazia-icone{display:inline-flex;align-items:center;justify-content:center;padding:14px;background:var(--soft);color:var(--accent);border-radius:16px;margin-bottom:20px}
+.rotina-vazia h2{font-size:1.3rem;line-height:1.4;margin:0 0 12px;letter-spacing:-.02em}
+.rotina-vazia>p{max-width:52ch;margin:0 auto;color:var(--muted);line-height:1.75;font-size:.95rem}
+.rotina-vazia>.botao-principal{margin-top:24px}
+.rotina-vazia-sugestoes{border-top:1px solid var(--line);padding-top:24px;margin-top:28px}
+.rotina-vazia-sugestoes>p{font-size:.85rem;color:var(--muted);margin:0 0 14px}
+.rotina-vazia-sugestoes>div{display:flex;justify-content:center;flex-wrap:wrap;gap:10px}
+.rotina-vazia-sugestoes button{min-height:44px;padding:10px 14px;background:var(--background);border:1px solid var(--line);border-radius:10px;font-size:.85rem;line-height:1.5}
+.rotina-vazia-sugestoes button:hover:not(:disabled){background:var(--soft);border-color:var(--accent)}
+.rotina-vazia-sugestoes small{display:block;margin:16px auto 0;color:var(--muted);font-size:.8rem;line-height:1.7;max-width:50ch}
+.rotina-sugestao-nota{margin:0 0 18px;color:var(--muted);font-size:.85rem;line-height:1.7}
+@media(max-width:650px){.rotina-vazia{padding:28px 20px}.rotina-vazia-sugestoes>div{display:grid;grid-template-columns:1fr}.rotina-vazia h2{font-size:1.2rem}}
