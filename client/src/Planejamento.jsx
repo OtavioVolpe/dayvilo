@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from 'react';
 import SeloSituacao from './SeloSituacao.jsx';
 import ListaHistorico from './ListaHistorico.jsx';
 import RotinaVazia from './RotinaVazia.jsx';
+import CasaVazia from './CasaVazia.jsx';
 import { deslocarData, formatarData } from './datas.js';
 import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, RefreshCw, House, Dumbbell, ArrowUpRight, Utensils, NotebookText, BookOpen, Wallet } from 'lucide-react';
 
@@ -95,7 +96,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
     return () => cancelAnimationFrame(quadro);
   }, [tarefaMovida]);
 
-  async function abrirFormulario(tarefa = null, dia = data, serie = false, tituloInicial = '') {
+  async function abrirFormulario(tarefa = null, dia = data, serie = false, tituloInicial = '', sugestaoCasa = null) {
     if (tarefa?.financeiro_id) { aoAbrirFinanceiro?.(tarefa.financeiro_id, 'editar'); return; }
     if (tarefa?.refeicao_id) { aoAbrirRefeicao?.(tarefa); return; }
     definirConfiguracaoSerie(null); definirFimSerie(''); definirTipoSerieAntiga('');
@@ -108,8 +109,8 @@ export default function Planejamento({ semanal = false, historico = false, casa 
       finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
     }
     definirModoSerie(serie);
-    definirRascunhoInicial(anterior => ({ titulo: tarefa ? '' : tituloInicial, abertura: anterior.abertura + 1 }));
-    definirRepeticao(casa && !tarefa ? 'semanal' : 'nenhuma');
+    definirRascunhoInicial(anterior => ({ titulo: tarefa ? '' : tituloInicial, ambiente: sugestaoCasa?.ambiente || '', abertura: anterior.abertura + 1 }));
+    definirRepeticao(casa && !tarefa && !sugestaoCasa ? 'semanal' : 'nenhuma');
     definirNovaData(dia);
     definirEditando(tarefa); definirAberto(true); definirErro(''); definirAviso('');
     requestAnimationFrame(() => {
@@ -329,6 +330,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
   </details>;
 
   const bloqueado = diaSelecao !== null || aberto || salvando || carregando || atualizando.length > 0;
+  const orientarCasa = casa && !historico && consultaValida && !carregando && !aberto && tarefas.length === 0 && diaCasa >= hoje && dias.includes(diaCasa);
   const consultarPeriodo = valor => {
     definirCarregando(true); definirExcluindo(null); definirAviso('');
     definirPeriodo(valor); definirTentativa(atual => atual + 1);
@@ -357,9 +359,9 @@ export default function Planejamento({ semanal = false, historico = false, casa 
     {erro && <div className="mensagem-erro" role="alert">{erro} <button type="button" onClick={() => definirTentativa(valor => valor + 1)}>Recarregar lista</button></div>}
     <form key={(editando?.id ?? `nova-${novaData || data}`) + String(modoSerie) + '-' + rascunhoInicial.abertura} ref={formularioRef} onSubmit={adicionar} className="formulario-tarefa" hidden={!aberto}>
       <fieldset disabled={diaSelecao !== null || salvando || carregando}><legend>{modoSerie ? "Editar próximas ocorrências" : editando ? "Editar tarefa" : "Nova tarefa"}</legend>
-        {!editando && rascunhoInicial.titulo && <p className="rotina-sugestao-nota">Preenchemos só uma sugestão de título. Revise a data e os detalhes; a tarefa só será criada quando você salvar.</p>}
+        {!editando && rascunhoInicial.titulo && <p className="rotina-sugestao-nota">{casa ? 'Preenchemos uma sugestão de título e ambiente.' : 'Preenchemos só uma sugestão de título.'} Revise a data e os detalhes; a tarefa só será criada quando você salvar.</p>}
         <label>O que você quer fazer?<input defaultValue={editando?.titulo ?? rascunhoInicial.titulo} name="titulo" required maxLength={200} placeholder={casa ? "Ex.: limpar o banheiro" : "Ex.: ler algumas páginas"} /></label>
-        {(editando?.area === 'casa' || (!editando && casa)) && <label>Ambiente<input name="ambiente" defaultValue={editando?.ambiente ?? ''} required maxLength={60} list="ambientes-casa" placeholder="Ex.: banheiro" /><datalist id="ambientes-casa">{['Quarto', 'Banheiro', 'Cozinha', 'Sala', 'Lavanderia', 'Área externa', 'Casa toda'].map(ambiente => <option key={ambiente} value={ambiente} />)}</datalist></label>}
+        {(editando?.area === 'casa' || (!editando && casa)) && <label>Ambiente<input name="ambiente" defaultValue={editando?.ambiente ?? rascunhoInicial.ambiente ?? ''} required maxLength={60} list="ambientes-casa" placeholder="Ex.: banheiro" /><datalist id="ambientes-casa">{['Quarto', 'Banheiro', 'Cozinha', 'Sala', 'Lavanderia', 'Área externa', 'Casa toda'].map(ambiente => <option key={ambiente} value={ambiente} />)}</datalist></label>}
         {modoSerie && editando && <p className="inicio-alteracoes">Alterações a partir de <strong>{formatarData(editando.data_prevista > hoje ? editando.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}</strong></p>}
         <div className="campos-opcionais">{!modoSerie && <label>Data<input defaultValue={editando?.data_prevista ?? (novaData || data)} name="data_prevista" type="date" required min="1000-01-01" max="9999-12-31" /></label>}<label>Horário inicial (opcional)<input defaultValue={editando?.horario ?? ""} name="horario" type="time" /></label><label>Horário final (opcional)<input defaultValue={editando?.horario_final ?? ""} name="horario_final" type="time" /></label><label className="campo-prioridade prioridade-horarios"><input defaultChecked={editando?.prioridade ?? false} name="prioridade" type="checkbox" />Marcar como prioridade</label></div>
         <p className="dica-horarios">Fim antes do início indica o dia seguinte.</p>
@@ -394,8 +396,8 @@ export default function Planejamento({ semanal = false, historico = false, casa 
         <ul className="lista-tarefas">{atrasadas.map(tarefa => linha(tarefa, true))}</ul>
       </section>}
 
-      {casa && <nav className="dias-casa" aria-label="Dia da limpeza">{dias.map(dia => <button key={dia} type="button" aria-pressed={diaCasa === dia} disabled={bloqueado} onClick={() => definirDiaCasa(dia)}><span>{formatarData(dia, { weekday: 'short' })}</span><strong>{formatarData(dia, { day: '2-digit' })}</strong></button>)}</nav>}
-      {historico ? <ListaHistorico periodo={periodoConsultado} tarefas={tarefas} situacao={situacao} definirSituacao={definirSituacao} bloqueado={diaSelecao !== null || aberto || salvando || atualizando.length > 0} renderizarTarefa={tarefa => linha(tarefa)} /> : semanal ? <div className="grade-semana">{dias.map(dia => {
+      {casa && !orientarCasa && <nav className="dias-casa" aria-label="Dia da limpeza">{dias.map(dia => <button key={dia} type="button" aria-pressed={diaCasa === dia} disabled={bloqueado} onClick={() => definirDiaCasa(dia)}><span>{formatarData(dia, { weekday: 'short' })}</span><strong>{formatarData(dia, { day: '2-digit' })}</strong></button>)}</nav>}
+      {orientarCasa ? <CasaVazia dias={dias} dia={diaCasa} hoje={hoje} bloqueado={bloqueado} aoEscolherDia={definirDiaCasa} aoCriar={sugestao => abrirFormulario(null, diaCasa, false, sugestao.titulo, sugestao)} /> : historico ? <ListaHistorico periodo={periodoConsultado} tarefas={tarefas} situacao={situacao} definirSituacao={definirSituacao} bloqueado={diaSelecao !== null || aberto || salvando || atualizando.length > 0} renderizarTarefa={tarefa => linha(tarefa)} /> : semanal ? <div className="grade-semana">{dias.map(dia => {
         const itens = tarefas.filter(tarefa => tarefa.data_prevista === dia).sort((a, b) => Number(a.situacao === 'concluida') - Number(b.situacao === 'concluida') || compararTarefas(ordem)(a, b));
         return <section className={`dia-semana ${dia === hoje ? 'dia-atual' : ''} ${casa && dia !== diaCasa ? 'dia-casa-oculto' : ''}`} key={dia} aria-label={formatarData(dia, { weekday: 'long', day: 'numeric', month: 'long' })}>
           <header><h3>{formatarData(dia, { weekday: 'short' })} <span>{formatarData(dia)}</span>{dia === hoje && <small>Hoje</small>}</h3>

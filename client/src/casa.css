@@ -1,6 +1,9 @@
 .layout-casa main{max-width:none;padding-inline:24px}
 .selo-casa{color:var(--accent)}
 .dias-casa{display:none}
+.casa-vazia{max-width:840px;margin:24px auto 0}
+.casa-vazia .casa-vazia-data{display:flex;flex-direction:column;gap:8px;max-width:340px;margin:24px auto 0;text-align:left;font-size:.85rem;color:var(--muted)}
+.casa-vazia-data select{width:100%;min-height:44px;font-size:1rem}
 .planejamento-casa .grade-semana{grid-template-columns:repeat(7,minmax(210px,1fr));overflow-x:auto;align-items:start;padding-bottom:12px;gap:12px}
 .planejamento-casa .dia-semana{padding:12px}
 .planejamento-casa .dia-semana>header{flex-wrap:nowrap;align-items:flex-start}
