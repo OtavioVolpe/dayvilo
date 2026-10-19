@@ -1,0 +1,8 @@
+.treino-primeiros-passos{margin:20px 0}
+.treino .treino-primeiros-passos h2{font-size:1.3rem;margin:0 0 12px}
+.treino .treino-primeiros-passos>.botao-principal{display:inline-flex;margin-top:24px}
+.treino-passos{list-style:none;padding:0;margin:28px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;text-align:left}
+.treino-passos li{min-width:0;padding:18px;background:var(--background);border:1px solid var(--line);border-radius:12px}
+.treino-passos strong{display:block;font-size:.9rem;line-height:1.5;margin-bottom:10px;color:var(--accent)}
+.treino-passos span{display:block;font-size:.85rem;line-height:1.75;color:var(--muted)}
+@media(max-width:650px){.treino-passos{grid-template-columns:1fr;gap:12px}.treino .treino-primeiros-passos h2{font-size:1.2rem}}
