@@ -383,6 +383,14 @@ Após publicar, confira no site real o carregamento de `/manifest.webmanifest` e
 
 Referências: [manifesto e ícones](https://web.dev/learn/pwa/web-app-manifest) e [exibição standalone](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/How_to/Create_a_standalone_app).
 
+## Feedback
+
+Em **Minha conta → Enviar feedback**, usuários autenticados podem enviar uma sugestão ou relatar um problema, escolhendo a área e escrevendo de 10 a 2.000 caracteres. O formulário mantém o texto quando ocorre erro e só confirma o recebimento após a gravação. O relato fica associado à conta para análise do desenvolvedor; não envia e-mail, não anexa dados da rotina e não promete retorno. Fechar o formulário preserva o rascunho enquanto Minha conta continuar aberta; sair da página não salva o rascunho.
+
+`POST /api/feedback` usa a sessão e CSRF existentes, valida os campos permitidos e limita envios a 10 tentativas por IP a cada 15 minutos por processo. O ID do usuário vem da sessão. A chave de envio por usuário evita duplicação ao repetir a mesma requisição após falha de conexão. Não existe endpoint público de consulta dos relatos.
+
+Aplicar a migration **027_feedback.sql** antes de publicar, após backup verificado. Para ler os últimos 100 relatos no Workbench, execute `server/scripts/consultar-feedback.sql` na conexão online privada. Resultados podem conter dados pessoais: não publicar nem commitar exports. A exclusão do usuário no banco remove seus relatos pelo vínculo da tabela.
+
 ## Leitura
 
 A estante separa **Quero ler**, **Lendo** e **Lidos**. Título é obrigatório; autor, total de páginas e página atual são opcionais. Começar ou concluir preenche a data vazia com hoje, permitindo informar uma data anterior. Reabrir mantém as anotações e o progresso; não cria um histórico separado de releituras. Chegar à última página não conclui o livro automaticamente: escolha Lido e salve.

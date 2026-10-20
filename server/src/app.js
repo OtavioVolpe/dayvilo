@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { protegerProducao } from './middlewares/producao.js';
 import express from 'express';
+import { criarRotasFeedback } from './rotas/feedback.js';
 import { criarEntregaLocal } from './servicos/email-local.js';
 import { instalarContas } from './rotas/contas.js';
 import { criarRotasTarefas } from './rotas/tarefas.js';
@@ -34,6 +35,7 @@ export function criarAplicacao({ banco, porta = 3001, modoEmail = 'local', envia
   aplicacao.use(express.json({ limit: '32kb' }));
   // Contas instala a sessão e a proteção antes das rotas privadas.
   instalarContas(aplicacao, banco, { enviarEmail, urlAplicacao, modoEmail, cadastroAberto });
+  aplicacao.use('/api/feedback', criarRotasFeedback(banco));
   aplicacao.use('/api', criarRotasTarefas(banco));
   aplicacao.use('/api/treinos', criarRotasTreinos(banco));
   aplicacao.use('/api/financeiro', criarRotasFinanceiro(banco));

@@ -3,6 +3,7 @@ import { ArrowLeft, CircleCheck, UserRound } from 'lucide-react';
 import { solicitar } from './api.js';
 import './minha-conta.css';
 import InstalarDayvilo from './InstalarDayvilo.jsx';
+import Feedback from './Feedback.jsx';
 
 export function aplicarTema(tema) {
   document.documentElement.dataset.tema = ['claro', 'escuro'].includes(tema) ? tema : 'automatico';
@@ -28,6 +29,7 @@ export default function MinhaConta({ sessao, atualizarNome, encerrar, voltar, ao
     <h1 id="titulo-conta"><UserRound size={24} aria-hidden="true" />Minha conta</h1>
     <section className="conta-painel"><h2>Seu espaço no Dayvilo</h2><p className="conta-nota">Veja o que você pode organizar em cada área e escolha por onde começar.</p><button type="button" className="botao-secundario" disabled={ocupado} onClick={aoConhecerAreas}>Conhecer as áreas</button></section>
     <InstalarDayvilo instalacao={instalacao} painel />
+    <Feedback />
     {erro && <p role="alert" className="mensagem-erro">{erro}</p>}
     {aviso && <p role="status" className="aviso-tarefa">{aviso}</p>}
     <section className="conta-painel"><h2>Seus dados</h2>
