@@ -1,3 +1,5 @@
+import DataConsulta from './DataConsulta.jsx';
+import CampoHorario from './CampoHorario.jsx';
 import DestinosAlimentacao from './DestinosAlimentacao.jsx';
 import AguaDia from './AguaDia.jsx';
 import AlimentacaoVazia from './AlimentacaoVazia.jsx';
@@ -89,7 +91,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
     <nav className="routine-tabs" aria-label="Visualizações da alimentação">{[['hoje', 'Hoje'], ['semana', 'Semana']].map(([a, nome]) => <button key={a} disabled={ocupado} aria-pressed={aba === a} onClick={() => navegar(() => setAba(a))}>{nome}</button>)}</nav>
     <div className="ali-periodo">
       <button aria-label={aba === 'hoje' ? 'Dia anterior' : 'Semana anterior'} disabled={!dia || ocupado} onClick={() => navegar(() => setData(deslocarData(dia, aba === 'semana' ? -7 : -1)))}><ChevronLeft size={20} /></button>
-      <label><span className="ali-sr">Data consultada</span><input type="date" min="1001-01-01" max="9998-12-31" value={dia} disabled={ocupado} onInput={e => { const v = e.target.value; if (v) navegar(() => setData(v)); }} /></label>
+      <DataConsulta data={dia} min="1001-01-01" max="9998-12-31" bloqueado={ocupado} aoAplicar={v => navegar(() => setData(v))} />
       <button aria-label={aba === 'hoje' ? 'Próximo dia' : 'Próxima semana'} disabled={!dia || ocupado} onClick={() => navegar(() => setData(deslocarData(dia, aba === 'semana' ? 7 : 1)))}><ChevronRight size={20} /></button>
       <button className="atalho-hoje" disabled={!dados || ocupado || dia === dados.hoje} onClick={() => navegar(() => setData(dados.hoje))}>Hoje</button>
     </div>
@@ -109,7 +111,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
       </section> : <form className="ali-form" onSubmit={salvar}><fieldset disabled={ocupado}><legend>{form.modo === 'nota' ? 'O que mudou?' : form.id ? 'Editar refeição' : 'Nova refeição'}</legend>
         {form.modo === 'nota' ? <><p className="ali-ajuda">{form.titulo} · {formatarData(form.data_prevista)}. O planejamento original será mantido.</p><label>Anotação<textarea maxLength={2000} value={form.nota} onChange={e => alterar('nota', e.target.value)} placeholder="Ex.: troquei o frango por peixe" /></label></> : <>
           <label>Refeição<input required maxLength={200} list="ali-nomes" value={form.titulo} onChange={e => alterar('titulo', e.target.value)} placeholder="Ex.: Almoço" /><datalist id="ali-nomes">{nomes.map(n => <option key={n} value={n} />)}</datalist></label>
-          <div className="ali-campos"><label>Data<input type="date" required min="1001-01-01" max="9998-12-31" value={form.data_prevista} onInput={e => alterar('data_prevista', e.target.value)} /></label><label>Horário · opcional<input type="time" value={form.horario} onInput={e => alterar('horario', e.target.value)} /></label></div>
+          <div className="ali-campos"><label>Data<input type="date" required min="1001-01-01" max="9998-12-31" value={form.data_prevista} onInput={e => alterar('data_prevista', e.target.value)} /></label><label>Horário · opcional<CampoHorario value={form.horario} onInput={e => alterar('horario', e.target.value)} /></label></div>
           <label>Alimentos e quantidades<textarea required maxLength={4000} value={form.observacao} onChange={e => alterar('observacao', e.target.value)} placeholder="Ex.: arroz, feijão e 100 g de frango" /></label>
           <label className="ali-check"><input type="checkbox" checked={form.mostrar_rotina} onChange={e => alterar('mostrar_rotina', e.target.checked)} />Mostrar na Rotina</label>
           <p className="ali-ajuda">Na Rotina aparece o nome da refeição, com uma seta para abrir os alimentos aqui. Deixe desmarcado para manter somente em Alimentação.</p>

@@ -1,12 +1,11 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
+import DataConsulta from './DataConsulta.jsx';
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { deslocarData, formatarData } from './datas.js';
 
 export default function NavegacaoDatas({ data, hoje, dias, semanal, bloqueado, aoEscolher, aoVoltar }) {
   const [aberto, definirAberto] = useState(false);
-  const input = useRef(null);
   const id = useId();
-  useEffect(() => { if (aberto) input.current?.focus(); }, [aberto]);
   useEffect(() => { if (bloqueado) definirAberto(false); }, [bloqueado]);
   const atual = semanal ? dias.includes(hoje) : data === hoje;
   const passo = semanal ? 7 : 1;
@@ -21,7 +20,7 @@ export default function NavegacaoDatas({ data, hoje, dias, semanal, bloqueado, a
     </div>
     <button type="button" className="voltar-hoje" disabled={bloqueado || !hoje || atual} aria-label={semanal ? 'Voltar à semana atual' : 'Voltar para hoje'} onClick={aoVoltar}>{semanal ? 'Semana atual' : 'Hoje'}</button>
     <div id={id} className="painel-data" hidden={!aberto} onKeyDown={evento => { if (evento.key === 'Escape') { definirAberto(false); evento.currentTarget.parentElement.querySelector('.escolher-data').focus(); } }}>
-      <label>Ir para a data<input ref={input} type="date" aria-label="Data da lista" defaultValue={data} key={data + String(aberto)} min="1000-01-01" max="9999-12-31" disabled={bloqueado} onChange={evento => { if (evento.target.value && evento.target.validity.valid) { definirAberto(false); aoEscolher(evento.target.value); } }} /></label>
+      {aberto && <DataConsulta data={data} foco rotulo="Ir para a data" bloqueado={bloqueado} aoCancelar={() => definirAberto(false)} aoAplicar={valor => { definirAberto(false); aoEscolher(valor); }} />}
     </div>
   </div>;
 }

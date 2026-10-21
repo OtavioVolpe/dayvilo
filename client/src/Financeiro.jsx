@@ -1,3 +1,4 @@
+import CampoHorario from './CampoHorario.jsx';
 import { useEffect, useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight, ArrowDownLeft, ArrowUpRight, Landmark, ChartNoAxesCombined, RefreshCw } from 'lucide-react';
 import { solicitar } from './api.js';
@@ -103,7 +104,7 @@ export default function Financeiro({aoAlterarSujo, inicial, aoConsumirInicial}) 
         {!v.id&&<div className="fin-campos"><label>Repetição<select value={v.repetir_ate?'mensal':'nao'} onChange={e=>alterar('repetir_ate',e.target.value==='mensal'?v.data_prevista:'')}><option value="nao">Não repetir</option><option value="mensal">Mensal</option></select></label>{v.repetir_ate&&<label>Repetir até<input type="date" required min={v.data_prevista} value={v.repetir_ate} onInput={e=>alterar('repetir_ate',e.target.value)}/></label>}</div>}
         {v.repetir_ate&&<p className="fin-ajuda">Até 366 dias. Nos meses curtos, usa o último dia. Só o primeiro pode começar pago/recebido.</p>}
         {v.escopo==='proximos'&&<p className="fin-ajuda">Atualiza os próximos pendentes, inclusive edições individuais. Datas e pagamentos são mantidos.</p>}
-        {v.tipo==='despesa'&&<div className="fin-lembrete"><label className="fin-lembrete-opcao"><input type="checkbox" checked={Boolean(v.lembrar_rotina)} onChange={e=>alterar('lembrar_rotina',e.target.checked)}/>Lembrar na Rotina</label>{v.lembrar_rotina&&<><p className="fin-ajuda">Aparece na data de vencimento. Contas mensais terão um lembrete por ocorrência. Confirmar o pagamento conclui o lembrete.</p><label>Horário do lembrete (opcional)<input type="time" value={v.horario_lembrete||''} onChange={e=>alterar('horario_lembrete',e.target.value)}/></label></>}</div>}
+        {v.tipo==='despesa'&&<div className="fin-lembrete"><label className="fin-lembrete-opcao"><input type="checkbox" checked={Boolean(v.lembrar_rotina)} onChange={e=>alterar('lembrar_rotina',e.target.checked)}/>Lembrar na Rotina</label>{v.lembrar_rotina&&<><p className="fin-ajuda">Aparece na data de vencimento. Contas mensais terão um lembrete por ocorrência. Confirmar o pagamento conclui o lembrete.</p><label>Horário do lembrete (opcional)<CampoHorario value={v.horario_lembrete||''} onChange={e=>alterar('horario_lembrete',e.target.value)}/></label></>}</div>}
         <label>Observação (opcional)<textarea maxLength={1000} value={v.observacao} onChange={e=>alterar('observacao',e.target.value)}/></label>
       </>}
       {form.kind==='pagamento'&&<><h2>{v.descricao} · {moeda(v.valor_centavos)}</h2><label>Data realizada<input type="date" required max={hoje} value={v.data_pagamento} onInput={e=>alterar('data_pagamento',e.target.value)}/></label></>}
