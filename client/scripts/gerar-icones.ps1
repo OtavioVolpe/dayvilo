@@ -18,7 +18,7 @@ foreach ($formato in $formatos) {
     $contorno = [System.Drawing.Drawing2D.GraphicsPath]::new()
     try {
         $grafico.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-        $grafico.Clear([System.Drawing.ColorTranslator]::FromHtml('#286348'))
+        $grafico.Clear([System.Drawing.ColorTranslator]::FromHtml('#239b67'))
         $unidade = $formato.Tamanho / 32.0
         $margem = $formato.Tamanho * (1 - $formato.Escala) / 2
         $grafico.TranslateTransform($margem, $margem)
