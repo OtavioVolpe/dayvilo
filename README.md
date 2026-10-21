@@ -410,3 +410,11 @@ Abra o livro para atualizar progresso, editar seus dados e guardar anotações o
 **Ver agendamentos** abre uma visualização separada no livro, com datas de hoje em diante agrupadas por mês, horário e situação. **Selecionar datas** permite escolher ocorrências pendentes e **Desagendar selecionadas** pede confirmação antes de removê-las também da Rotina. A remoção usa os IDs escolhidos, valida livro, conta e versão e preserva passados, concluídos e pulados, inclusive se mudaram após a seleção. Essa alteração não exige migration. Ao concluir um livro, é possível encerrar os agendamentos futuros pendentes ou mantê-los. **Excluir livro** pede confirmação: apaga livro, anotações e tarefas futuras pendentes, mantendo o histórico da Rotina sem o vínculo de abertura do livro. Não há expiração automática do histórico.
 
 Antes de publicar esta versão, aplique as migrações **019–021**, após backup online e verificação em instância descartável. São três tabelas novas; não alteram as tabelas existentes. O teste `server/test/leitura.integration.js` cobre páginas opcionais, isolamento de contas, conflitos, agenda, conclusão independente da Rotina, preservação de histórico e proteções HTTP. Execute integrações somente em banco descartável.
+
+## Atalhos do menu mobile
+
+O celular usa Rotina e Mais fixos e até dois favoritos, inicialmente nenhum. Em Mais → Personalizar atalhos, a ordem de seleção define a ordem na barra. Todas as áreas continuam acessíveis em Mais, assim como Minha conta e Sair. O desktop mantém a navegação lateral.
+
+A preferência é salva por usuário em `atalhos_usuario`, via GET/PUT `/api/atalhos`, com sessão e CSRF nas escritas. O menu consulta novamente a preferência ao abrir Mais. Falhas de salvamento mantêm o rascunho para tentar novamente.
+
+Aplicar `028_atalhos_usuario.sql` antes de publicar, após backup online verificado em instância descartável. Não há favoritos automáticos nem alteração nos agendamentos existentes.

@@ -1,4 +1,5 @@
 import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
+import MenuMobile from './MenuMobile.jsx';
 import Treino from './Treino.jsx';
 import Financeiro from './Financeiro.jsx';
 import Leitura from './Leitura.jsx';
@@ -75,7 +76,7 @@ export default function App() {
 
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${sessao && !recuperacao ? ' com-menu-mobile' : ''}`}>
       {confirmacaoTreino && <ConfirmacaoTreino mensagem={confirmacaoTreino.mensagem} cancelar={() => setConfirmacaoTreino(null)} confirmar={() => { const acao = confirmacaoTreino.acao; setConfirmacaoTreino(null); acao(); }} />}
       <header className="app-header">
         <span className="brand"><span className="brand-mark"><Sprout size={22} aria-hidden="true" /></span>Dayvilo</span>
@@ -93,6 +94,7 @@ export default function App() {
             </button>
           ))}
         </nav>
+        <MenuMobile key={sessao.id} areas={areas} view={view} navegar={navegar} saindo={saindo} sair={() => { if (treinoSujo) setConfirmacaoTreino({ mensagem: 'Sair e descartar alterações não salvas?', acao: sair }); else sair(); }} />
         <main>
           {view === 'Hoje' && <InstalarDayvilo instalacao={instalacao} />}
           {erro && <p className="mensagem-erro" role="alert">{erro}</p>}

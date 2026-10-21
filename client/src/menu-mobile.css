@@ -1,0 +1,32 @@
+.menu-mobile{display:none}
+.menu-mobile-painel{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:22px;padding:20px;width:calc(100% - 24px);max-width:420px;max-height:80dvh;overflow:auto;margin:auto auto calc(100px + env(safe-area-inset-bottom,0px));box-shadow:0 12px 40px #0004}
+.menu-mobile-painel::backdrop{background:#0006}
+.menu-mobile-painel header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.menu-mobile-painel h2{font-size:1.1rem;margin:0}
+.menu-mobile-painel button{min-height:44px;background:transparent;border:0;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px}
+.menu-mobile-painel header button{min-width:44px}
+.menu-mobile-painel p{font-size:.85rem;color:var(--muted);line-height:1.6;margin:12px 0}
+.menu-mobile-grade{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.menu-mobile-grade button{flex-direction:column;gap:12px;min-height:84px;font-size:.75rem;background:var(--background);padding:8px 2px}
+.menu-mobile-grade svg{color:var(--accent)}
+.menu-mobile-grade button[aria-current=page]{background:var(--soft);color:var(--accent)}
+.menu-mobile-painel .menu-mobile-personalizar{width:100%;margin-top:16px;color:var(--accent)}
+.menu-mobile-painel footer{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);margin-top:16px;padding-top:12px}
+.menu-mobile-painel .botao-principal{background:var(--accent);color:var(--on-accent)}
+.menu-mobile-favoritos{display:grid;gap:6px}
+.menu-mobile-favoritos button{justify-content:flex-start;border:1px solid var(--line)}
+.menu-mobile-favoritos button span{flex:1;text-align:left}
+.menu-mobile-favoritos button[aria-pressed=true]{background:var(--soft);color:var(--accent)}
+.menu-mobile-painel button:disabled{opacity:.5}
+@media(max-width:650px){
+ .app-shell.com-menu-mobile .app-layout>.areas{display:none}
+ .app-shell.com-menu-mobile .app-layout>main{padding-bottom:calc(112px + env(safe-area-inset-bottom,0px))}
+ .app-shell.com-menu-mobile .app-header{background:var(--background);border:0;padding:12px 20px 4px;min-height:60px}
+ .app-shell.com-menu-mobile .brand{font-size:.8rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:500}
+ .app-shell.com-menu-mobile .brand-mark,.app-shell.com-menu-mobile .conta-atual>button.botao-secundario,.app-shell.com-menu-mobile .abrir-minha-conta span{display:none}
+ .app-shell.com-menu-mobile .abrir-minha-conta{min-width:44px;min-height:44px;justify-content:center;background:transparent;border:0}
+ .menu-mobile{display:flex;position:fixed;z-index:30;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:12px;right:12px;background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 28px #0002;padding:8px 4px;gap:4px}
+ .menu-mobile button{flex:1;min-width:0;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:0;background:transparent;border-radius:12px;color:var(--muted);font-size:.7rem;padding:4px 0;position:relative}
+ .menu-mobile button[aria-current=page]{color:var(--accent)}
+ .menu-mobile button[aria-current=page]:after{content:'';position:absolute;bottom:0;width:4px;height:4px;border-radius:50%;background:var(--accent)}
+}
