@@ -34,4 +34,14 @@
   .dias-casa button[aria-pressed=true]{background:var(--soft);color:var(--accent);border-color:var(--accent)}
   .planejamento-casa .grade-semana{display:block;overflow:visible}
   .planejamento-casa .dia-casa-oculto{display:none}
+  /* Duas linhas estáveis: conteúdo acima, arraste/status/menu abaixo. */
+  .planejamento.planejamento-casa .dia-semana .tarefa{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:12px 8px;align-items:center}
+  .planejamento.planejamento-casa .dia-semana .tarefa>input,.planejamento.planejamento-casa .dia-semana .tarefa>.marcador-selecao{grid-column:1;grid-row:1;align-self:center;justify-self:center}
+  .planejamento.planejamento-casa .dia-semana .tarefa>.tarefa-conteudo{grid-column:2/-1;grid-row:1;align-self:center}
+  .planejamento.planejamento-casa .dia-semana .tarefa:has(.acoes-tarefa>button:not(.alca-ordenacao):not(.botao-mais-acoes))>.tarefa-conteudo{grid-column:2}
+  .planejamento.planejamento-casa .dia-semana .tarefa>.selo-situacao{grid-column:2;grid-row:2;justify-self:center;align-self:center;margin:0}
+  .planejamento.planejamento-casa .dia-semana .tarefa>.acoes-tarefa{display:contents}
+  .planejamento.planejamento-casa .dia-semana .acoes-tarefa>button{grid-column:3;grid-row:1;align-self:center;justify-self:center;width:44px;min-width:44px;height:44px;margin:0}
+  .planejamento.planejamento-casa .dia-semana .acoes-tarefa>.alca-ordenacao{grid-column:1;grid-row:2}
+  .planejamento.planejamento-casa .dia-semana .acoes-tarefa>.botao-mais-acoes{grid-column:3;grid-row:2}
 }

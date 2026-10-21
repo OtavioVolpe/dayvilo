@@ -78,6 +78,10 @@
 .planejamento .dia-semana .tarefa>.confirmacao-exclusao{grid-row:4}
 @media(max-width:1050px){.grade-semana{grid-template-columns:1fr}.app-layout>main{padding:24px}}
 @media(max-width:650px){
+  /* O conteúdo cria sua própria camada; o menu fica acima de ícones e painéis.
+     Dialogs e popovers nativos continuam na top layer. */
+  .app-layout>main{isolation:isolate}
+  .app-layout>.areas{z-index:20;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
   .app-layout>main{padding:20px 16px 32px}.routine-tabs{gap:8px;margin-bottom:24px}.routine-tabs button{flex:1;padding:10px 4px 14px}
   .planejamento h1{font-size:1.25rem}.planejamento .data-planejamento{display:none}.planejamento .lista-cabecalho{gap:8px;margin-bottom:18px}
   .controles-planejamento{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 8px;margin-bottom:16px}
