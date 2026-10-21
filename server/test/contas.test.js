@@ -14,7 +14,7 @@ test('senha usa sal exclusivo e permite conferir sem armazenar o texto original'
 
 test('cadastro rejeita campos inválidos antes de gravar ou processar a senha', async () => {
   const servico = criarServicoAutenticacao({ execute() { throw new Error('Não deve acessar o banco.'); } });
-  const base = { nome: 'Pessoa', email: 'pessoa@example.test', senha: 'Uma senha de teste bem longa' };
+  const base = { nome: 'Pessoa', email: 'pessoa@example.test', senha: 'Uma senha de teste bem longa 1!' };
   for (const alteracao of [
     { nome: ' ' }, { nome: 'a'.repeat(101) }, { email: 'invalido' }, { senha: 'curta' },
     { senha: 'a'.repeat(129) }, { senha: {} }, { fuso_horario: 'Inexistente' },

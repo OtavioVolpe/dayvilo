@@ -13,7 +13,7 @@ test('sessões: saída individual, cookies inválidos e rollback da redefiniçã
   try {
     await banco.beginTransaction();
     const contas = criarServicoAutenticacao(banco);
-    const email = `${randomUUID()}@example.test`, senha = 'Frase anterior exclusiva do teste', nova = 'Frase nova exclusiva deste teste';
+    const email = `${randomUUID()}@example.test`, senha = 'Frase anterior exclusiva do teste 1!', nova = 'Frase nova exclusiva deste teste 2!';
     const primeira = await contas.cadastrar({ nome: 'Ciclo sessão', email, senha });
     const segunda = await contas.entrar({ email, senha });
     const mensagens = [];

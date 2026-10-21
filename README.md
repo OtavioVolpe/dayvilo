@@ -185,7 +185,7 @@ As tabelas `usuarios` e `tarefas` guardam os dados da aplicação. A conta MySQL
 
 ### Contas e acesso
 
-Depois das migrações, inicie com `npm run dev` e abra a interface. Crie uma conta com nome, e-mail e senha; cada conta acessa apenas sua própria rotina. E-mails são tratados sem distinção entre maiúsculas e minúsculas. A senha aceita de 15 a 128 caracteres, incluindo espaços.
+Depois das migrações, inicie com `npm run dev` e abra a interface. Crie uma conta com nome, e-mail e senha; cada conta acessa apenas sua própria rotina. E-mails são tratados sem distinção entre maiúsculas e minúsculas. A senha aceita de 8 a 128 caracteres, com maiúscula, minúscula, número e símbolo, incluindo espaços.
 
 As senhas são protegidas com scrypt e sal individual. A sessão dura até sete dias e usa um cookie HttpOnly/SameSite=Strict; sair invalida a sessão no servidor. Alterações exigem proteção contra CSRF. Cadastro e entrada têm limite de tentativas. O e-mail é usado como identificador; a confirmação de e-mail e a recuperação de senha aceitam entrega local ou envio pelo Resend.
 
@@ -219,7 +219,7 @@ Na tela de entrada, selecione **Esqueci minha senha** e informe o e-mail cadastr
 npm run emails:listar
 ```
 
-Abra o arquivo mais recente no editor e copie o link para o navegador. Ele vale por 30 minutos, só pode ser usado uma vez e permite definir uma senha de 15 a 128 caracteres. Um novo pedido, após o intervalo mínimo de um minuto, substitui o link anterior. Há limite de cinco pedidos por IP a cada 15 minutos. Após a troca, todas as sessões da conta são invalidadas; tarefas e histórico permanecem intactos. Entre novamente com a nova senha.
+Abra o arquivo mais recente no editor e copie o link para o navegador. Ele vale por 30 minutos, só pode ser usado uma vez e permite definir uma senha de 8 a 128 caracteres, com maiúscula, minúscula, número e símbolo. Um novo pedido, após o intervalo mínimo de um minuto, substitui o link anterior. Há limite de cinco pedidos por IP a cada 15 minutos. Após a troca, todas as sessões da conta são invalidadas; tarefas e histórico permanecem intactos. Entre novamente com a nova senha.
 
 `URL_APLICACAO` define o endereço usado nos links; o padrão é `http://127.0.0.1:5173/`. Se alterar a porta da interface, ajuste essa variável. Mensagens locais contêm links privados: não as publique ou compartilhe.
 
@@ -339,7 +339,7 @@ Rotina inicial sugerida: backup após mudanças importantes na rotina e antes de
 
 Clique no nome no cabeçalho para editar o nome, consultar o e-mail e sua confirmação, escolher o tema, trocar a senha ou encerrar todas as sessões. O e-mail é somente leitura. A preferência de tema fica neste navegador; Automático acompanha o dispositivo.
 
-A troca de senha exige a senha atual e uma nova senha de 15 a 128 caracteres. Encerra todas as sessões e invalida links pendentes de recuperação. Sair de todos os dispositivos pede confirmação e mantém os dados e tarefas. As rotas exigem sessão e proteção CSRF. Não há migração de banco nesta funcionalidade.
+A troca de senha exige a senha atual e uma nova senha de 8 a 128 caracteres, com maiúscula, minúscula, número e símbolo. Encerra todas as sessões e invalida links pendentes de recuperação. Sair de todos os dispositivos pede confirmação e mantém os dados e tarefas. As rotas exigem sessão e proteção CSRF. Não há migração de banco nesta funcionalidade.
 
 ### Desagendar treinos
 
@@ -382,6 +382,14 @@ O diálogo sugere instruções para Android, iPhone/iPad ou computador e permite
 Após publicar, confira no site real o carregamento de `/manifest.webmanifest` e dos ícones. No Android, valide a instalação pelo menu do navegador e a abertura pelo ícone. No iPhone, valide a opção de adicionar à tela de início pelo menu de compartilhamento do Safari. Confira nome, ícone, abertura, login e navegação nas seis áreas. Essa conferência em dispositivos permanece necessária; o build não comprova a instalação.
 
 Referências: [manifesto e ícones](https://web.dev/learn/pwa/web-app-manifest) e [exibição standalone](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/How_to/Create_a_standalone_app).
+
+## Política e indicador de senha
+
+Cadastro, recuperação e troca de senha compartilham a regra em `shared/politica-senha.js`: 8 a 128 caracteres Unicode, contendo maiúscula, minúscula, número e símbolo. Espaços são permitidos, mas não contam como símbolo. O servidor aplica a mesma validação. A entrada e a conferência da senha atual não impõem a nova composição: contas antigas continuam acessíveis sem troca obrigatória. O armazenamento scrypt permanece igual; não exige migration.
+
+O indicador usa [zxcvbn](https://github.com/dropbox/zxcvbn), carregado separadamente ao abrir o formulário. A análise ocorre no navegador, sem serviço externo. Senhas abaixo de 15 caracteres recebem no máximo Média; padrões previsíveis ou requisitos incompletos recebem Fraca. Forte exige pelo menos 15 caracteres, requisitos atendidos e score de pelo menos 3. A classificação é uma estimativa limitada, não garantia nem verificação de vazamentos. Uma senha Fraca que cumpre os requisitos pode ser aceita; o indicador orienta, não adiciona uma regra oculta. Se o recurso não carregar, os requisitos e o envio continuam funcionando.
+
+Essa é uma decisão de produto que flexibiliza o mínimo anterior; não equivale à recomendação NIST de 15 caracteres para autenticação apenas por senha. Google e segundo fator ainda não estão implementados.
 
 ## Feedback
 

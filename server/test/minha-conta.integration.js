@@ -13,7 +13,7 @@ test('Minha conta: nome isolado, senha atual, revogação e saída de todos', as
   try {
     await banco.beginTransaction();
     const contas = criarServicoAutenticacao(banco), email = randomUUID()+'@example.test';
-    const senha = 'Senha anterior para minha conta', nova = 'Outra senha para minha conta';
+    const senha = 'Senha anterior para minha conta 1!', nova = 'Outra senha para minha conta 2!';
     const a = await contas.cadastrar({nome:'Conta A',email,senha});
     const a2 = await contas.entrar({email,senha});
     const b = await contas.cadastrar({nome:'Conta B',email:'b-'+email,senha});

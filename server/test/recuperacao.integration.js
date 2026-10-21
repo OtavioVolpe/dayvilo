@@ -13,7 +13,7 @@ test('recuperação: entrega, reenvio, expiração, uso único e revogação ape
     await banco.beginTransaction();
     const contas = criarServicoAutenticacao(banco);
     const email = `${randomUUID()}@example.test`;
-    const senha = 'Minha senha anterior de teste!'; const nova = 'Minha nova senha longa de teste!';
+    const senha = 'Minha senha anterior de teste 1!'; const nova = 'Minha nova senha longa de teste 2!';
     const sessao1 = await contas.cadastrar({ nome: 'Recuperação teste', email, senha });
     const sessao2 = await contas.entrar({ email, senha });
     const outra = await contas.cadastrar({ nome: 'Outra conta', email: `outra-${email}`, senha });

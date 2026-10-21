@@ -16,7 +16,7 @@ test('confirmação: cadastro automático, conta atual, reenvio, expiração, is
     const enviarEmail = async mensagem => { if (falhar) throw new Error('falha simulada'); mensagens.push(mensagem); };
     const config = { banco, enviarEmail, urlAplicacao: 'http://127.0.0.1:5173/' };
     const servico = criarServicoConfirmacao(config); const contas = criarServicoAutenticacao(banco);
-    const email = `${randomUUID()}@example.test`; const senha = 'Uma senha longa para testar!';
+    const email = `${randomUUID()}@example.test`; const senha = 'Uma senha longa para testar 1!';
     const antiga = await contas.cadastrar({ nome: 'Conta atual', email, senha });
     const usuario = await contas.consultar(antiga.token); assert.equal(usuario.email_confirmado, false);
     await banco.execute('INSERT INTO tarefas (usuario_id,titulo) VALUES (?,?)', [usuario.id, 'Minha rotina']);

@@ -1,6 +1,7 @@
 import { ErroValidacao } from '../validacoes/tarefas.js';
 import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
+import { erroSenhaNova } from '../../../shared/politica-senha.js';
 
 const derivar = promisify(scrypt);
 const parametros = { N: 131072, r: 8, p: 1, maxmem: 160 * 1024 * 1024 };
@@ -21,5 +22,6 @@ export async function conferirSenha(senha, armazenada = hashAusente) {
 }
 
 export function validarSenhaNova(senha) {
-  if (typeof senha !== 'string' || [...senha].length < 15 || [...senha].length > 128) throw new ErroValidacao('Use uma senha com 15 a 128 caracteres. Pode ser uma frase.');
+  const erro = erroSenhaNova(senha);
+  if (erro) throw new ErroValidacao(erro);
 }

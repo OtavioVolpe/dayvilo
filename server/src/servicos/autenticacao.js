@@ -18,7 +18,7 @@ function validarCredenciais(dados, cadastro) {
   validarObjeto(dados, cadastro ? ['nome', 'email', 'senha', 'fuso_horario', 'codigo_vinculo'] : ['email', 'senha']);
   validarEmail(dados.email);
   if (typeof dados.senha !== 'string' || [...dados.senha].length > 128 || dados.senha.length === 0) {
-    throw new ErroConta(400, cadastro ? 'Use uma senha com 15 a 128 caracteres. Pode ser uma frase.' : 'Informe sua senha (até 128 caracteres).');
+    throw new ErroConta(400, cadastro ? 'Use de 8 a 128 caracteres, com maiúscula, minúscula, número e símbolo.' : 'Informe sua senha (até 128 caracteres).');
   }
   if (cadastro) validarSenhaNova(dados.senha);
   if (!cadastro) return { email: dados.email.trim().toLowerCase(), senha: dados.senha };
