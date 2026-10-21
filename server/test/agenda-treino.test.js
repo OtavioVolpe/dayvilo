@@ -2,6 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { prepararAgendaTreino } from '../../client/src/agenda-treino.js';
 
+test('desagendamento único envia só a data escolhida e não os campos de interface', () => {
+  const resultado = prepararAgendaTreino({ ficha_id: 7, desagendar: true, frequencia: 'unica', inicio: '2026-10-25', fim: '2026-11-30', dias: [1, 3] });
+  assert.deepEqual(resultado.selecao, { ficha_id: 7, inicio: '2026-10-25', fim: '2026-10-25', dias: [0] });
+  assert.match(resultado.resumo, /^Data selecionada:/);
+});
+
+test('desagendamento por período preserva o filtro de dias da semana', () => {
+  const resultado = prepararAgendaTreino({ ficha_id: 7, desagendar: true, frequencia: 'semanal', inicio: '2026-10-26', fim: '2026-11-02', dias: [1, 4] });
+  assert.deepEqual(resultado.selecao, { ficha_id: 7, inicio: '2026-10-26', fim: '2026-11-02', dias: [1, 4] });
+  assert.equal(resultado.quantidade, 3);
+});
+
 test('treino único ignora período e dias remanescentes da repetição', () => {
   const resultado = prepararAgendaTreino({ ficha_id: 7, frequencia: 'unica', inicio: '2026-10-25', fim: '2026-11-30', dias: [1, 3] });
   assert.deepEqual(resultado.selecao, { ficha_id: 7, inicio: '2026-10-25', fim: '2026-10-25', dias: [0] });

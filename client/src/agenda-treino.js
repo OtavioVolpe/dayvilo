@@ -18,6 +18,6 @@ export function prepararAgendaTreino(agenda) {
   for (let i = 0; i <= intervalo; i++) if (dias.includes(diaSemana(deslocarData(inicio, i)))) quantidade++;
   if (!quantidade) return { erro: 'Nenhum dos dias escolhidos ocorre neste período.' };
   const formato = { day: '2-digit', month: '2-digit', year: 'numeric' };
-  const resumo = unica ? `Um treino em ${formatarData(inicio, { ...formato, weekday: 'long' })}.` : `${semanaTreino.filter(([n]) => dias.includes(n)).map(([, nome]) => nome).join(', ')} · de ${formatarData(inicio, formato)} a ${formatarData(fim, formato)} · ${quantidade} datas selecionadas.`;
+  const resumo = unica ? `${agenda.desagendar ? 'Data selecionada:' : 'Um treino em'} ${formatarData(inicio, { ...formato, weekday: 'long' })}.` : `${semanaTreino.filter(([n]) => dias.includes(n)).map(([, nome]) => nome).join(', ')} · de ${formatarData(inicio, formato)} a ${formatarData(fim, formato)} · ${quantidade} datas selecionadas.`;
   return { selecao: { ficha_id: agenda.ficha_id, inicio, fim, dias }, resumo, quantidade };
 }
