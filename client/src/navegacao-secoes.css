@@ -1,0 +1,11 @@
+.navegacao-secoes{margin:24px 0}
+.navegacao-secoes .navegacao-datas{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.navegacao-secoes .faixa-data button{min-height:44px;min-width:44px;border:0;border-radius:8px;padding:8px;background:transparent;gap:7px}
+.navegacao-secoes .faixa-data .escolher-data{min-width:0;font-size:.85rem}
+.navegacao-secoes .voltar-hoje{min-height:44px;padding:8px;border:0;background:transparent;font-size:.8rem;color:var(--accent)}
+.navegacao-secoes .voltar-hoje:disabled{color:var(--muted)}
+.navegacao-secoes .faixa-data button:hover:not(:disabled),.navegacao-secoes .voltar-hoje:hover:not(:disabled){background:var(--soft)}
+@media(max-width:750px){
+  .navegacao-secoes .faixa-data{width:100%}
+  .navegacao-secoes .painel-data{flex-basis:100%;margin:0}
+}

@@ -1,11 +1,12 @@
-import DataConsulta from './DataConsulta.jsx';
+import NavegacaoDatas from './NavegacaoDatas.jsx';
+import './navegacao-secoes.css';
 import FichaTreinoCard from './FichaTreinoCard.jsx';
 import TreinoVazio from './TreinoVazio.jsx';
 import { CamposCardio, RegistroCardio, novoCardio } from './Cardio.jsx';
 import { copiarReferencia, copiarReferenciaCardio } from './copiar-referencia-treino.js';
 import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
 import { useEffect, useState } from 'react';
-import { Plus, ChevronLeft, ChevronRight, Dumbbell, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
+import { Plus, ChevronRight, Dumbbell, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
 import { solicitar } from './api.js';
 import { deslocarData, formatarData } from './datas.js';
 import './treino.css';
@@ -117,7 +118,7 @@ export default function Treino({ sessaoInicial = null, aoConsumirSessao, aoAlter
     {erro && <p className="mensagem-erro" role="alert">{erro}</p>}{aviso && <p className="mensagem-sucesso" role="status">{aviso}</p>}
     {!editando && <>
       <nav className="routine-tabs" aria-label="Visualizações do treino">{['Hoje', 'Semana'].map(v => <button key={v} disabled={ocupado} aria-pressed={visao === v} onClick={() => setVisao(v)}>{v}</button>)}</nav>
-      <div className="treino-navegacao"><button aria-label={visao === 'Hoje' ? 'Dia anterior' : 'Semana anterior'} disabled={bloqueado || !data} onClick={() => setData(deslocarData(data, visao === 'Hoje' ? -1 : -7))}><ChevronLeft /></button><DataConsulta data={data} bloqueado={bloqueado} aoAplicar={setData} /><button aria-label={visao === 'Hoje' ? 'Próximo dia' : 'Próxima semana'} disabled={bloqueado || !data} onClick={() => setData(deslocarData(data, visao === 'Hoje' ? 1 : 7))}><ChevronRight /></button><button className="atalho-hoje" disabled={bloqueado || !hoje || data === hoje} onClick={() => setData(hoje)}>Hoje</button></div>
+      <div className="navegacao-secoes"><NavegacaoDatas data={data} hoje={hoje} dias={dias} semanal={visao === 'Semana'} bloqueado={bloqueado} aoEscolher={setData} aoVoltar={() => setData(hoje)} /></div>
       {carregando ? <p role="status">Carregando treinos…</p> : <div className={visao === 'Semana' ? 'treino-semana' : 'treino-dia'}>{dias.map(d => <section className="treino-dia-card" key={d}><h2>{formatarData(d, { weekday: 'short', day: '2-digit', month: '2-digit' })}{d === hoje && <small>Hoje</small>}</h2>{dados.sessoes.filter(s => s.data_prevista === d).map(s => <button className="treino-agendado" key={s.id} disabled={ocupado} onClick={() => abrirSessao(s.id)}><Dumbbell size={20} /><span><strong>{s.titulo}</strong><small>{({ pendente: 'Abrir treino', concluida: 'Concluído · ver registro', pulada: 'Pulado · ver ficha' })[s.situacao]}</small></span><ChevronRight size={18} /></button>)}{!dados.sessoes.some(s => s.data_prevista === d) && <p className="treino-vazio">Sem treino agendado.</p>}</section>)}</div>}
       <h2 className="treino-fichas-titulo">Minhas fichas</h2><p className="treino-ajuda">Monte os exercícios e escolha os dias para treinar.</p>
       {!dados.fichas.length && !carregando && !erro && data && <TreinoVazio bloqueado={bloqueado} aoCriar={criarFicha} />}

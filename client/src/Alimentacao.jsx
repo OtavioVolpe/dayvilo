@@ -1,11 +1,12 @@
-import DataConsulta from './DataConsulta.jsx';
+import NavegacaoDatas from './NavegacaoDatas.jsx';
+import './navegacao-secoes.css';
 import CampoHorario from './CampoHorario.jsx';
 import DestinosAlimentacao from './DestinosAlimentacao.jsx';
 import AguaDia from './AguaDia.jsx';
 import AlimentacaoVazia from './AlimentacaoVazia.jsx';
 import { destinosAlimentacao } from './destinos-alimentacao.js';
 import { useEffect, useRef, useState } from 'react';
-import { Plus, ChevronLeft, ChevronRight, Copy, Utensils, Clock, Pencil, Trash2, SkipForward, Circle, CircleCheck, NotebookPen, RotateCcw } from 'lucide-react';
+import { Plus, Copy, Utensils, Clock, Pencil, Trash2, SkipForward, Circle, CircleCheck, NotebookPen, RotateCcw } from 'lucide-react';
 import { solicitar } from './api.js';
 import { deslocarData, formatarData } from './datas.js';
 import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
@@ -89,12 +90,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
     {confirmacao && <ConfirmacaoTreino rotulo={confirmacao.rotulo} destrutiva={confirmacao.destrutiva} mensagem={confirmacao.mensagem} cancelar={() => setConfirmacao(null)} confirmar={() => { const acao = confirmacao.executar; setConfirmacao(null); acao(); }} />}
     <header className="ali-topo"><div><h1>Minha alimentação</h1><p>Seu dia, refeição por refeição.</p></div><button className="botao-principal" disabled={desabilitado || !dados} onClick={() => nova()}><Plus size={18} />Refeição</button></header>
     <nav className="routine-tabs" aria-label="Visualizações da alimentação">{[['hoje', 'Hoje'], ['semana', 'Semana']].map(([a, nome]) => <button key={a} disabled={ocupado} aria-pressed={aba === a} onClick={() => navegar(() => setAba(a))}>{nome}</button>)}</nav>
-    <div className="ali-periodo">
-      <button aria-label={aba === 'hoje' ? 'Dia anterior' : 'Semana anterior'} disabled={!dia || ocupado} onClick={() => navegar(() => setData(deslocarData(dia, aba === 'semana' ? -7 : -1)))}><ChevronLeft size={20} /></button>
-      <DataConsulta data={dia} min="1001-01-01" max="9998-12-31" bloqueado={ocupado} aoAplicar={v => navegar(() => setData(v))} />
-      <button aria-label={aba === 'hoje' ? 'Próximo dia' : 'Próxima semana'} disabled={!dia || ocupado} onClick={() => navegar(() => setData(deslocarData(dia, aba === 'semana' ? 7 : 1)))}><ChevronRight size={20} /></button>
-      <button className="atalho-hoje" disabled={!dados || ocupado || dia === dados.hoje} onClick={() => navegar(() => setData(dados.hoje))}>Hoje</button>
-    </div>
+    <div className="navegacao-secoes"><NavegacaoDatas data={dia} hoje={dados?.hoje} dias={dados?.dias || []} semanal={aba === 'semana'} bloqueado={desabilitado} aoEscolher={v => navegar(() => setData(v))} aoVoltar={() => navegar(() => setData(dados.hoje))} /></div>
     {erro && <div className="mensagem-erro" role="alert">{erro} <button disabled={ocupado} onClick={() => navegar(() => setTentativa(n => n + 1))}>Atualizar lista</button></div>}
     {aviso && <p className="ali-aviso" role="status">{aviso}</p>}
     {dia && !form && <AguaDia key={dia} data={dia} bloqueado={desabilitado} aoOcupar={setOcupado} />}
