@@ -1,0 +1,17 @@
+@media(min-width:651px){
+  .app-shell.com-menu-mobile>.app-header{display:none}
+  .app-shell.com-menu-mobile>.app-layout{min-height:100dvh;grid-template-columns:200px minmax(0,1fr)}
+  .app-shell.com-menu-mobile .app-layout>.areas{position:sticky;top:0;align-self:start;height:100dvh;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:0;padding:30px 16px 18px;background:var(--background);border-right:1px solid var(--line)}
+  .lateral-marca{display:flex;align-items:center;gap:10px;padding:0 12px 36px;color:var(--accent);font-size:1.2rem;font-weight:500;letter-spacing:.02em;flex-shrink:0}
+  .lateral-links{display:grid;gap:6px}
+  .app-shell.com-menu-mobile .areas button{margin:0;padding:12px;min-height:46px;font-size:.875rem;font-weight:400;color:var(--muted);border-radius:10px}
+  .app-shell.com-menu-mobile .areas button[aria-current=page]{background:var(--soft);color:var(--accent);font-weight:500}
+  .app-shell.com-menu-mobile .areas button:hover:not(:disabled){background:var(--soft);color:var(--accent)}
+  .lateral-conta{margin-top:auto;padding-top:16px}
+  .lateral-conta:before{content:'';display:block;height:1px;background:var(--line);margin-bottom:12px}
+  .lateral-avatar{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:50%;background:var(--soft);color:var(--accent)}
+  .lateral-identidade{display:block;min-width:0}
+  .lateral-identidade>span{display:block;overflow-wrap:anywhere}
+  .lateral-identidade small{display:block;font-size:.7rem;color:var(--muted);margin-top:2px}
+  .app-shell.com-menu-mobile .lateral-conta button:last-child{font-size:.8rem}
+}

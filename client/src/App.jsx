@@ -15,7 +15,8 @@ import { useSessao } from './useSessao.js';
 import RecuperarSenha from './RecuperarSenha.jsx';
 import { useEffect, useState } from 'react';
 import Planejamento from './Planejamento.jsx';
-import { UserRound, Sprout, Sun, Utensils, Dumbbell, BookOpen, House, Wallet, LockKeyhole } from 'lucide-react';
+import { UserRound, Sprout, Sun, Utensils, Dumbbell, BookOpen, House, Wallet, LockKeyhole, LogOut } from 'lucide-react';
+import './menu-desktop.css';
 
 const areas = [
   { name: 'Rotina', icon: Sun },
@@ -72,6 +73,10 @@ export default function App() {
     if (treinoSujo) { setConfirmacaoTreino({ mensagem: 'Descartar alterações não salvas?', acao: () => { setTreinoSujo(false); setView(destino); } }); return; }
     setTreinoSujo(false); setView(destino);
   }
+  function solicitarSaida() {
+    if (treinoSujo) setConfirmacaoTreino({ mensagem: 'Sair e descartar alterações não salvas?', acao: sair });
+    else sair();
+  }
 
 
 
@@ -86,15 +91,24 @@ export default function App() {
       {recuperacao?.confirmacao ? <ConfirmarEmail key={recuperacao.token} token={recuperacao.token} atualizar={atualizar} aoVoltar={() => { window.history.replaceState(null, '', window.location.pathname + window.location.search + '#entrar'); definirRotaPublica('#entrar'); definirRecuperacao(null); atualizar(); }} /> : recuperacao ? <RecuperarSenha key={recuperacao.token ?? 'pedido'} token={recuperacao.token} aoSolicitarNovo={solicitarRecuperacao} aoVoltar={() => { window.history.replaceState(null, '', window.location.pathname + window.location.search + '#entrar'); definirRotaPublica('#entrar'); definirRecuperacao(null); atualizar(); }} /> : sessao === undefined ? <main><p className="estado-lista" role="status">{erro || 'Abrindo seu espaço…'}</p>{erro && <button className="botao-secundario" onClick={atualizar}>Tentar novamente</button>}</main>
         : !sessao ? (mostrarAcesso ? <Acesso key={rotaPublica} cadastroInicial={rotaPublica === '#criar-conta'} cadastroAberto={cadastroAberto} aoRecuperar={solicitarRecuperacao} aoEntrar={receberAcesso} aviso={aviso} /> : <Apresentacao cadastroAberto={cadastroAberto} />) : <div className={`app-layout ${view === 'Casa' ? 'layout-casa' : ''}`}>
         <nav className="areas" aria-label="Áreas pessoais">
-          <p className="areas-label">Seu espaço</p>
+          <div className="lateral-marca"><Sprout size={24} aria-hidden="true" /><span>Dayvilo</span></div>
+          <div className="lateral-links">
           {areas.map(({ name, label = name, icon: Icon }) => (
             <button key={name} disabled={!['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name)} aria-current={(['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? view === name : name === 'Rotina' && !['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura', 'Conta', 'BoasVindas'].includes(view)) ? 'page' : undefined} aria-label={['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? label : `${label}, em breve`} title={['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? label : `${label} — em breve`} onClick={() => navegar(['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? name : 'Hoje')}>
               <Icon size={20} aria-hidden="true" /><span>{name}</span>
               {!['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) && <LockKeyhole className="area-cadeado" size={12} aria-hidden="true" />}
             </button>
           ))}
+          </div>
+          <div className="lateral-conta">
+            <button aria-label="Minha conta" aria-current={view === 'Conta' ? 'page' : undefined} onClick={() => navegar('Conta')}>
+              <span className="lateral-avatar" aria-hidden="true">{Array.from(sessao.nome || 'D')[0].toLocaleUpperCase('pt-BR')}</span>
+              <span className="lateral-identidade"><span>{sessao.nome}</span><small>Minha conta</small></span>
+            </button>
+            <button disabled={saindo} onClick={solicitarSaida}><LogOut size={18} aria-hidden="true" /><span>{saindo ? 'Saindo…' : 'Sair'}</span></button>
+          </div>
         </nav>
-        <MenuMobile key={sessao.id} areas={areas} view={view} navegar={navegar} saindo={saindo} sair={() => { if (treinoSujo) setConfirmacaoTreino({ mensagem: 'Sair e descartar alterações não salvas?', acao: sair }); else sair(); }} />
+        <MenuMobile key={sessao.id} areas={areas} view={view} navegar={navegar} saindo={saindo} sair={solicitarSaida} />
         <main>
           {view === 'Hoje' && <InstalarDayvilo instalacao={instalacao} />}
           {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
