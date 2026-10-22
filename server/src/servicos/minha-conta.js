@@ -4,6 +4,26 @@ import { validarObjeto } from '../validacoes/tarefas.js';
 
 export function criarServicoMinhaConta(banco) {
   return {
+    async excluir(usuarioId, token, dados) {
+      validarObjeto(dados, ['senha_atual', 'confirmacao']);
+      if (dados.confirmacao !== 'EXCLUIR') throw new ErroConta(400, 'Digite EXCLUIR para confirmar.');
+      if (typeof dados.senha_atual !== 'string' || !dados.senha_atual || [...dados.senha_atual].length > 128) throw new ErroConta(400, 'Informe sua senha atual.');
+      const [[conta]] = await banco.execute('SELECT id, senha_hash FROM contas WHERE usuario_id = ?', [usuarioId]);
+      if (!conta || !await conferirSenha(dados.senha_atual, conta.senha_hash)) throw new ErroConta(400, 'Senha atual incorreta.');
+      await transacionar(banco, async c => {
+        const [[atual]] = await c.execute('SELECT senha_hash FROM contas WHERE id = ? FOR UPDATE', [conta.id]);
+        const [[sessao]] = await c.execute('SELECT conta_id FROM sessoes WHERE token_hash = ? AND conta_id = ? AND expira_em > UTC_TIMESTAMP()', [resumoToken(token), conta.id]);
+        if (!atual || !sessao || atual.senha_hash !== conta.senha_hash) throw new ErroConta(409, 'Sua conta mudou. Entre novamente e tente outra vez.');
+        // Bloqueia novos filhos por FK; a ordem respeita referências RESTRICT.
+        await c.execute('SELECT id FROM usuarios WHERE id = ? FOR UPDATE', [usuarioId]);
+        for (const tabela of ['tarefas', 'fichas_treino', 'financeiro_lancamentos', 'financeiro_investimentos', 'livros']) {
+          await c.execute(`DELETE FROM ${tabela} WHERE usuario_id = ?`, [usuarioId]);
+        }
+        // Sessões, tokens e demais dados dependentes são removidos por CASCADE.
+        await c.execute('DELETE FROM contas WHERE id = ?', [conta.id]);
+        await c.execute('DELETE FROM usuarios WHERE id = ?', [usuarioId]);
+      });
+    },
     async nome(usuarioId, dados) {
       validarObjeto(dados, ['nome']);
       if (typeof dados.nome !== 'string' || !dados.nome.trim() || [...dados.nome.trim()].length > 100) throw new ErroConta(400, 'Use um nome de até 100 caracteres.');

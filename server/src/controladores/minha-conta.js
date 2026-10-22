@@ -6,6 +6,14 @@ import { limitarOperacaoSenha } from '../servicos/limite-senha.js';
 export function criarControladorMinhaConta(banco) {
   const servico = criarServicoMinhaConta(banco);
   return {
+    async excluir(req, res) {
+      if (!req.is('application/json')) throw new ErroConta(415, 'Use conteúdo JSON.');
+      await limitarOperacaoSenha(async () => {
+        await servico.excluir(req.usuario.id, req.tokenSessao, req.body);
+        limparCookie(res);
+        res.json({ mensagem: 'Conta excluída. Seus dados foram removidos do banco ativo e todas as sessões foram encerradas.' });
+      });
+    },
     async nome(req, res) {
       if (!req.is('application/json')) throw new ErroConta(415, 'Use conteúdo JSON.');
       res.json(await servico.nome(req.usuario.id, req.body));

@@ -6,6 +6,7 @@ import InstalarDayvilo from './InstalarDayvilo.jsx';
 import Feedback from './Feedback.jsx';
 import SenhaNova from './SenhaNova.jsx';
 import AlterarEmail from './AlterarEmail.jsx';
+import ExcluirConta from './ExcluirConta.jsx';
 import { abrirPrivacidade } from './analytics.js';
 
 export function aplicarTema(tema) {
@@ -33,7 +34,7 @@ export default function MinhaConta({ sessao, atualizarNome, encerrar, voltar, ao
     <section className="conta-painel"><h2>Seu espaço no Dayvilo</h2><p className="conta-nota">Veja o que você pode organizar em cada área e escolha por onde começar.</p><button type="button" className="botao-secundario" disabled={ocupado} onClick={aoConhecerAreas}>Conhecer as áreas</button></section>
     <InstalarDayvilo instalacao={instalacao} painel />
     <Feedback />
-    <section className="conta-painel"><h2>Privacidade</h2><p className="conta-nota">Escolha se permite a medição de uso neste navegador.</p><p><a href="/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade e Cookies</a></p><p className="conta-nota">Para solicitar acesso, cópia dos dados ou exclusão da conta: <a href="mailto:dayviloapp@gmail.com?subject=Privacidade%20no%20Dayvilo">dayviloapp@gmail.com</a>.</p><button type="button" className="botao-secundario" onClick={abrirPrivacidade}>Preferências de medição</button></section>
+    <section className="conta-painel"><h2>Privacidade</h2><p className="conta-nota">Escolha se permite a medição de uso neste navegador.</p><p><a href="/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade e Cookies</a></p><p className="conta-nota">Para solicitar acesso, cópia dos dados ou ajuda com privacidade: <a href="mailto:dayviloapp@gmail.com?subject=Privacidade%20no%20Dayvilo">dayviloapp@gmail.com</a>.</p><button type="button" className="botao-secundario" onClick={abrirPrivacidade}>Preferências de medição</button></section>
     {erro && <p role="alert" className="mensagem-erro">{erro}</p>}
     {aviso && <p role="status" className="aviso-tarefa">{aviso}</p>}
     <section className="conta-painel"><h2>Seus dados</h2>
@@ -55,5 +56,6 @@ export default function MinhaConta({ sessao, atualizarNome, encerrar, voltar, ao
     <section className="conta-painel"><h2>Dispositivos</h2><p className="conta-nota">Encerra todas as sessões, incluindo esta.</p>
       {confirmar ? <div role="group" aria-label="Confirmar saída de todos os dispositivos" className="conta-confirmar"><button className="botao-secundario" disabled={ocupado} onClick={() => setConfirmar(false)}>Cancelar</button><button className="botao-principal" disabled={ocupado} onClick={() => executar(async () => { const dados = await solicitar('/contas/saida-todas', { method: 'POST' }); encerrar(dados.mensagem); })}>Confirmar saída</button></div> : <button className="botao-secundario" disabled={ocupado} onClick={() => setConfirmar(true)}>Sair de todos os dispositivos</button>}
     </section>
+    <ExcluirConta usuarioId={sessao.id} encerrar={encerrar} />
   </section>;
 }

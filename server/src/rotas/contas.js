@@ -44,6 +44,7 @@ export function instalarContas(aplicacao, banco, entrega) {
   rotas.get('/sessao', controlador.sessao);
   rotas.post('/saida', exigirConta, conferirCsrf, controlador.sair);
   rotas.patch('/perfil', exigirConta, conferirCsrf, minhaConta.nome);
+  rotas.delete('/perfil', exigirConta, conferirCsrf, limitarRedefinicoes, minhaConta.excluir);
   rotas.put('/senha', exigirConta, conferirCsrf, limitarRedefinicoes, minhaConta.senha);
   rotas.post('/saida-todas', exigirConta, conferirCsrf, minhaConta.sairTodas);
   aplicacao.use('/api/contas', rotas);
