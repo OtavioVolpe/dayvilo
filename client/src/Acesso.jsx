@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Eye, EyeOff, Sprout } from 'lucide-react';
 import { solicitar } from './api.js';
 import SenhaNova from './SenhaNova.jsx';
+import { registrarEvento, abrirPrivacidade, analytics } from './analytics.js';
 
 export default function Acesso({ aoEntrar, aviso, aoRecuperar, cadastroAberto = false, cadastroInicial = false }) {
   const [criandoConta, definirCadastro] = useState(cadastroInicial);
@@ -11,6 +12,7 @@ export default function Acesso({ aoEntrar, aviso, aoRecuperar, cadastroAberto = 
   const [enviando, definirEnviando] = useState(false);
   const [erro, definirErro] = useState('');
   const titulo = useRef(null);
+  useEffect(() => { try { analytics()?.pagina(cadastro ? 'cadastro' : 'entrar'); } catch {} }, [cadastro]);
   useEffect(() => { titulo.current?.focus({ preventScroll: true }); window.scrollTo(0, 0); }, []);
 
   async function enviar(evento) {
@@ -29,6 +31,7 @@ export default function Acesso({ aoEntrar, aviso, aoRecuperar, cadastroAberto = 
       const sessao = await solicitar(`/contas/${cadastro ? 'cadastro' : 'entrada'}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados),
       });
+      registrarEvento(cadastro ? 'sign_up' : 'login');
       aoEntrar(sessao, { novaConta: cadastro && !vincular });
     } catch (falha) { definirErro(falha.message); }
     finally { definirEnviando(false); }
@@ -64,6 +67,7 @@ export default function Acesso({ aoEntrar, aviso, aoRecuperar, cadastroAberto = 
       </form>
       {!cadastro && <p className="acesso-alternar acesso-recuperar"><button type="button" disabled={enviando} onClick={aoRecuperar}>Esqueci minha senha</button></p>}
       {cadastroAberto && <p className="acesso-alternar">{cadastro ? 'Já tem uma conta?' : 'Primeira vez aqui?'} <button type="button" disabled={enviando} onClick={() => { definirCadastro(!cadastro); definirErro(''); definirMostrarSenha(false); definirVincular(false); }}>{cadastro ? 'Entrar' : 'Criar conta'}</button></p>}
+      <button type="button" className="botao-secundario" onClick={abrirPrivacidade}>Privacidade</button>
     </section>
   </main>;
 }

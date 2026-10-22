@@ -3,14 +3,15 @@ import { join } from 'node:path';
 
 const escapar = valor => valor.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-export function instalarSeo(app, { pastaInterface, urlAplicacao, cadastroAberto }) {
+export function instalarSeo(app, { pastaInterface, urlAplicacao, cadastroAberto, analyticsId = '' }) {
+  if (analyticsId && !/^G-[A-Z0-9]{5,20}$/.test(analyticsId)) throw new Error('ID Analytics inválido.');
   const url = new URL('/', urlAplicacao).href;
   const endereco = escapar(url);
   const imagem = escapar(new URL('/icons/icon-512.png', url).href);
   const template = readFileSync(join(pastaInterface, 'index.html'), 'utf8');
   const apresentacao = template.includes('<!--dayvilo-apresentacao-->')
     ? readFileSync(join(pastaInterface, `.apresentacao-${cadastroAberto ? 'aberta' : 'fechada'}.html`), 'utf8') : '';
-  const metadados = `<link rel="canonical" href="${endereco}" />
+  const metadados = `${analyticsId ? `<meta name="dayvilo-analytics" content="${analyticsId}" />` : ''}<link rel="canonical" href="${endereco}" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="pt_BR" />
     <meta property="og:site_name" content="Dayvilo" />

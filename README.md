@@ -335,6 +335,20 @@ Se os executáveis estiverem em outro local, configure `MYSQLDUMP_PATH` para exp
 
 Rotina inicial sugerida: backup após mudanças importantes na rotina e antes de migrações; enquanto houver uso diário, fazer uma cópia por dia. Ainda é **manual**, sem agendamento. Guarde também uma cópia em armazenamento privado separado deste computador. Para recuperar em produção, restaure primeiro em banco vazio, valide a aplicação e só então planeje a troca; nunca rode este SQL diretamente sobre o banco em uso.
 
+## Analytics e preferências de privacidade
+
+A integração GA4 é opcional. Sem `GOOGLE_ANALYTICS_ID`, não carrega scripts Google nem mostra convite automático. Configure o ID público `G-...` apenas em produção, depois de preparar o fluxo Web. O servidor injeta o ID no HTML; não precisa recompilar para trocar a variável, mas precisa reiniciar o serviço. O ambiente local permanece desativado.
+
+Antes de ativar, crie uma propriedade GA4 e um fluxo Web para `https://dayvilo.com.br`, com fuso de São Paulo e moeda BRL. **Desative toda a Medição otimizada do fluxo**: a aplicação envia eventos próprios, com telas e URLs controladas. Não habilite Google Signals, coleta de dados fornecidos pelo usuário, vinculação com Ads ou tags adicionais. Use retenção de eventos de 2 meses no painel. Essas opções da conta Google não são configuradas pelo código. Não instale um segundo snippet ou GTM.
+
+O consentimento segue o modo básico: nenhum script do Analytics carrega antes de aceitar. Aceitar e Recusar têm o mesmo destaque. A escolha fica neste navegador por até 180 dias; pode ser alterada em Privacidade na apresentação, no acesso ou em Minha conta. Os cookies GA têm prazo de até 60 dias, sem renovação por atividade. Recusar bloqueia coleta com `ga-disable` e remove os cookies `_ga` deste site, preservando sessão e dados. A escolha sincroniza entre abas. Revogação não apaga eventos já recebidos pelo Google. Bloqueadores e recusas reduzem os números: eles não representam toda a base de contas.
+
+Eventos: `page_view` (apresentação e telas permitidas), `start_signup` (clique da apresentação), `sign_up` (cadastro bem-sucedido), `login` (entrada bem-sucedida), `create_task` (criação manual bem-sucedida, incluindo série como uma ação). Não envia ID da conta, e-mail, nome, senha, conteúdo de tarefas, valores, URLs brutas, query strings ou fragmentos com tokens. Referências externas são reduzidas à origem de Google, Instagram ou LinkedIn; as demais ficam vazias. Links identificados de campanhas ficam para outra etapa. Não há gravação de sessões. Os eventos usam o identificador de navegador do GA; não identificam a primeira tarefa histórica da conta nem unificam pessoas entre dispositivos. Para ativação, analise um funil de cadastro seguido de criação de tarefa; retornos usam os relatórios do GA.
+
+Validação antes de concluir a ativação: com navegador limpo, recusar não deve gerar requisições Google; aceitar deve carregar uma única tag; trocar de área deve gerar uma visualização; revogar deve interromper eventos novos. Confira em Tempo real no GA4 um cadastro/tarefa de teste com consentimento, sem dados pessoais nos parâmetros. Os testes automatizados usam um navegador simulado e não enviam eventos reais. Teste real de recebimento depende do ID e da configuração externa. Não há migração de banco.
+
+Referência: [modo básico de consentimento do Google](https://developers.google.com/tag-platform/security/guides/consent?consentmode=basic).
+
 ## SEO da apresentação pública
 
 O build gera duas versões estáticas do mesmo componente `Apresentacao`: cadastro aberto e fechado. Em produção, o servidor entrega a versão correspondente a `CADASTRO_ABERTO` dentro do HTML inicial; não consulta a conta para gerar esse conteúdo. O React assume a interface normalmente após carregar. Os fragmentos internos começam com ponto e não são servidos pelo middleware de arquivos estáticos.

@@ -1,0 +1,4 @@
+.privacidade-painel{max-width:900px;margin:16px auto;padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--text);grid-column:1/-1}
+.privacidade-painel h2{font-size:1.05rem;margin:0 0 12px}.privacidade-painel p{font-size:.875rem;line-height:1.6;margin:10px 0}.privacidade-painel a{color:var(--accent)}
+.privacidade-acoes{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}.privacidade-acoes button{min-height:44px;flex:1 1 150px}
+@media(max-width:650px){.privacidade-painel{margin:12px;padding:16px}}

@@ -10,6 +10,7 @@ import useInstalacao from './useInstalacao.js';
 import ConfirmarEmail, { AvisoConfirmacao } from './ConfirmarEmail.jsx';
 import Acesso from './Acesso.jsx';
 import Apresentacao from './Apresentacao.jsx';
+import Privacidade from './Privacidade.jsx';
 import BoasVindas, { orientarNovaConta, temOrientacaoPendente, concluirOrientacao } from './BoasVindas.jsx';
 import { useSessao } from './useSessao.js';
 import RecuperarSenha from './RecuperarSenha.jsx';
@@ -89,6 +90,7 @@ export default function App() {
         {sessao === null && !recuperacao && !mostrarAcesso && <nav className="apresentacao-navegacao" aria-label="Acesso à conta"><a className="botao-secundario" href="#entrar">Entrar</a></nav>}
         {sessao && !recuperacao && <div className="conta-atual"><button className="abrir-minha-conta" aria-label="Minha conta" onClick={() => navegar('Conta')}><UserRound size={18} aria-hidden="true" /><span>{sessao.nome}</span></button><button className="botao-secundario" disabled={saindo} onClick={() => { if (treinoSujo) setConfirmacaoTreino({ mensagem: 'Sair e descartar alterações não salvas?', acao: sair }); else sair(); }}>{saindo ? 'Saindo…' : 'Sair'}</button></div>}
       </header>
+      <Privacidade tela={recuperacao || sessao === undefined ? null : sessao ? ({ Hoje: 'rotina', Semana: 'rotina', Histórico: 'rotina', Casa: 'casa', Treino: 'treino', Financeiro: 'financeiro', Alimentação: 'alimentacao', Leitura: 'leitura', Conta: 'conta', BoasVindas: 'boas_vindas' }[view] || 'rotina') : mostrarAcesso ? (rotaPublica === '#criar-conta' ? 'cadastro' : 'entrar') : 'inicio'} />
       {recuperacao?.confirmacao ? <ConfirmarEmail key={recuperacao.token} troca={recuperacao.troca} token={recuperacao.token} atualizar={atualizar} aoVoltar={() => { window.history.replaceState(null, '', window.location.pathname + window.location.search + '#entrar'); definirRotaPublica('#entrar'); definirRecuperacao(null); atualizar(); }} /> : recuperacao ? <RecuperarSenha key={recuperacao.token ?? 'pedido'} token={recuperacao.token} aoSolicitarNovo={solicitarRecuperacao} aoVoltar={() => { window.history.replaceState(null, '', window.location.pathname + window.location.search + '#entrar'); definirRotaPublica('#entrar'); definirRecuperacao(null); atualizar(); }} /> : sessao === undefined ? <main><p className="estado-lista" role="status">{erro || 'Abrindo seu espaço…'}</p>{erro && <button className="botao-secundario" onClick={atualizar}>Tentar novamente</button>}</main>
         : !sessao ? (mostrarAcesso ? <Acesso key={rotaPublica} cadastroInicial={rotaPublica === '#criar-conta'} cadastroAberto={cadastroAberto} aoRecuperar={solicitarRecuperacao} aoEntrar={receberAcesso} aviso={aviso} /> : <Apresentacao cadastroAberto={cadastroAberto} />) : <div className={`app-layout ${view === 'Casa' ? 'layout-casa' : ''}`}>
         <nav className="areas" aria-label="Áreas pessoais">

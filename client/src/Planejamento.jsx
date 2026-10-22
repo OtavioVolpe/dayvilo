@@ -1,4 +1,5 @@
 import CampoHorario from './CampoHorario.jsx';
+import { registrarEvento } from './analytics.js';
 import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
 import './casa.css';
 import ObservacaoTarefa from './ObservacaoTarefa.jsx';
@@ -164,6 +165,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
         body: JSON.stringify(corpo),
       });
       if (casa) definirDiaCasa(tarefa.data_prevista);
+      if (!editando) registrarEvento('create_task');
       if (historico) {
         definirTarefas(anteriores => anteriores.map(item => item.id === tarefa.id ? tarefa : item)
           .filter(item => item.data_prevista >= periodoConsultado.inicio && item.data_prevista <= periodoConsultado.fim));

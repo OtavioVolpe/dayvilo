@@ -6,6 +6,7 @@ import InstalarDayvilo from './InstalarDayvilo.jsx';
 import Feedback from './Feedback.jsx';
 import SenhaNova from './SenhaNova.jsx';
 import AlterarEmail from './AlterarEmail.jsx';
+import { abrirPrivacidade } from './analytics.js';
 
 export function aplicarTema(tema) {
   document.documentElement.dataset.tema = ['claro', 'escuro'].includes(tema) ? tema : 'automatico';
@@ -32,6 +33,7 @@ export default function MinhaConta({ sessao, atualizarNome, encerrar, voltar, ao
     <section className="conta-painel"><h2>Seu espaço no Dayvilo</h2><p className="conta-nota">Veja o que você pode organizar em cada área e escolha por onde começar.</p><button type="button" className="botao-secundario" disabled={ocupado} onClick={aoConhecerAreas}>Conhecer as áreas</button></section>
     <InstalarDayvilo instalacao={instalacao} painel />
     <Feedback />
+    <section className="conta-painel"><h2>Privacidade</h2><p className="conta-nota">Escolha se permite a medição de uso neste navegador.</p><button type="button" className="botao-secundario" onClick={abrirPrivacidade}>Preferências de privacidade</button></section>
     {erro && <p role="alert" className="mensagem-erro">{erro}</p>}
     {aviso && <p role="status" className="aviso-tarefa">{aviso}</p>}
     <section className="conta-painel"><h2>Seus dados</h2>

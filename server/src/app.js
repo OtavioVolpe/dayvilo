@@ -16,18 +16,18 @@ import { criarRotasAlimentacao } from './rotas/alimentacao.js';
 import { restringirOrigemLocal } from './middlewares/origem-local.js';
 import { instalarTratamentoErros } from './middlewares/erros.js';
 
-export function criarAplicacao({ banco, porta = 3001, modoEmail = 'local', enviarEmail = criarEntregaLocal(), urlAplicacao = 'http://127.0.0.1:5173/', producao = false, proxySaltos = 0, cadastroAberto = !producao, pastaInterface = fileURLToPath(new URL('../../client/dist/', import.meta.url)) }) {
+export function criarAplicacao({ banco, porta = 3001, modoEmail = 'local', enviarEmail = criarEntregaLocal(), urlAplicacao = 'http://127.0.0.1:5173/', producao = false, proxySaltos = 0, analyticsId = '', cadastroAberto = !producao, pastaInterface = fileURLToPath(new URL('../../client/dist/', import.meta.url)) }) {
   const aplicacao = express();
   aplicacao.disable('x-powered-by');
   aplicacao.set('trust proxy', producao ? proxySaltos : false);
   aplicacao.use('/api', (req, res, next) => { res.set('X-Robots-Tag', 'noindex, nofollow'); next(); });
   // A sonda de disponibilidade não consulta dados nem exige sessão.
   aplicacao.get('/api/health', (requisicao, resposta) => resposta.json({ status: 'ok', service: 'dayvilo-api' }));
-  aplicacao.use(producao ? protegerProducao(urlAplicacao) : restringirOrigemLocal(porta));
+  aplicacao.use(producao ? protegerProducao(urlAplicacao, Boolean(analyticsId)) : restringirOrigemLocal(porta));
   aplicacao.use((requisicao, resposta, proximo) => { resposta.locals.cookieSeguro = producao; proximo(); });
   if (producao) {
     if (!existsSync(join(pastaInterface, 'index.html'))) throw new Error('Interface não compilada. Execute npm run build antes de iniciar.');
-    instalarSeo(aplicacao, { pastaInterface, urlAplicacao, cadastroAberto });
+    instalarSeo(aplicacao, { pastaInterface, urlAplicacao, cadastroAberto, analyticsId });
     const servirInterface = express.static(pastaInterface, { dotfiles: 'deny', maxAge: 0 });
     aplicacao.use((requisicao, resposta, proximo) => {
       if (requisicao.path === '/api' || requisicao.path.startsWith('/api/')) return proximo();

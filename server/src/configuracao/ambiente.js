@@ -15,6 +15,8 @@ export function lerConfiguracao(ambiente = process.env) {
   if (![0, 1].includes(proxySaltos)) throw new Error('PROXY_SALTOS deve ser 0 ou 1.');
   if (ambiente.CADASTRO_ABERTO !== undefined && !['true', 'false'].includes(ambiente.CADASTRO_ABERTO)) throw new Error('CADASTRO_ABERTO deve ser true ou false.');
   if (producao && ambiente.EMAIL_MODO !== 'resend') throw new Error('Produção exige EMAIL_MODO=resend.');
-  return { producao, porta, endereco, urlAplicacao: url.href, proxySaltos: producao ? proxySaltos : 0,
+  const analyticsId = ambiente.GOOGLE_ANALYTICS_ID || '';
+  if (analyticsId && !/^G-[A-Z0-9]{5,20}$/.test(analyticsId)) throw new Error('GOOGLE_ANALYTICS_ID deve ser um ID de medição G- válido.');
+  return { producao, porta, endereco, urlAplicacao: url.href, proxySaltos: producao ? proxySaltos : 0, analyticsId: producao ? analyticsId : '',
     cadastroAberto: ambiente.CADASTRO_ABERTO === undefined ? !producao : ambiente.CADASTRO_ABERTO === 'true' };
 }

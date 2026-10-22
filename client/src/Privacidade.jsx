@@ -1,0 +1,31 @@
+import { useEffect, useRef, useState } from 'react';
+import { analytics } from './analytics.js';
+import './privacidade.css';
+
+export default function Privacidade({ tela }) {
+  const [aberto, setAberto] = useState(false), [preferencia, setPreferencia] = useState(() => analytics()?.preferencia());
+  const painel = useRef(null);
+  const ativo = analytics()?.habilitado;
+  useEffect(() => { try { analytics()?.pagina(tela); } catch {} }, [tela]);
+  useEffect(() => {
+    const abrir = () => { setAberto(true); };
+    const atualizar = () => setPreferencia(analytics()?.preferencia());
+    window.addEventListener('dayvilo:abrir-privacidade', abrir); window.addEventListener('dayvilo:privacidade-atualizada', atualizar);
+    return () => { window.removeEventListener('dayvilo:abrir-privacidade', abrir); window.removeEventListener('dayvilo:privacidade-atualizada', atualizar); };
+  }, []);
+  useEffect(() => { if (aberto) { painel.current?.scrollIntoView({ block: 'center' }); painel.current?.focus({ preventScroll: true }); } }, [aberto]);
+  if (!aberto && (!ativo || preferencia || !tela)) return null;
+  function escolher(valor) { analytics()?.escolher(valor); setPreferencia(valor); setAberto(false); }
+  return <section className="privacidade-painel" aria-labelledby="privacidade-titulo" tabIndex={-1} ref={painel}>
+    <h2 id="privacidade-titulo">Privacidade e medição de uso</h2>
+    <p>O Dayvilo funciona com ou sem medição. Com sua autorização, usamos o Google Analytics para entender visitas, cadastros e uso das áreas. Cookies ajudam a reconhecer retornos neste navegador.</p>
+    <details open={aberto}><summary>Como usamos esses dados</summary>
+    <p>Não enviamos nomes, e-mails, senhas, textos das tarefas, anotações ou valores financeiros. O Google recebe informações técnicas do acesso e eventos de uso. Não usamos esta integração para anúncios nem gravação da tela.</p>
+    <p>Sua escolha fica neste navegador por até 180 dias. Você pode alterá-la em “Privacidade” na apresentação ou em Minha conta. Recusar interrompe novas medições e remove os cookies do Analytics deste site; não apaga dados já enviados.</p>
+    <p><a href="https://policies.google.com/privacy?hl=pt-BR" target="_blank" rel="noreferrer">Privacidade do Google</a> · Dúvidas: <a href="mailto:dayviloapp@gmail.com">dayviloapp@gmail.com</a></p>
+    </details>
+    {!ativo && <p>A medição ainda não está ativada neste ambiente.</p>}
+    {preferencia && <p>Escolha atual: {preferencia === 'aceito' ? 'medição permitida' : 'medição recusada'}.</p>}
+    <div className="privacidade-acoes"><button type="button" className="botao-secundario" onClick={() => escolher('recusado')}>Recusar medição</button><button type="button" className="botao-secundario" onClick={() => escolher('aceito')}>Aceitar medição</button>{aberto && <button type="button" className="botao-secundario" onClick={() => setAberto(false)}>Fechar</button>}</div>
+  </section>;
+}
