@@ -5,6 +5,7 @@ import './minha-conta.css';
 import InstalarDayvilo from './InstalarDayvilo.jsx';
 import Feedback from './Feedback.jsx';
 import SenhaNova from './SenhaNova.jsx';
+import AlterarEmail from './AlterarEmail.jsx';
 
 export function aplicarTema(tema) {
   document.documentElement.dataset.tema = ['claro', 'escuro'].includes(tema) ? tema : 'automatico';
@@ -39,6 +40,7 @@ export default function MinhaConta({ sessao, atualizarNome, encerrar, voltar, ao
         atualizarNome(dados.nome); setNome(dados.nome); setAviso('Nome atualizado.');
       }); }}><label>Nome<input value={nome} onChange={e => setNome(e.target.value)} required maxLength={100} autoComplete="name" disabled={ocupado} /></label><button className="botao-principal" disabled={ocupado}>Salvar nome</button></form>
       <div className="conta-email"><span>E-mail</span><strong>{sessao.email}</strong><p>{sessao.email_confirmado ? <><CircleCheck size={16} aria-hidden="true" />Confirmado</> : 'Ainda não confirmado'}</p></div>
+      <AlterarEmail sessao={sessao} />
       {!sessao.email_confirmado && <button className="botao-secundario" disabled={ocupado} onClick={() => executar(async () => { const dados = await solicitar('/contas/confirmacao', { method: 'POST' }); setAviso(dados.mensagem); })}>Enviar confirmação</button>}
     </section>
     <section className="conta-painel"><h2>Aparência</h2><label>Tema<select value={tema} disabled={ocupado} onChange={e => { const valor = e.target.value; setTema(valor); aplicarTema(valor); try { localStorage.setItem('dayvilo-tema', valor); } catch { setErro('Tema aplicado, mas não foi possível guardar a preferência.'); } }}><option value="automatico">Automático</option><option value="claro">Claro</option><option value="escuro">Escuro</option></select></label><p className="conta-nota">Salvo neste navegador. Automático acompanha o dispositivo.</p></section>

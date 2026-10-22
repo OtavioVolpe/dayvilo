@@ -1,0 +1,10 @@
+.alterar-email{width:100%;margin:12px 0}
+.confirmacao-aviso>.alterar-email{flex-basis:100%}
+.confirmacao-aviso .alterar-email strong{display:inline}
+.alterar-email p{font-size:.85rem;line-height:1.6;margin:12px 0;overflow-wrap:anywhere}
+.alterar-email form{max-width:520px;margin-top:16px}
+.alterar-email fieldset{padding:0;border:0;min-width:0}
+.alterar-email label{display:flex;flex-direction:column;gap:8px;margin:14px 0;font-size:.85rem}
+.alterar-email input{width:100%;min-height:44px}
+.alterar-email .conta-confirmar{display:flex;flex-wrap:wrap;gap:8px}
+@media(max-width:650px){.alterar-email input{font-size:16px}}

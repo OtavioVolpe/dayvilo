@@ -11,6 +11,8 @@ export function criarServicoConfirmacao({ banco, enviarEmail, urlAplicacao }) {
         if (!conta) throw new ErroConta(401, 'Entre na sua conta para continuar.');
         const [[anterior]] = await conexao.execute('SELECT confirmado_em, criado_em > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 MINUTE) AS recente FROM confirmacoes_email WHERE conta_id = ?', [conta.id]);
         if (anterior?.confirmado_em) return { confirmado: true };
+        const [[troca]] = await conexao.execute('SELECT conta_id FROM alteracoes_email WHERE conta_id = ? AND expira_em > UTC_TIMESTAMP()', [conta.id]);
+        if (troca) throw new ErroConta(409, 'Há uma correção de e-mail pendente. Confira o novo endereço em Minha conta ou cancele a troca para reenviar a confirmação atual.');
         if (anterior?.recente) throw new ErroConta(429, 'Aguarde um minuto antes de solicitar outro link.');
         const token = gerarToken();
         await conexao.execute(`INSERT INTO confirmacoes_email (conta_id, token_hash, criado_em, expira_em)

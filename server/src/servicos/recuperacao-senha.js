@@ -55,6 +55,7 @@ export function criarServicoRecuperacao({ banco, enviarEmail, urlAplicacao }) {
         await conexao.execute('UPDATE contas SET senha_hash = ? WHERE id = ?', [senhaHash, registro.conta_id]);
         await conexao.execute('DELETE FROM sessoes WHERE conta_id = ?', [registro.conta_id]);
         await conexao.execute('DELETE FROM recuperacoes_senha WHERE conta_id = ?', [registro.conta_id]);
+        await conexao.execute('DELETE FROM alteracoes_email WHERE conta_id = ?', [registro.conta_id]);
       });
     },
   };

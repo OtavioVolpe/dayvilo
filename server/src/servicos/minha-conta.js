@@ -25,6 +25,7 @@ export function criarServicoMinhaConta(banco) {
         await c.execute('UPDATE contas SET senha_hash = ? WHERE id = ?', [hash, conta.id]);
         await c.execute('DELETE FROM sessoes WHERE conta_id = ?', [conta.id]);
         await c.execute('DELETE FROM recuperacoes_senha WHERE conta_id = ?', [conta.id]);
+        await c.execute('DELETE FROM alteracoes_email WHERE conta_id = ?', [conta.id]);
       });
     },
     async sairTodas(usuarioId) {

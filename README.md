@@ -337,9 +337,13 @@ Rotina inicial sugerida: backup após mudanças importantes na rotina e antes de
 
 ## Minha conta
 
-Clique no nome no cabeçalho para editar o nome, consultar o e-mail e sua confirmação, escolher o tema, trocar a senha ou encerrar todas as sessões. O e-mail é somente leitura. A preferência de tema fica neste navegador; Automático acompanha o dispositivo.
+Em Minha conta, edite o nome, consulte ou altere o e-mail, escolha o tema, troque a senha ou encerre todas as sessões. A preferência de tema fica neste navegador; Automático acompanha o dispositivo.
 
-A troca de senha exige a senha atual e uma nova senha de 8 a 128 caracteres, com maiúscula, minúscula, número e símbolo. Encerra todas as sessões e invalida links pendentes de recuperação. Sair de todos os dispositivos pede confirmação e mantém os dados e tarefas. As rotas exigem sessão e proteção CSRF. Não há migração de banco nesta funcionalidade.
+A troca de senha exige a senha atual e uma nova senha de 8 a 128 caracteres, com maiúscula, minúscula, número e símbolo. Encerra todas as sessões e invalida links pendentes de recuperação e alteração de e-mail. Sair de todos os dispositivos pede confirmação e mantém os dados e tarefas. As rotas exigem sessão e proteção CSRF.
+
+**Corrigir ou alterar e-mail:** o aviso de endereço não confirmado oferece Corrigir e-mail; Minha conta também permite a troca. Exige a senha atual e envia um link de uso único, válido por 30 minutos, ao novo endereço. O endereço atual continua sendo o login até a confirmação explícita. É possível cancelar ou reenviar o pedido (intervalo mínimo de um minuto). Quando confirmado, mantém usuário e dados, confirma o novo endereço e invalida sessões e links antigos de recuperação. Um endereço antigo já confirmado recebe aviso da solicitação. Trocar ou recuperar a senha cancela pedidos de alteração pendentes. Sem acesso à conta e sem um canal confirmado, este fluxo não permite recuperar a conta apenas informando outro endereço.
+
+Aplicar **029_alteracoes_email.sql** antes de publicar, após backup verificado. Os tokens ficam armazenados somente como hash. Google e telefone não fazem parte desta etapa. A integração `server/test/alteracao-email.integration.js` deve ser executada somente em banco descartável local.
 
 ### Desagendar treinos
 
