@@ -335,6 +335,16 @@ Se os executáveis estiverem em outro local, configure `MYSQLDUMP_PATH` para exp
 
 Rotina inicial sugerida: backup após mudanças importantes na rotina e antes de migrações; enquanto houver uso diário, fazer uma cópia por dia. Ainda é **manual**, sem agendamento. Guarde também uma cópia em armazenamento privado separado deste computador. Para recuperar em produção, restaure primeiro em banco vazio, valide a aplicação e só então planeje a troca; nunca rode este SQL diretamente sobre o banco em uso.
 
+## SEO da apresentação pública
+
+O build gera duas versões estáticas do mesmo componente `Apresentacao`: cadastro aberto e fechado. Em produção, o servidor entrega a versão correspondente a `CADASTRO_ABERTO` dentro do HTML inicial; não consulta a conta para gerar esse conteúdo. O React assume a interface normalmente após carregar. Os fragmentos internos começam com ponto e não são servidos pelo middleware de arquivos estáticos.
+
+Título, descrição, canonical e metadados Open Graph/Twitter descrevem o Dayvilo e suas seis áreas. O compartilhamento usa o ícone verde existente de 512 pixels. Os endereços absolutos vêm de `URL_APLICACAO` (ou `RENDER_EXTERNAL_URL`), a mesma configuração validada utilizada pelo servidor. Não é necessário incluir uma URL de produção no build. `/index.html` redireciona para a raiz, e parâmetros de campanhas não entram no canonical.
+
+`/sitemap.xml` lista apenas a apresentação pública; `/robots.txt` aponta para esse sitemap e evita rastreamento de `/api/`. As respostas da API recebem `X-Robots-Tag: noindex, nofollow`. A proteção dos dados continua sendo a autenticação — robots não é controle de acesso. As áreas da conta não são publicadas como páginas de SEO. Endereços inexistentes continuam retornando 404.
+
+Após publicar, confira o código-fonte da página inicial, `/robots.txt` e `/sitemap.xml`. O servidor de desenvolvimento e `vite preview` não reproduzem a montagem de SEO feita pelo Express em produção. Esta etapa não instala Analytics, não conecta Search Console e não exige migração de banco. A indexação depende dos buscadores após a publicação.
+
 ## Minha conta
 
 Em Minha conta, edite o nome, consulte ou altere o e-mail, escolha o tema, troque a senha ou encerre todas as sessões. A preferência de tema fica neste navegador; Automático acompanha o dispositivo.

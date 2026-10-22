@@ -97,6 +97,7 @@ test('produção: interface e API na mesma origem; rejeita HTTP, origem externa 
   assert.deepEqual(await sessao.json(), { usuario: null, cadastro_aberto: false });
   assert.match(sessao.headers.get('set-cookie'), /Secure/);
   assert.equal(sessao.headers.get('cache-control'), 'no-store');
+  assert.equal(sessao.headers.get('x-robots-tag'), 'noindex, nofollow');
   const cadastro = await chamar(base + '/api/contas/cadastro', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json', 'X-Dayvilo': '1' }, body: '{}' });
   assert.equal(cadastro.status, 403);
   assert.match((await cadastro.json()).erro, /cadastros estão fechados/);

@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { protegerProducao } from './middlewares/producao.js';
 import express from 'express';
+import { instalarSeo } from './seo.js';
 import { criarRotasAtalhos } from './rotas/atalhos.js';
 import { criarRotasFeedback } from './rotas/feedback.js';
 import { criarEntregaLocal } from './servicos/email-local.js';
@@ -19,18 +20,19 @@ export function criarAplicacao({ banco, porta = 3001, modoEmail = 'local', envia
   const aplicacao = express();
   aplicacao.disable('x-powered-by');
   aplicacao.set('trust proxy', producao ? proxySaltos : false);
+  aplicacao.use('/api', (req, res, next) => { res.set('X-Robots-Tag', 'noindex, nofollow'); next(); });
   // A sonda de disponibilidade não consulta dados nem exige sessão.
   aplicacao.get('/api/health', (requisicao, resposta) => resposta.json({ status: 'ok', service: 'dayvilo-api' }));
   aplicacao.use(producao ? protegerProducao(urlAplicacao) : restringirOrigemLocal(porta));
   aplicacao.use((requisicao, resposta, proximo) => { resposta.locals.cookieSeguro = producao; proximo(); });
   if (producao) {
     if (!existsSync(join(pastaInterface, 'index.html'))) throw new Error('Interface não compilada. Execute npm run build antes de iniciar.');
+    instalarSeo(aplicacao, { pastaInterface, urlAplicacao, cadastroAberto });
     const servirInterface = express.static(pastaInterface, { dotfiles: 'deny', maxAge: 0 });
     aplicacao.use((requisicao, resposta, proximo) => {
       if (requisicao.path === '/api' || requisicao.path.startsWith('/api/')) return proximo();
       return servirInterface(requisicao, resposta, proximo);
     });
-    aplicacao.get('/', (requisicao, resposta) => resposta.sendFile(join(pastaInterface, 'index.html')));
   }
   aplicacao.use('/api/treinos', express.json({ limit: '128kb' }));
   aplicacao.use(express.json({ limit: '32kb' }));
