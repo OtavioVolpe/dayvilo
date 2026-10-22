@@ -43,6 +43,6 @@ export default function Apresentacao({ cadastroAberto }) {
       <div className="apresentacao-grade">{areas.map(([Icone, nome, descricao]) => <article key={nome}><Icone size={23} aria-hidden="true" /><h3>{nome}</h3><p>{descricao}</p></article>)}</div>
     </section>
     <section className="apresentacao-final" aria-labelledby="apresentacao-final-titulo"><div><h2 id="apresentacao-final-titulo">Comece com uma coisa do seu dia.</h2><p>Uma tarefa, um treino ou uma leitura. Seu espaço vai tomando forma com o uso.</p></div><a className="botao-principal" href={destino}>{cadastroAberto ? 'Criar minha conta' : 'Entrar'}<ArrowRight size={18} aria-hidden="true" /></a></section>
-    <footer className="apresentacao-rodape"><span>Dayvilo · Seu dia, no seu ritmo.</span><button type="button" className="botao-secundario" onClick={abrirPrivacidade}>Privacidade</button><a href="#entrar">Já tenho uma conta</a></footer>
+    <footer className="apresentacao-rodape"><span>Dayvilo · Seu dia, no seu ritmo.</span><a href="/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade e Cookies</a><button type="button" className="botao-secundario" onClick={abrirPrivacidade}>Preferências de medição</button><a href="#entrar">Já tenho uma conta</a></footer>
   </main>;
 }

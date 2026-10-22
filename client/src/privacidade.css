@@ -2,3 +2,4 @@
 .privacidade-painel h2{font-size:1.05rem;margin:0 0 12px}.privacidade-painel p{font-size:.875rem;line-height:1.6;margin:10px 0}.privacidade-painel a{color:var(--accent)}
 .privacidade-acoes{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}.privacidade-acoes button{min-height:44px;flex:1 1 150px}
 @media(max-width:650px){.privacidade-painel{margin:12px;padding:16px}}
+.acesso-politica{font-size:.85rem;line-height:1.6;color:var(--muted)}.acesso-politica a,.conta-painel a{color:var(--accent)}

@@ -62,12 +62,14 @@ export default function Acesso({ aoEntrar, aviso, aoRecuperar, cadastroAberto = 
             {vincular && <div className="acesso-codigo"><label>Código de vinculação<input name="codigo" autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={64} required aria-describedby="dica-vinculo" /></label><p className="acesso-dica" id="dica-vinculo">Use o código do seu computador para manter suas tarefas e histórico.</p></div>}
           </details>}
           {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
+          {cadastro && <p className="acesso-politica">Usamos os dados informados para criar e manter sua conta. Leia a <a href="/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade e Cookies</a>. A medição de uso é opcional e tem uma escolha separada.</p>}
           <button className="botao-principal acesso-enviar" type="submit">{enviando ? cadastro ? 'Criando sua conta…' : 'Entrando…' : cadastro ? 'Criar minha conta' : 'Entrar'}</button>
         </fieldset>
       </form>
       {!cadastro && <p className="acesso-alternar acesso-recuperar"><button type="button" disabled={enviando} onClick={aoRecuperar}>Esqueci minha senha</button></p>}
       {cadastroAberto && <p className="acesso-alternar">{cadastro ? 'Já tem uma conta?' : 'Primeira vez aqui?'} <button type="button" disabled={enviando} onClick={() => { definirCadastro(!cadastro); definirErro(''); definirMostrarSenha(false); definirVincular(false); }}>{cadastro ? 'Entrar' : 'Criar conta'}</button></p>}
-      <button type="button" className="botao-secundario" onClick={abrirPrivacidade}>Privacidade</button>
+      <p><a href="/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade e Cookies</a></p>
+      <button type="button" className="botao-secundario" onClick={abrirPrivacidade}>Preferências de medição</button>
     </section>
   </main>;
 }

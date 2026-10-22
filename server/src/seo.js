@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const escapar = valor => valor.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -29,6 +29,13 @@ export function instalarSeo(app, { pastaInterface, urlAplicacao, cadastroAberto,
   const html = template.replace('<!--dayvilo-seo-->', metadados).replace('<!--dayvilo-apresentacao-->', apresentacao);
   app.get('/', (req, res) => res.set('Cache-Control', 'no-cache').type('html').send(html));
   app.get('/index.html', (req, res) => res.redirect(301, url));
+  const arquivoPolitica = join(pastaInterface, 'privacidade.html');
+  const temPolitica = existsSync(arquivoPolitica);
+  if (temPolitica) {
+    const politica = readFileSync(arquivoPolitica, 'utf8').replace('<!--dayvilo-politica-canonical-->', `<link rel="canonical" href="${escapar(new URL('/privacidade', url).href)}" />`);
+    app.get('/privacidade', (req, res) => res.set('Cache-Control', 'no-cache').type('html').send(politica));
+    app.get('/privacidade.html', (req, res) => res.redirect(301, new URL('/privacidade', url).href));
+  }
   app.get('/robots.txt', (req, res) => res.type('text/plain').send(`User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: ${url}sitemap.xml\n`));
-  app.get('/sitemap.xml', (req, res) => res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${endereco}</loc></url></urlset>\n`));
+  app.get('/sitemap.xml', (req, res) => res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${endereco}</loc></url>${temPolitica ? `<url><loc>${escapar(new URL('/privacidade', url).href)}</loc></url>` : ''}</urlset>\n`));
 }

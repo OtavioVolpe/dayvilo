@@ -33,7 +33,7 @@ export default function MinhaConta({ sessao, atualizarNome, encerrar, voltar, ao
     <section className="conta-painel"><h2>Seu espaço no Dayvilo</h2><p className="conta-nota">Veja o que você pode organizar em cada área e escolha por onde começar.</p><button type="button" className="botao-secundario" disabled={ocupado} onClick={aoConhecerAreas}>Conhecer as áreas</button></section>
     <InstalarDayvilo instalacao={instalacao} painel />
     <Feedback />
-    <section className="conta-painel"><h2>Privacidade</h2><p className="conta-nota">Escolha se permite a medição de uso neste navegador.</p><button type="button" className="botao-secundario" onClick={abrirPrivacidade}>Preferências de privacidade</button></section>
+    <section className="conta-painel"><h2>Privacidade</h2><p className="conta-nota">Escolha se permite a medição de uso neste navegador.</p><p><a href="/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade e Cookies</a></p><p className="conta-nota">Para solicitar acesso, cópia dos dados ou exclusão da conta: <a href="mailto:dayviloapp@gmail.com?subject=Privacidade%20no%20Dayvilo">dayviloapp@gmail.com</a>.</p><button type="button" className="botao-secundario" onClick={abrirPrivacidade}>Preferências de medição</button></section>
     {erro && <p role="alert" className="mensagem-erro">{erro}</p>}
     {aviso && <p role="status" className="aviso-tarefa">{aviso}</p>}
     <section className="conta-painel"><h2>Seus dados</h2>

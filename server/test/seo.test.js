@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import express from 'express';
@@ -39,4 +39,34 @@ test('SEO entrega conteúdo público sem sessão, canonical estável e sitemap a
       assert.equal((await fetch(base + '/pagina-inexistente')).status, 404);
     } finally { server.closeAllConnections(); await new Promise(r => server.close(r)); }
   }
+});
+
+test('política pública funciona sem sessão ou scripts e integra o sitemap', async t => {
+  const pasta = await mkdtemp(join(tmpdir(), 'dayvilo-politica-'));
+  t.after(() => rm(pasta, { recursive: true, force: true }));
+  await writeFile(join(pasta, 'index.html'), '<html><head><!--dayvilo-seo--></head></html>');
+  const fonte = await readFile(new URL('../../client/public/privacidade.html', import.meta.url), 'utf8');
+  await writeFile(join(pasta, 'privacidade.html'), fonte);
+  const app = express();
+  instalarSeo(app, { pastaInterface: pasta, urlAplicacao: 'https://dayvilo.example/', cadastroAberto: true, analyticsId: 'G-TESTE123' });
+  const server = app.listen(0, '127.0.0.1'); await once(server, 'listening');
+  try {
+    const base = `http://127.0.0.1:${server.address().port}`;
+    const resposta = await fetch(base + '/privacidade');
+    const html = await resposta.text();
+    assert.equal(resposta.status, 200);
+    assert.match(resposta.headers.get('content-type'), /text\/html/);
+    assert.match(html, /rel="canonical" href="https:\/\/dayvilo.example\/privacidade"/);
+    assert.match(html, /Otávio Volpe Leal/);
+    assert.match(html, /mailto:dayviloapp@gmail.com/);
+    assert.match(html, /href="\/#preferencias-privacidade"/);
+    assert.doesNotMatch(html, /<script|G-TESTE123|<!--dayvilo/);
+    for (const [, ancora] of html.matchAll(/href="#([^"]+)"/g)) assert.ok(html.includes(`id="${ancora}"`));
+    const sitemap = await (await fetch(base + '/sitemap.xml')).text();
+    assert.equal(sitemap.match(/<loc>/g).length, 2);
+    assert.match(sitemap, /<loc>https:\/\/dayvilo.example\/privacidade<\/loc>/);
+    const redirecionamento = await fetch(base + '/privacidade.html', { redirect: 'manual' });
+    assert.equal(redirecionamento.status, 301);
+    assert.equal(redirecionamento.headers.get('location'), 'https://dayvilo.example/privacidade');
+  } finally { server.closeAllConnections(); await new Promise(r => server.close(r)); }
 });
