@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from 'react';
 import SeloSituacao from './SeloSituacao.jsx';
 import ListaHistorico from './ListaHistorico.jsx';
 import RotinaVazia from './RotinaVazia.jsx';
+import ProgressoDia from './ProgressoDia.jsx';
 import CasaVazia from './CasaVazia.jsx';
 import { deslocarData, formatarData } from './datas.js';
 import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, RefreshCw, House, Dumbbell, ArrowUpRight, Utensils, NotebookText, BookOpen, Wallet } from 'lucide-react';
@@ -59,6 +60,18 @@ export default function Planejamento({ semanal = false, historico = false, casa 
   const [ordem, definirOrdem] = useState('manual');
   const [diaCasa, definirDiaCasa] = useState('');
   const [tentativa, definirTentativa] = useState(0);
+  const [celebracao, definirCelebracao] = useState(null);
+  const numeroCelebracao = useRef(0);
+  const rotinaHoje = !historico && !semanal && !casa && data === hoje;
+  function celebrarConclusao(dia) {
+    if (rotinaHoje && dia === hoje) definirCelebracao({ dia, numero: ++numeroCelebracao.current });
+  }
+  useEffect(() => {
+    if (!celebracao) return;
+    const tempo = setTimeout(() => definirCelebracao(null), 3500);
+    return () => clearTimeout(tempo);
+  }, [celebracao]);
+  useEffect(() => { definirCelebracao(null); }, [dataSelecionada, semanal, historico, casa]);
   useEffect(() => { cancelarSelecao(); }, [dataSelecionada, tentativa]);
 
   useEffect(() => {
@@ -208,6 +221,8 @@ export default function Planejamento({ semanal = false, historico = false, casa 
         body: JSON.stringify({ concluida: tarefa.situacao !== 'concluida' }),
       });
       atualizarTarefa(dados.tarefa);
+      if (tarefa.situacao !== 'concluida' && dados.tarefa.situacao === 'concluida') celebrarConclusao(dados.tarefa.data_prevista);
+      else definirCelebracao(null);
     } catch (falha) { definirAviso(''); definirErro(falha.message); }
     finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
   }
@@ -286,6 +301,8 @@ export default function Planejamento({ semanal = false, historico = false, casa 
     try {
       const resultado = await solicitar('/tarefas/selecao', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: diaSelecao, acao, tarefas: itens.map(({id,situacao}) => ({id,situacao})) }) });
       if (acao === 'pular') definirPuladasAbertas(estado => ({ ...estado, [diaSelecao]: true }));
+      if (acao === 'concluir' && resultado.quantidade > 0) celebrarConclusao(diaSelecao);
+      else definirCelebracao(null);
       definirAviso(resultado.quantidade + ' tarefa(s) ' + ({ concluir: 'concluídas.', pular: 'puladas.', restaurar: 'restauradas.', desfazer: 'voltaram para pendentes.', excluir: 'excluídas.' }[acao]));
       cancelarSelecao(); definirCarregando(true); definirTentativa(valor => valor + 1);
     } catch (falha) { definirAviso(''); definirErro(falha.message); definirConfirmarLote(false); }
@@ -391,7 +408,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
       </fieldset>
     </form>
     {carregando ? <p role="status" className="estado-lista">Carregando sua rotina…</p> : data && consultaValida && <>
-      {!historico && tarefas.length > 0 && <div className="progresso"><div><span>{concluidas.length} de {totalAtivas} concluídas · {puladas.length} puladas</span><span>{totalAtivas ? Math.round(concluidas.length / totalAtivas * 100) : 0}%</span></div><progress aria-label={semanal ? "Progresso da semana" : "Progresso do dia"} value={concluidas.length} max={totalAtivas || 1} /></div>}
+      {!historico && tarefas.length > 0 && (rotinaHoje ? <ProgressoDia concluidas={concluidas.length} total={totalAtivas} puladas={puladas.length} celebracao={celebracao?.dia === data ? celebracao.numero : null} /> : <div className="progresso"><div><span>{concluidas.length} de {totalAtivas} concluídas · {puladas.length} puladas</span><span>{totalAtivas ? Math.round(concluidas.length / totalAtivas * 100) : 0}%</span></div><progress aria-label={semanal ? "Progresso da semana" : "Progresso do dia"} value={concluidas.length} max={totalAtivas || 1} /></div>)}
       {!historico && diaSelecao === null && ordem === 'manual' && tarefas.length > 0 && <p id="ajuda-ordenacao" className="ajuda-ordenacao">Arraste as tarefas para mudar a ordem.</p>}
       {!historico && !semanal && diaSelecao === data && barraSelecao(data)}
       {!historico && ((casa && dias.includes(hoje)) || (!semanal && data === hoje)) && atrasadas.length > 0 && <section className="tarefas-atrasadas" aria-label="Pendências anteriores">
