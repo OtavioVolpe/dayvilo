@@ -16,7 +16,7 @@ export function criarServicoMetaSemanal(banco) {
   return {
     async consultar(usuarioId, hoje) {
       const semana = obterSemana(hoje);
-      const [[meta]] = await banco.execute('SELECT tipo,titulo,dias,DATE_FORMAT(semana_manual, "%Y-%m-%d") AS semana_manual,dias_manuais FROM metas_semanais WHERE usuario_id=?', [usuarioId]);
+      const [[meta]] = await banco.execute("SELECT tipo,titulo,dias,DATE_FORMAT(semana_manual, '%Y-%m-%d') AS semana_manual,dias_manuais FROM metas_semanais WHERE usuario_id=?", [usuarioId]);
       if (!meta) return { meta: null, semana, hoje };
       let cumpridos;
       if (meta.tipo === 'manual') cumpridos = meta.semana_manual === semana.inicio ? datasManuais(meta).filter(d => d >= semana.inicio && d <= hoje) : [];
@@ -37,7 +37,7 @@ export function criarServicoMetaSemanal(banco) {
       const dia = validarData(dados.dia), semana = obterSemana(hoje);
       if (dia < semana.inicio || dia > hoje || typeof dados.cumprido !== 'boolean') throw new ErroValidacao('Marque apenas dias desta semana que já chegaram.');
       await transacionar(banco, async c => {
-        const [[meta]] = await c.execute('SELECT tipo,DATE_FORMAT(semana_manual, "%Y-%m-%d") AS semana_manual,dias_manuais FROM metas_semanais WHERE usuario_id=? FOR UPDATE', [usuarioId]);
+        const [[meta]] = await c.execute("SELECT tipo,DATE_FORMAT(semana_manual, '%Y-%m-%d') AS semana_manual,dias_manuais FROM metas_semanais WHERE usuario_id=? FOR UPDATE", [usuarioId]);
         if (!meta || meta.tipo !== 'manual') throw new ErroValidacao('Esta meta não permite marcação manual. Atualize a página.');
         const dias = new Set(meta.semana_manual === semana.inicio ? datasManuais(meta) : []);
         if (dados.cumprido) dias.add(dia); else dias.delete(dia);

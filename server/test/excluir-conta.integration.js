@@ -36,6 +36,8 @@ test('exclusão: todas as tabelas, isolamento, autenticação, CSRF e rollback e
     const migrations = new URL('../migrations/', import.meta.url);
     for (const nome of (await readdir(migrations)).filter(n => n.endsWith('.sql')).sort()) await admin.query(await readFile(new URL(nome, migrations), 'utf8'));
     pool = mysql.createPool({ ...conexao, database: 'teste', multipleStatements: false });
+    // Reproduz o modo do Aiven: aspas duplas são identificadores, não texto.
+    pool.on('connection', c => c.query("SET SESSION sql_mode = CONCAT(@@SESSION.sql_mode, ',ANSI_QUOTES')"));
     const auth = criarServicoAutenticacao(pool), senha = 'Minha senha de teste 123!';
     const b = await auth.cadastrar({ nome: 'B', email: 'b@example.test', senha });
     async function preencher(sessao) {
