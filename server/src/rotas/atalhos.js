@@ -3,7 +3,7 @@ import { ErroValidacao, validarObjeto } from '../validacoes/tarefas.js';
 
 export function validarAtalhos(dados) {
   validarObjeto(dados, ['areas']);
-  if (!Array.isArray(dados.areas) || dados.areas.length > 2 || new Set(dados.areas).size !== dados.areas.length || dados.areas.some(a => !['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(a))) throw new ErroValidacao('Escolha até duas áreas diferentes para os atalhos.');
+  if (!Array.isArray(dados.areas) || dados.areas.length > 2 || new Set(dados.areas).size !== dados.areas.length || dados.areas.some(a => !['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura', 'Metas'].includes(a))) throw new ErroValidacao('Escolha até duas áreas diferentes para os atalhos.');
   return dados.areas;
 }
 export function criarRotasAtalhos(banco) {

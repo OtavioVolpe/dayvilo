@@ -1,6 +1,6 @@
 const CHAVE = 'dayvilo-analytics-v1';
 const PRAZO = 180 * 24 * 60 * 60 * 1000;
-const TELAS = { inicio: 'Apresentação', entrar: 'Entrar', cadastro: 'Cadastro', rotina: 'Rotina', casa: 'Casa', treino: 'Treino', financeiro: 'Financeiro', alimentacao: 'Alimentação', leitura: 'Leitura', conta: 'Minha conta', boas_vindas: 'Boas-vindas' };
+const TELAS = { inicio: 'Apresentação', entrar: 'Entrar', cadastro: 'Cadastro', rotina: 'Rotina', casa: 'Casa', treino: 'Treino', financeiro: 'Financeiro', alimentacao: 'Alimentação', leitura: 'Leitura', metas: 'Metas', conta: 'Minha conta', boas_vindas: 'Boas-vindas' };
 const EVENTOS = new Set(['sign_up', 'login', 'create_task', 'start_signup']);
 
 // Dependências injetáveis permitem testar sem carregar scripts ou enviar dados ao Google.

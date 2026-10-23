@@ -37,6 +37,10 @@ Registrar apenas o que mudou: dados/finalidade; necessidade; fundamento e escolh
 - Política pública atualizada para versão 3. Nome personalizado pode conter dados sensíveis, como outros campos livres; aviso para evitar dados clínicos não substitui a avaliação das bases e demais pendências já registradas.
 - Verificação em MySQL descartável: autenticação, CSRF, isolamento, contagem por dias, virada semanal, marcações concorrentes, remoção e exclusão de conta com rollback e preservação de outra conta. Exportação completa por solicitação deve incluir `metas_semanais`; o CSV de tarefas continua limitado ao histórico de tarefas.
 
+### Reorganização de Metas — 23/10/2026
+
+A configuração e as marcações existentes passaram para a seção Metas; a Rotina exibe um resumo. A seção pode ser escolhida como atalho na preferência já existente por conta. Nenhuma nova tabela, categoria de dado ou regra de retenção. O acesso à área usa a medição de páginas já condicionada ao consentimento, com o nome fixo “Metas”, sem título pessoal ou progresso. A política pública permanece na versão 3, pois as finalidades e controles já descritos continuam os mesmos.
+
 ## Referências oficiais
 
 - [LGPD — texto compilado](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm)

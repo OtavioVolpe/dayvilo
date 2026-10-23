@@ -21,7 +21,7 @@ import CasaVazia from './CasaVazia.jsx';
 import { deslocarData, formatarData } from './datas.js';
 import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, RefreshCw, House, Dumbbell, ArrowUpRight, Utensils, NotebookText, BookOpen, Wallet } from 'lucide-react';
 
-export default function Planejamento({ semanal = false, historico = false, casa = false, aoAbrirTreino, aoAbrirRefeicao, aoAbrirLivro, aoAbrirFinanceiro }) {
+export default function Planejamento({ semanal = false, historico = false, casa = false, aoAbrirTreino, aoAbrirRefeicao, aoAbrirLivro, aoAbrirFinanceiro, aoAbrirMetas }) {
   const [observacaoAberta, definirObservacaoAberta] = useState(null);
   const [repeticaoAberta, definirRepeticaoAberta] = useState(null);
   const [diaSelecao, definirDiaSelecao] = useState(null);
@@ -410,7 +410,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
     </form>
     {carregando ? <p role="status" className="estado-lista">Carregando sua rotina…</p> : data && consultaValida && <>
       {!historico && tarefas.length > 0 && (rotinaHoje ? <ProgressoDia concluidas={concluidas.length} total={totalAtivas} puladas={puladas.length} celebracao={celebracao?.dia === data ? celebracao.numero : null} /> : <div className="progresso"><div><span>{concluidas.length} de {totalAtivas} concluídas · {puladas.length} puladas</span><span>{totalAtivas ? Math.round(concluidas.length / totalAtivas * 100) : 0}%</span></div><progress aria-label={semanal ? "Progresso da semana" : "Progresso do dia"} value={concluidas.length} max={totalAtivas || 1} /></div>)}
-      {rotinaHoje && <MetaSemanal revisao={tarefas} />}
+      {rotinaHoje && <MetaSemanal compacto revisao={tarefas} aoAbrirMetas={aoAbrirMetas} />}
       {!historico && diaSelecao === null && ordem === 'manual' && tarefas.length > 0 && <p id="ajuda-ordenacao" className="ajuda-ordenacao">Arraste as tarefas para mudar a ordem.</p>}
       {!historico && !semanal && diaSelecao === data && barraSelecao(data)}
       {!historico && ((casa && dias.includes(hoje)) || (!semanal && data === hoje)) && atrasadas.length > 0 && <section className="tarefas-atrasadas" aria-label="Pendências anteriores">

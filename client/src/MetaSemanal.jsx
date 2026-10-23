@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Target, Check, ChevronDown } from 'lucide-react';
+import { Target, Check, ArrowUpRight } from 'lucide-react';
 import { solicitar } from './api.js';
 import { formatarData } from './datas.js';
 import './meta-semanal.css';
@@ -12,14 +12,18 @@ const opcoes = [
   ['manual', 'Criar minha meta', 3, 'Você marca os dias em que cumpriu a meta. Ex.: praticar violão.'],
 ];
 
-export default function MetaSemanal({ revisao }) {
+export default function MetaSemanal({ revisao, compacto = false, aoAbrirMetas, aoAlterarSujo }) {
   const [dados, definirDados] = useState(null), [erro, definirErro] = useState('');
-  const [aberto, definirAberto] = useState(false), [editando, definirEditando] = useState(false);
+  const [editando, definirEditando] = useState(false);
   const [tipo, definirTipo] = useState('rotina'), [titulo, definirTitulo] = useState(''), [dias, definirDias] = useState(4);
   const [salvando, definirSalvando] = useState(false), [carregando, definirCarregando] = useState(true);
   const [confirmarRemocao, definirConfirmarRemocao] = useState(false), [aviso, definirAviso] = useState('');
   const [tentativa, definirTentativa] = useState(0);
   const consulta = useRef(0);
+  useEffect(() => {
+    aoAlterarSujo?.(editando || salvando);
+    return () => aoAlterarSujo?.(false);
+  }, [editando, salvando, aoAlterarSujo]);
   useEffect(() => {
     const numero = ++consulta.current;
     definirCarregando(true); definirErro('');
@@ -34,7 +38,7 @@ export default function MetaSemanal({ revisao }) {
   const bloqueado = salvando || carregando;
   function abrirEdicao() {
     definirTipo(meta?.tipo || 'rotina'); definirTitulo(meta?.tipo === 'manual' ? meta.titulo : ''); definirDias(meta?.dias || 4);
-    definirEditando(true); definirAberto(true); definirConfirmarRemocao(false); definirAviso('');
+    definirEditando(true); definirConfirmarRemocao(false); definirAviso('');
   }
   async function enviar(caminho, method, body) {
     definirSalvando(true); definirErro(''); definirAviso('');
@@ -43,17 +47,18 @@ export default function MetaSemanal({ revisao }) {
       const resultado = await solicitar('/meta-semanal' + caminho, { method, ...(body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}) });
       definirDados(anterior => ({ ...anterior, ...resultado }));
       if (method === 'PUT') { definirEditando(false); definirAviso('Meta salva. Vá no seu ritmo.'); }
-      if (method === 'DELETE') { definirConfirmarRemocao(false); definirEditando(false); definirAberto(false); definirAviso('Meta removida. Suas tarefas foram mantidas.'); }
+      if (method === 'DELETE') { definirConfirmarRemocao(false); definirEditando(false); definirAviso('Meta removida. Suas tarefas foram mantidas.'); }
     } catch (falha) { definirErro(falha.message); }
     finally { definirSalvando(false); }
   }
-  return <section className="meta-semanal" aria-label="Meta semanal">
-    <button className="meta-semanal-resumo" aria-expanded={aberto} onClick={() => definirAberto(v => !v)}>
-      <Target size={19} aria-hidden="true" /><span><strong>{meta ? meta.titulo : 'Uma meta para a semana'}</strong><small>{carregando ? 'Atualizando…' : meta ? `${Math.min(quantidade, meta.dias)} de ${meta.dias} dias${completa ? ' · Meta cumprida!' : ''}` : 'Opcional. Escolha um pequeno compromisso.'}</small></span><ChevronDown size={17} aria-hidden="true" />
-    </button>
+  return <section className={`meta-semanal${compacto ? ' meta-semanal-compacta' : ' meta-semanal-pagina'}`} aria-label="Meta semanal">
+    {compacto ? <button className="meta-semanal-resumo" onClick={aoAbrirMetas}>
+      <Target size={19} aria-hidden="true" /><span><strong>{meta ? meta.titulo : 'Uma meta para a semana'}</strong><small>{carregando ? 'Atualizando…' : meta ? `${Math.min(quantidade, meta.dias)} de ${meta.dias} dias${completa ? ' · Meta cumprida!' : ''}` : 'Escolha um pequeno compromisso.'}</small></span><span className="meta-semanal-link">Ver metas<ArrowUpRight size={16} aria-hidden="true" /></span>
+    </button> : <div className="meta-semanal-titulo"><Target size={21} aria-hidden="true" /><h2>{meta ? meta.titulo : 'Sua primeira meta'}</h2>{meta && !carregando && <span>{Math.min(quantidade, meta.dias)} de {meta.dias} dias</span>}</div>}
     {erro && <p className="mensagem-erro" role="alert">{erro} <button type="button" className="botao-secundario" disabled={salvando} onClick={() => definirTentativa(v => v + 1)}>Tentar novamente</button></p>}
     {aviso && <p className="meta-semanal-aviso" role="status">{aviso}</p>}
-    {aberto && !carregando && dados && <div className="meta-semanal-conteudo">
+    {!compacto && carregando && <p className="meta-semanal-aviso" role="status">Carregando sua meta…</p>}
+    {!compacto && !carregando && dados && <div className="meta-semanal-conteudo">
       {!editando && !meta && <><p>Escolha uma sugestão ou crie sua própria meta. Os dias de descanso fazem parte.</p><button className="botao-secundario" onClick={abrirEdicao}>Escolher meta</button></>}
       {!editando && meta && <>
         <p>{formatarData(dados.semana.inicio, { day: '2-digit', month: '2-digit' })} a {formatarData(dados.semana.fim, { day: '2-digit', month: '2-digit' })} · Segunda a domingo</p>

@@ -1,5 +1,6 @@
 import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
 import MenuMobile from './MenuMobile.jsx';
+import Metas from './Metas.jsx';
 import Treino from './Treino.jsx';
 import Financeiro from './Financeiro.jsx';
 import Leitura from './Leitura.jsx';
@@ -16,7 +17,7 @@ import { useSessao } from './useSessao.js';
 import RecuperarSenha from './RecuperarSenha.jsx';
 import { useEffect, useState } from 'react';
 import Planejamento from './Planejamento.jsx';
-import { UserRound, Sprout, Sun, Utensils, Dumbbell, BookOpen, House, Wallet, LockKeyhole, LogOut } from 'lucide-react';
+import { UserRound, Sprout, Sun, Utensils, Dumbbell, BookOpen, House, Wallet, Target, LogOut } from 'lucide-react';
 import './menu-desktop.css';
 
 const areas = [
@@ -26,6 +27,7 @@ const areas = [
   { name: 'Financeiro', icon: Wallet },
   { name: 'Alimentação', icon: Utensils },
   { name: 'Leitura', icon: BookOpen },
+  { name: 'Metas', icon: Target },
 ];
 
 function lerRecuperacao() {
@@ -90,16 +92,15 @@ export default function App() {
         {sessao === null && !recuperacao && !mostrarAcesso && <nav className="apresentacao-navegacao" aria-label="Acesso à conta"><a className="botao-secundario" href="#entrar">Entrar</a></nav>}
         {sessao && !recuperacao && <div className="conta-atual"><button className="abrir-minha-conta" aria-label="Minha conta" onClick={() => navegar('Conta')}><UserRound size={18} aria-hidden="true" /><span>{sessao.nome}</span></button><button className="botao-secundario" disabled={saindo} onClick={() => { if (treinoSujo) setConfirmacaoTreino({ mensagem: 'Sair e descartar alterações não salvas?', acao: sair }); else sair(); }}>{saindo ? 'Saindo…' : 'Sair'}</button></div>}
       </header>
-      <Privacidade tela={recuperacao || sessao === undefined ? null : sessao ? ({ Hoje: 'rotina', Semana: 'rotina', Histórico: 'rotina', Casa: 'casa', Treino: 'treino', Financeiro: 'financeiro', Alimentação: 'alimentacao', Leitura: 'leitura', Conta: 'conta', BoasVindas: 'boas_vindas' }[view] || 'rotina') : mostrarAcesso ? (rotaPublica === '#criar-conta' ? 'cadastro' : 'entrar') : 'inicio'} />
+      <Privacidade tela={recuperacao || sessao === undefined ? null : sessao ? ({ Hoje: 'rotina', Semana: 'rotina', Histórico: 'rotina', Casa: 'casa', Treino: 'treino', Financeiro: 'financeiro', Alimentação: 'alimentacao', Leitura: 'leitura', Metas: 'metas', Conta: 'conta', BoasVindas: 'boas_vindas' }[view] || 'rotina') : mostrarAcesso ? (rotaPublica === '#criar-conta' ? 'cadastro' : 'entrar') : 'inicio'} />
       {recuperacao?.confirmacao ? <ConfirmarEmail key={recuperacao.token} troca={recuperacao.troca} token={recuperacao.token} atualizar={atualizar} aoVoltar={() => { window.history.replaceState(null, '', window.location.pathname + window.location.search + '#entrar'); definirRotaPublica('#entrar'); definirRecuperacao(null); atualizar(); }} /> : recuperacao ? <RecuperarSenha key={recuperacao.token ?? 'pedido'} token={recuperacao.token} aoSolicitarNovo={solicitarRecuperacao} aoVoltar={() => { window.history.replaceState(null, '', window.location.pathname + window.location.search + '#entrar'); definirRotaPublica('#entrar'); definirRecuperacao(null); atualizar(); }} /> : sessao === undefined ? <main><p className="estado-lista" role="status">{erro || 'Abrindo seu espaço…'}</p>{erro && <button className="botao-secundario" onClick={atualizar}>Tentar novamente</button>}</main>
         : !sessao ? (mostrarAcesso ? <Acesso key={rotaPublica} cadastroInicial={rotaPublica === '#criar-conta'} cadastroAberto={cadastroAberto} aoRecuperar={solicitarRecuperacao} aoEntrar={receberAcesso} aviso={aviso} /> : <Apresentacao cadastroAberto={cadastroAberto} />) : <div className={`app-layout ${view === 'Casa' ? 'layout-casa' : ''}`}>
         <nav className="areas" aria-label="Áreas pessoais">
           <div className="lateral-marca"><Sprout size={24} aria-hidden="true" /><span>Dayvilo</span></div>
           <div className="lateral-links">
           {areas.map(({ name, label = name, icon: Icon }) => (
-            <button key={name} disabled={!['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name)} aria-current={(['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? view === name : name === 'Rotina' && !['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura', 'Conta', 'BoasVindas'].includes(view)) ? 'page' : undefined} aria-label={['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? label : `${label}, em breve`} title={['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? label : `${label} — em breve`} onClick={() => navegar(['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) ? name : 'Hoje')}>
+            <button key={name} aria-current={(name === 'Rotina' ? ['Hoje', 'Semana', 'Histórico'].includes(view) : view === name) ? 'page' : undefined} aria-label={label} title={label} onClick={() => navegar(name === 'Rotina' ? 'Hoje' : name)}>
               <Icon size={20} aria-hidden="true" /><span>{name}</span>
-              {!['Rotina', 'Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(name) && <LockKeyhole className="area-cadeado" size={12} aria-hidden="true" />}
             </button>
           ))}
           </div>
@@ -116,11 +117,11 @@ export default function App() {
           {view === 'Hoje' && <InstalarDayvilo instalacao={instalacao} />}
           {erro && <p className="mensagem-erro" role="alert">{erro}</p>}
           {view === 'BoasVindas' ? <BoasVindas aoEscolher={navegar} /> : view === 'Conta' ? <MinhaConta key={sessao.id} instalacao={instalacao} sessao={sessao} atualizarNome={atualizarNome} encerrar={encerrar} aoConhecerAreas={() => navegar('BoasVindas')} voltar={() => setView('Hoje')} /> : <><AvisoConfirmacao key={sessao.id} sessao={sessao} atualizar={atualizar} aviso={aviso} />
-          {!['Casa', 'Treino', 'Financeiro', 'Alimentação', 'Leitura'].includes(view) && <nav className="routine-tabs" aria-label="Visualizações da rotina">
+          {['Hoje', 'Semana', 'Histórico'].includes(view) && <nav className="routine-tabs" aria-label="Visualizações da rotina">
             {['Hoje', 'Semana', 'Histórico'].map(item => <button key={item} aria-pressed={view === item} onClick={() => setView(item)}>{item}</button>)}
           </nav>}
 
-          {view === 'Leitura' ? <Leitura key={sessao.id} inicial={livroInicial} aoConsumirInicial={() => setLivroInicial(null)} aoAlterarSujo={setTreinoSujo} /> : view === 'Alimentação' ? <Alimentacao key={sessao.id} inicial={refeicaoInicial} aoConsumirInicial={() => setRefeicaoInicial(null)} aoAlterarSujo={setTreinoSujo} /> : view === 'Financeiro' ? <Financeiro key={sessao.id} inicial={financeiroInicial} aoConsumirInicial={() => setFinanceiroInicial(null)} aoAlterarSujo={setTreinoSujo} /> : view === 'Treino' ? <Treino sessaoInicial={treinoSessao} aoConsumirSessao={() => setTreinoSessao(null)} aoAlterarSujo={setTreinoSujo} /> : <Planejamento aoAbrirFinanceiro={(id, acao) => { setFinanceiroInicial({ id, acao }); navegar('Financeiro'); }} aoAbrirLivro={id => { setLivroInicial(id); navegar('Leitura'); }} aoAbrirRefeicao={r => { setRefeicaoInicial({ id: r.refeicao_id, data: r.data_prevista }); navegar('Alimentação'); }} aoAbrirTreino={id => { setTreinoSessao(id); navegar('Treino'); }} key={`${sessao.id}-${view}`} casa={view === 'Casa'} semanal={view === 'Semana' || view === 'Casa'} historico={view === 'Histórico'} />}</>}
+          {view === 'Metas' ? <Metas key={sessao.id} aoAlterarSujo={setTreinoSujo} /> : view === 'Leitura' ? <Leitura key={sessao.id} inicial={livroInicial} aoConsumirInicial={() => setLivroInicial(null)} aoAlterarSujo={setTreinoSujo} /> : view === 'Alimentação' ? <Alimentacao key={sessao.id} inicial={refeicaoInicial} aoConsumirInicial={() => setRefeicaoInicial(null)} aoAlterarSujo={setTreinoSujo} /> : view === 'Financeiro' ? <Financeiro key={sessao.id} inicial={financeiroInicial} aoConsumirInicial={() => setFinanceiroInicial(null)} aoAlterarSujo={setTreinoSujo} /> : view === 'Treino' ? <Treino sessaoInicial={treinoSessao} aoConsumirSessao={() => setTreinoSessao(null)} aoAlterarSujo={setTreinoSujo} /> : <Planejamento aoAbrirMetas={() => navegar('Metas')} aoAbrirFinanceiro={(id, acao) => { setFinanceiroInicial({ id, acao }); navegar('Financeiro'); }} aoAbrirLivro={id => { setLivroInicial(id); navegar('Leitura'); }} aoAbrirRefeicao={r => { setRefeicaoInicial({ id: r.refeicao_id, data: r.data_prevista }); navegar('Alimentação'); }} aoAbrirTreino={id => { setTreinoSessao(id); navegar('Treino'); }} key={`${sessao.id}-${view}`} casa={view === 'Casa'} semanal={view === 'Semana' || view === 'Casa'} historico={view === 'Histórico'} />}</>}
         </main>
       </div>}
     </div>

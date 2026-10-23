@@ -6,6 +6,7 @@ import { criarRotasAtalhos, validarAtalhos } from '../src/rotas/atalhos.js';
 test('atalhos preservam ordem, permitem nenhum e rejeitam opções inválidas', () => {
   assert.deepEqual(validarAtalhos({ areas: [] }), []);
   assert.deepEqual(validarAtalhos({ areas: ['Treino', 'Casa'] }), ['Treino', 'Casa']);
+  assert.deepEqual(validarAtalhos({ areas: ['Metas', 'Treino'] }), ['Metas', 'Treino']);
   for (const areas of [['Rotina'], ['Mais'], ['Casa', 'Casa'], ['Casa', 'Treino', 'Leitura'], 'Casa', null]) assert.throws(() => validarAtalhos({ areas }));
   assert.throws(() => validarAtalhos({ areas: [], usuario_id: 4 }));
 });

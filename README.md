@@ -453,7 +453,7 @@ Aplicar `028_atalhos_usuario.sql` antes de publicar, após backup online verific
 
 ## Meta semanal opcional
 
-Na Rotina de hoje, a faixa abaixo do progresso abre a meta semanal. Uma meta ativa por conta, de 1 a 7 dias: Rotina, Treino, Leitura e Casa contam automaticamente datas planejadas com pelo menos uma tarefa vinculada concluída; a meta personalizada permite marcar/desmarcar dias da semana até hoje. A semana segue segunda a domingo no fuso do perfil. Várias conclusões na mesma data contam uma vez. Conclusões futuras não contam; desfazer ou excluir tarefas recalcula o resultado.
+A seção Metas reúne a configuração e o acompanhamento da meta semanal. Na Rotina de hoje, a faixa abaixo do progresso mostra apenas um resumo com acesso por Ver metas. Metas também aparece no menu lateral e em Mais no celular, podendo ser escolhida como um dos dois atalhos favoritos. Uma meta ativa por conta, de 1 a 7 dias: Rotina, Treino, Leitura e Casa contam automaticamente datas planejadas com pelo menos uma tarefa vinculada concluída; a meta personalizada permite marcar/desmarcar dias da semana até hoje. A semana segue segunda a domingo no fuso do perfil. Várias conclusões na mesma data contam uma vez. Conclusões futuras não contam; desfazer ou excluir tarefas recalcula o resultado.
 
 A meta continua na semana seguinte, com nova contagem. Ainda não há jardim nem histórico de conquistas. Salvar alterações limpa as marcações manuais; remover a meta não remove tarefas. Os dados participam da exclusão da conta por CASCADE. Política pública versão 3 e acompanhamento de privacidade atualizados.
 
