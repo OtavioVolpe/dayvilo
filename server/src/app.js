@@ -5,6 +5,7 @@ import { protegerProducao } from './middlewares/producao.js';
 import express from 'express';
 import { instalarSeo } from './seo.js';
 import { criarRotasAtalhos } from './rotas/atalhos.js';
+import { criarRotasMetaSemanal } from './rotas/meta-semanal.js';
 import { criarRotasFeedback } from './rotas/feedback.js';
 import { criarEntregaLocal } from './servicos/email-local.js';
 import { instalarContas } from './rotas/contas.js';
@@ -39,6 +40,7 @@ export function criarAplicacao({ banco, porta = 3001, modoEmail = 'local', envia
   // Contas instala a sessão e a proteção antes das rotas privadas.
   instalarContas(aplicacao, banco, { enviarEmail, urlAplicacao, modoEmail, cadastroAberto });
   aplicacao.use('/api/atalhos', criarRotasAtalhos(banco));
+  aplicacao.use('/api/meta-semanal', criarRotasMetaSemanal(banco));
   aplicacao.use('/api/feedback', criarRotasFeedback(banco));
   aplicacao.use('/api', criarRotasTarefas(banco));
   aplicacao.use('/api/treinos', criarRotasTreinos(banco));

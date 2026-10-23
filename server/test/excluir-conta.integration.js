@@ -11,6 +11,7 @@ import mysql from 'mysql2/promise';
 import { criarAplicacao } from '../src/app.js';
 import { criarServicoAutenticacao } from '../src/servicos/autenticacao.js';
 import { criarServicoMinhaConta } from '../src/servicos/minha-conta.js';
+import { criarServicoMetaSemanal } from '../src/servicos/meta-semanal.js';
 
 // Instância nova, sem .env, sem credenciais ou dados de desenvolvimento/produção.
 test('exclusão: todas as tabelas, isolamento, autenticação, CSRF e rollback em MySQL descartável', { timeout: 120000 }, async () => {
@@ -56,6 +57,7 @@ test('exclusão: todas as tabelas, isolamento, autenticação, CSRF e rollback e
       await inserir('INSERT INTO agua_registros(usuario_id,dia,ml,chave) VALUES (?,?,?,?)', [u, '2026-10-22', 200, randomUUID()]);
       await inserir('INSERT INTO feedback(usuario_id,envio_id,tipo,area,mensagem) VALUES (?,?,?,?,?)', [u, randomUUID(), 'sugestao', 'rotina', 'Teste']);
       await inserir('INSERT INTO atalhos_usuario(usuario_id,areas) VALUES (?,?)', [u, '[]']);
+      await inserir('INSERT INTO metas_semanais(usuario_id,tipo,titulo,dias,semana_manual,dias_manuais) VALUES (?,?,?,?,?,?)', [u, 'manual', 'Praticar violão', 3, '2026-10-19', '["2026-10-22"]']);
       const serie = randomUUID();
       await inserir('INSERT INTO configuracoes_series(serie_id,usuario_id,tipo,ate) VALUES (?,?,?,?)', [serie, u, 'diaria', '2026-10-22']);
       await inserir('INSERT INTO ocorrencias_series(tarefa_id,serie_id) VALUES (?,?)', [t, serie]);
@@ -76,6 +78,58 @@ test('exclusão: todas as tabelas, isolamento, autenticação, CSRF e rollback e
     const ua = await preencher(a);
     const antes = await retrato();
     servidor = criarAplicacao({ banco: pool, enviarEmail: async () => {} }).listen(0, '127.0.0.1'); await once(servidor, 'listening');
+    const metas = criarServicoMetaSemanal(pool);
+    async function chamarMeta(method, body, sessao = a, csrf = sessao?.csrf) {
+      const r = await fetch(`http://127.0.0.1:${servidor.address().port}/api/meta-semanal`, { method, headers: { 'Content-Type': 'application/json', 'X-Dayvilo': '1', ...(sessao ? { Cookie: `dayvilo_sessao=${sessao.token}`, 'X-CSRF-Token': csrf } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
+      return { status: r.status, dados: await r.json() };
+    }
+    assert.equal((await chamarMeta('GET', null, null)).status, 401);
+    assert.equal((await chamarMeta('PUT', { tipo: 'rotina', dias: 4 }, a, b.csrf)).status, 403);
+    assert.equal((await chamarMeta('PUT', { tipo: 'rotina', dias: 4, usuario_id: ua + 1 })).status, 400);
+    assert.equal((await chamarMeta('PUT', { tipo: 'rotina', dias: 4 })).status, 200);
+    assert.equal((await chamarMeta('GET', null, b)).dados.meta.titulo, 'Praticar violão');
+    // Datas repetidas contam uma vez; futuras e puladas não contam.
+    const inseridos = [];
+    for (const [dia, situacao] of [['2026-10-19','concluida'], ['2026-10-19','concluida'], ['2026-10-20','concluida'], ['2026-10-21','pulada'], ['2026-10-25','concluida']]) {
+      const [r] = await pool.execute('INSERT INTO tarefas(usuario_id,titulo,data_prevista,situacao,concluida_em) VALUES (?,?,?,?,?)', [ua, 'Meta teste', dia, situacao, situacao === 'concluida' ? '2026-10-22 12:00:00' : null]); inseridos.push(r.insertId);
+    }
+    assert.deepEqual((await metas.consultar(ua, '2026-10-23')).meta.cumpridos, ['2026-10-19','2026-10-20']);
+    await pool.execute("UPDATE tarefas SET situacao='pendente',concluida_em=NULL WHERE id=?", [inseridos[2]]);
+    assert.deepEqual((await metas.consultar(ua, '2026-10-23')).meta.cumpridos, ['2026-10-19']);
+    assert.deepEqual((await metas.consultar(ua, '2026-10-26')).meta.cumpridos, []);
+    for (const tipo of ['treino', 'leitura', 'casa']) {
+      await metas.salvar(ua, { tipo, dias: 3 });
+      assert.deepEqual((await metas.consultar(ua, '2026-10-23')).meta.cumpridos, []);
+    }
+    const [[fichaMeta]] = await pool.execute('SELECT id FROM fichas_treino WHERE usuario_id=?', [ua]);
+    const [[livroMeta]] = await pool.execute('SELECT id FROM livros WHERE usuario_id=?', [ua]);
+    await pool.execute('INSERT INTO sessoes_treino(tarefa_id,ficha_id,planejado,realizado) VALUES (?,?,?,?)', [inseridos[0], fichaMeta.id, '[]', '[]']);
+    await pool.execute('INSERT INTO leituras_agendadas(tarefa_id,livro_id) VALUES (?,?)', [inseridos[0], livroMeta.id]);
+    await pool.execute("UPDATE tarefas SET area='casa',ambiente='Sala' WHERE id=?", [inseridos[0]]);
+    for (const tipo of ['treino', 'leitura', 'casa']) {
+      await metas.salvar(ua, { tipo, dias: 3 });
+      assert.deepEqual((await metas.consultar(ua, '2026-10-23')).meta.cumpridos, ['2026-10-19']);
+      await assert.rejects(metas.marcar(ua, '2026-10-23', { dia: '2026-10-23', cumprido: true }), { status: 400 });
+    }
+    await metas.salvar(ua, { tipo: 'manual', titulo: 'Praticar violão', dias: 3 });
+    await Promise.all(['2026-10-20','2026-10-21'].map(dia => metas.marcar(ua, '2026-10-23', { dia, cumprido: true })));
+    assert.deepEqual((await metas.consultar(ua, '2026-10-23')).meta.cumpridos, ['2026-10-20','2026-10-21']);
+    await metas.marcar(ua, '2026-10-23', { dia: '2026-10-20', cumprido: true });
+    assert.equal((await metas.consultar(ua, '2026-10-23')).meta.cumpridos.length, 2);
+    await metas.marcar(ua, '2026-10-23', { dia: '2026-10-20', cumprido: false });
+    assert.deepEqual((await metas.consultar(ua, '2026-10-23')).meta.cumpridos, ['2026-10-21']);
+    await assert.rejects(metas.marcar(ua, '2026-10-23', { dia: '2026-10-24', cumprido: true }), { status: 400 });
+    await assert.rejects(metas.marcar(ua, '2026-10-23', { dia: '2026-10-18', cumprido: true }), { status: 400 });
+    assert.deepEqual((await metas.consultar(ua, '2026-10-26')).meta.cumpridos, []);
+    await metas.marcar(ua, '2026-10-26', { dia: '2026-10-26', cumprido: true });
+    assert.deepEqual((await metas.consultar(ua, '2026-10-26')).meta.cumpridos, ['2026-10-26']);
+    assert.equal((await chamarMeta('DELETE')).status, 200);
+    assert.equal((await chamarMeta('GET')).dados.meta, null);
+    assert.equal((await chamarMeta('GET', null, b)).dados.meta.titulo, 'Praticar violão');
+    for (const id of inseridos) await pool.execute('DELETE FROM tarefas WHERE id=?', [id]);
+    // Restaura o retrato inicial para conferir rollback e cascata de todas as tabelas.
+    await pool.execute('INSERT INTO metas_semanais(usuario_id,tipo,titulo,dias,semana_manual,dias_manuais) VALUES (?,?,?,?,?,?)', [ua, 'manual', 'Praticar violão', 3, '2026-10-19', '["2026-10-22"]']);
+    assert.deepEqual(await retrato(), antes);
     async function chamar(body, sessao = a, csrf = sessao?.csrf) {
       const r = await fetch(`http://127.0.0.1:${servidor.address().port}/api/contas/perfil`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-Dayvilo': '1', ...(sessao ? { Cookie: `dayvilo_sessao=${sessao.token}`, 'X-CSRF-Token': csrf } : {}) }, body: JSON.stringify(body) });
       return { status: r.status, cookie: r.headers.get('set-cookie'), dados: await r.json() };

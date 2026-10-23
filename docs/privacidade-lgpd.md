@@ -27,6 +27,16 @@ Prioridade sugerida: inventário e dados potencialmente sensíveis, retenção/e
 
 Registrar apenas o que mudou: dados/finalidade; necessidade; fundamento e escolha do usuário; destinatários; retenção; controles de acesso; impacto em exclusão/exportação; política/avisos alterados; testes e pendências. Se não houve mudança no tratamento, basta indicar isso quando relevante. Não apresentar funcionalidades planejadas como implementadas.
 
+## Acompanhamento de entregas
+
+### Entrega de 23/10/2026 — meta semanal opcional
+
+- Uma meta ativa por conta: tipo, título e frequência de 1 a 7 dias. Metas automáticas consultam datas planejadas de tarefas concluídas da semana; a personalizada guarda até sete marcações manuais. Finalidade: acompanhar o compromisso escolhido pelo usuário, dentro da funcionalidade de organização solicitada.
+- Configuração e marcações ficam no banco, isoladas pelo usuário da sessão, com CSRF nas alterações. Não há novos cookies, fornecedores ou eventos de Analytics; título, tipo e marcações não são enviados à medição.
+- Configuração mantida até alteração, remoção da meta ou exclusão da conta. Não há histórico separado de conquistas; a semana manual anterior é substituída na primeira marcação da nova semana. Editar a meta limpa marcações manuais. Remover a meta preserva as tarefas das áreas. Backups seguem as pendências gerais acima.
+- Política pública atualizada para versão 3. Nome personalizado pode conter dados sensíveis, como outros campos livres; aviso para evitar dados clínicos não substitui a avaliação das bases e demais pendências já registradas.
+- Verificação em MySQL descartável: autenticação, CSRF, isolamento, contagem por dias, virada semanal, marcações concorrentes, remoção e exclusão de conta com rollback e preservação de outra conta. Exportação completa por solicitação deve incluir `metas_semanais`; o CSV de tarefas continua limitado ao histórico de tarefas.
+
 ## Referências oficiais
 
 - [LGPD — texto compilado](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm)

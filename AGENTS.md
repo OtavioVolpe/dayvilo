@@ -15,3 +15,7 @@ Por solicitação de Otávio, considerar privacidade e LGPD em toda funcionalida
 - Ao finalizar trabalho com impacto em dados, explicar brevemente o impacto, as medidas implementadas e pendências relevantes. Não exigir nova autorização para revisões e correções já abrangidas pelo pedido.
 
 O usuário prefere mudanças em etapas para fazer os commits manualmente. Não fazer commit/push automaticamente.
+
+## Migrações autorizadas
+
+Otávio autorizou executar as migrações necessárias às funcionalidades solicitadas, inclusive no banco online. Antes de aplicar: revisar o SQL e o destino, criar backup com `server/scripts/backup-online.js` e validar SHA-256 e restauração com `server/scripts/verificar-backup.js` usando o caminho exato do novo SQL. Usar as credenciais privadas locais sem exibi-las e o migrador do projeto. Nunca restaurar o backup no Aiven ou no banco de desenvolvimento, nem excluir backups anteriores. Se backup, validação ou conexão falharem, não aplicar a migração; informar o impedimento. Mudanças destrutivas fora do escopo solicitado continuam exigindo avaliação específica. Ao finalizar, informar o resultado e lembrar de copiar os arquivos do backup para o Drive privado.

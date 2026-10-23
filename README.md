@@ -450,3 +450,13 @@ O celular usa Rotina e Mais fixos e até dois favoritos, inicialmente nenhum. Em
 A preferência é salva por usuário em `atalhos_usuario`, via GET/PUT `/api/atalhos`, com sessão e CSRF nas escritas. O menu consulta novamente a preferência ao abrir Mais. Falhas de salvamento mantêm o rascunho para tentar novamente.
 
 Aplicar `028_atalhos_usuario.sql` antes de publicar, após backup online verificado em instância descartável. Não há favoritos automáticos nem alteração nos agendamentos existentes.
+
+## Meta semanal opcional
+
+Na Rotina de hoje, a faixa abaixo do progresso abre a meta semanal. Uma meta ativa por conta, de 1 a 7 dias: Rotina, Treino, Leitura e Casa contam automaticamente datas planejadas com pelo menos uma tarefa vinculada concluída; a meta personalizada permite marcar/desmarcar dias da semana até hoje. A semana segue segunda a domingo no fuso do perfil. Várias conclusões na mesma data contam uma vez. Conclusões futuras não contam; desfazer ou excluir tarefas recalcula o resultado.
+
+A meta continua na semana seguinte, com nova contagem. Ainda não há jardim nem histórico de conquistas. Salvar alterações limpa as marcações manuais; remover a meta não remove tarefas. Os dados participam da exclusão da conta por CASCADE. Política pública versão 3 e acompanhamento de privacidade atualizados.
+
+**Antes do deploy:** fazer backup online validado e aplicar `030_meta_semanal.sql` pelo migrador com a configuração privada do destino. O build e o início da aplicação não aplicam migrations. No ambiente local, usar `npm run db:migrate` com a configuração local. Esta entrega foi validada em banco descartável, sem alterar produção ou desenvolvimento.
+
+Verificação: `server/test/meta-semanal.test.js`, cenários de metas e exclusão em `server/test/excluir-conta.integration.js` (MySQL descartável próprio, sem .env), suíte unitária e build do cliente.
