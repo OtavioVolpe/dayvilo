@@ -14,6 +14,8 @@ function executar(nome, args, entrada) {
   return new Promise((ok, falha) => {
     const p = spawn(join(bin, nome + '.exe'), args, { windowsHide: true, timeout: 120000, stdio: ['pipe', 'pipe', 'pipe'] });
     let saida = '';
+    // Mantém caracteres UTF-8 inteiros mesmo quando o processo divide os bytes entre blocos.
+    p.stdout.setEncoding('utf8');
     p.stdout.on('data', parte => { saida += parte; });
     p.stderr.resume(); // Nunca imprimir conteúdo de SQL ou credenciais.
     p.on('error', () => falha(new Error(`Não foi possível executar ${nome}.`)));

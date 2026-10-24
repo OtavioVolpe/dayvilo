@@ -41,6 +41,14 @@ Registrar apenas o que mudou: dados/finalidade; necessidade; fundamento e escolh
 
 A configuração e as marcações existentes passaram para a seção Metas; a Rotina exibe um resumo. A seção pode ser escolhida como atalho na preferência já existente por conta. Nenhuma nova tabela, categoria de dado ou regra de retenção. O acesso à área usa a medição de páginas já condicionada ao consentimento, com o nome fixo “Metas”, sem título pessoal ou progresso. A política pública permanece na versão 3, pois as finalidades e controles já descritos continuam os mesmos.
 
+### Missões semanais e mensais — 23/10/2026
+
+- Metas opcionais, até 12 por conta, com tipo, título, período, medida (dias ou conclusões), quantidade, origem e versão para impedir sobrescritas. A finalidade permanece acompanhar compromissos escolhidos pelo titular. Sem novos destinatários, cookies, eventos de medição ou envio de conteúdo pessoal ao Analytics.
+- A tabela `metas` preserva a configuração enquanto a meta existir. Marcações manuais guardam somente o último período registrado e são substituídas na primeira marcação da nova semana/mês. Mudar tipo, período ou medida limpa as marcações; mudar só nome ou quantidade as mantém. Não há histórico separado de conquistas nem jardim nesta entrega.
+- Migrações 031–032 criam a estrutura e copiam a meta anterior, mantendo sua medida em dias e as marcações existentes. A tabela antiga permanece para compatibilidade durante a publicação; a cópia da meta migrada é removida na primeira alteração/remoção pelo novo fluxo ou na exclusão da conta.
+- Sessão, CSRF, vínculo de conta, validação, limite e versões aplicados no servidor. Exclusão de conta remove as duas tabelas por CASCADE. Política pública versão 4; exportação integral por solicitação deve considerar `metas` e eventuais dados legados.
+- Verificação: 68 testes unitários; integração em MySQL descartável com ANSI_QUOTES (migração com dados anteriores, semana/mês, contagens e desfazer, isolamento, CSRF, conflitos, marcações, remoção, exclusão e rollback); build e teste visual mobile/desktop. Pendências gerais de dados sensíveis, backups e fornecedores continuam acima.
+
 ## Referências oficiais
 
 - [LGPD — texto compilado](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm)

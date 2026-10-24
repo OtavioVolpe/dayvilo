@@ -451,12 +451,16 @@ A preferência é salva por usuário em `atalhos_usuario`, via GET/PUT `/api/ata
 
 Aplicar `028_atalhos_usuario.sql` antes de publicar, após backup online verificado em instância descartável. Não há favoritos automáticos nem alteração nos agendamentos existentes.
 
-## Meta semanal opcional
+## Metas como missões
 
-A seção Metas reúne a configuração e o acompanhamento da meta semanal. Na Rotina de hoje, a faixa abaixo do progresso mostra apenas um resumo com acesso por Ver metas. Metas também aparece no menu lateral e em Mais no celular, podendo ser escolhida como um dos dois atalhos favoritos. Uma meta ativa por conta, de 1 a 7 dias: Rotina, Treino, Leitura e Casa contam automaticamente datas planejadas com pelo menos uma tarefa vinculada concluída; a meta personalizada permite marcar/desmarcar dias da semana até hoje. A semana segue segunda a domingo no fuso do perfil. Várias conclusões na mesma data contam uma vez. Conclusões futuras não contam; desfazer ou excluir tarefas recalcula o resultado.
+A seção Metas tem abas Semanais e Mensais, cartões com contagem e barra de progresso, sugestões editáveis e metas pessoais. A Rotina apresenta um resumo e acesso direto. Até 12 metas por conta; a criação é sempre explícita, inclusive para sugestões.
 
-A meta continua na semana seguinte, com nova contagem. Ainda não há jardim nem histórico de conquistas. Salvar alterações limpa as marcações manuais; remover a meta não remove tarefas. Os dados participam da exclusão da conta por CASCADE. Política pública versão 3 e acompanhamento de privacidade atualizados.
+Rotina e Casa contam tarefas concluídas; Treino conta sessões agendadas marcadas como concluídas; essas áreas também podem contar dias diferentes. Leitura conta dias com leitura agendada concluída. Metas pessoais permitem marcar/desmarcar datas já alcançadas no período. Todas usam as datas planejadas até hoje, no fuso do perfil, sem contar futuras ou puladas. Desfazer conclusões recalcula os valores. As metas incluem as atividades já concluídas no período atual.
 
-**Antes do deploy:** fazer backup online validado e aplicar `030_meta_semanal.sql` pelo migrador com a configuração privada do destino. O build e o início da aplicação não aplicam migrations. No ambiente local, usar `npm run db:migrate` com a configuração local. Esta entrega foi validada em banco descartável, sem alterar produção ou desenvolvimento.
+Semana: segunda a domingo. Mês: primeiro ao último dia. A configuração se repete e a contagem recomeça a cada período. Marcações manuais guardam somente o último período registrado; mudar tipo, período ou medida as limpa, mas mudar nome/quantidade as preserva. Ainda não há jardim, XP ou histórico separado de conquistas nesta entrega.
 
-Verificação: `server/test/meta-semanal.test.js`, cenários de metas e exclusão em `server/test/excluir-conta.integration.js` (MySQL descartável próprio, sem .env), suíte unitária e build do cliente.
+Rotas /api/metas com sessão, CSRF, validação, limite e versões contra sobrescrita. As migrações 031 e 032 criam metas e copiam a configuração semanal anterior, preservando dias e marcações. A tabela antiga e as rotas anteriores permanecem para compatibilidade durante a publicação; a cópia da meta migrada é eliminada na primeira alteração/remoção pelo novo fluxo ou ao excluir a conta. Ambas as tabelas participam da exclusão por CASCADE. Política versão 4.
+
+Antes de publicar em outro ambiente, executar backup validado e aplicar as migrações pelo migrador. Build e inicialização não migram automaticamente. No Aiven desta instalação, 031 e 032 foram aplicadas em 23/10/2026 após backup restaurado e validado em instância descartável. O verificador de backup agora decodifica stdout em UTF-8, preservando caracteres multibyte divididos entre blocos.
+
+Validação: 68 testes unitários, cenários de missões em server/test/metas-fixture.js chamados pela integração descartável de exclusão de conta, migração com dados legados, ANSI_QUOTES, isolamento/CSRF/versões, contagem semanal/mensal e desfazer, exclusão e rollback, além de build e conferência visual mobile/desktop.

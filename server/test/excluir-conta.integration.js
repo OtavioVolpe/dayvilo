@@ -12,6 +12,7 @@ import { criarAplicacao } from '../src/app.js';
 import { criarServicoAutenticacao } from '../src/servicos/autenticacao.js';
 import { criarServicoMinhaConta } from '../src/servicos/minha-conta.js';
 import { criarServicoMetaSemanal } from '../src/servicos/meta-semanal.js';
+import { verificarMissoes } from './metas-fixture.js';
 
 // Instância nova, sem .env, sem credenciais ou dados de desenvolvimento/produção.
 test('exclusão: todas as tabelas, isolamento, autenticação, CSRF e rollback em MySQL descartável', { timeout: 120000 }, async () => {
@@ -34,7 +35,16 @@ test('exclusão: todas as tabelas, isolamento, autenticação, CSRF e rollback e
     await admin.query('CREATE DATABASE teste CHARACTER SET utf8mb4');
     await admin.query('USE teste');
     const migrations = new URL('../migrations/', import.meta.url);
-    for (const nome of (await readdir(migrations)).filter(n => n.endsWith('.sql')).sort()) await admin.query(await readFile(new URL(nome, migrations), 'utf8'));
+    for (const nome of (await readdir(migrations)).filter(n => n.endsWith('.sql')).sort()) {
+      if (nome==='032_preservar_meta_semanal.sql') {
+        const [u]=await admin.query("INSERT INTO usuarios(nome) VALUES ('Migração teste')");
+        await admin.execute("INSERT INTO metas_semanais(usuario_id,tipo,titulo,dias,semana_manual,dias_manuais) VALUES (?,'manual','Meta preservada',3,'2026-10-19','[\"2026-10-20\"]')",[u.insertId]);
+        await admin.query(await readFile(new URL(nome,migrations),'utf8'));
+        const [[m]]=await admin.execute('SELECT titulo,medida,quantidade,dias_manuais FROM metas WHERE usuario_id=?',[u.insertId]);
+        assert.equal(m.titulo,'Meta preservada');assert.equal(m.medida,'dias');assert.equal(m.quantidade,3);assert.deepEqual(typeof m.dias_manuais==='string'?JSON.parse(m.dias_manuais):m.dias_manuais,['2026-10-20']);
+        await admin.execute('DELETE FROM usuarios WHERE id=?',[u.insertId]);
+      } else await admin.query(await readFile(new URL(nome, migrations), 'utf8'));
+    }
     pool = mysql.createPool({ ...conexao, database: 'teste', multipleStatements: false });
     // Reproduz o modo do Aiven: aspas duplas são identificadores, não texto.
     pool.on('connection', c => c.query("SET SESSION sql_mode = CONCAT(@@SESSION.sql_mode, ',ANSI_QUOTES')"));
@@ -60,6 +70,7 @@ test('exclusão: todas as tabelas, isolamento, autenticação, CSRF e rollback e
       await inserir('INSERT INTO feedback(usuario_id,envio_id,tipo,area,mensagem) VALUES (?,?,?,?,?)', [u, randomUUID(), 'sugestao', 'rotina', 'Teste']);
       await inserir('INSERT INTO atalhos_usuario(usuario_id,areas) VALUES (?,?)', [u, '[]']);
       await inserir('INSERT INTO metas_semanais(usuario_id,tipo,titulo,dias,semana_manual,dias_manuais) VALUES (?,?,?,?,?,?)', [u, 'manual', 'Praticar violão', 3, '2026-10-19', '["2026-10-22"]']);
+      await inserir('INSERT INTO metas(id,usuario_id,tipo,periodo,medida,titulo,quantidade,origem,dias_manuais) VALUES (?,?,?,?,?,?,?,?,?)', [randomUUID(),u,'manual','mensal','dias','Violão',10,'pessoal','[]']);
       const serie = randomUUID();
       await inserir('INSERT INTO configuracoes_series(serie_id,usuario_id,tipo,ate) VALUES (?,?,?,?)', [serie, u, 'diaria', '2026-10-22']);
       await inserir('INSERT INTO ocorrencias_series(tarefa_id,serie_id) VALUES (?,?)', [t, serie]);
@@ -80,6 +91,7 @@ test('exclusão: todas as tabelas, isolamento, autenticação, CSRF e rollback e
     const ua = await preencher(a);
     const antes = await retrato();
     servidor = criarAplicacao({ banco: pool, enviarEmail: async () => {} }).listen(0, '127.0.0.1'); await once(servidor, 'listening');
+    await verificarMissoes({pool,servidor,a,b,usuarioId:ua});
     const metas = criarServicoMetaSemanal(pool);
     async function chamarMeta(method, body, sessao = a, csrf = sessao?.csrf) {
       const r = await fetch(`http://127.0.0.1:${servidor.address().port}/api/meta-semanal`, { method, headers: { 'Content-Type': 'application/json', 'X-Dayvilo': '1', ...(sessao ? { Cookie: `dayvilo_sessao=${sessao.token}`, 'X-CSRF-Token': csrf } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
