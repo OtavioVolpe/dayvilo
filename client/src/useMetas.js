@@ -7,7 +7,7 @@ export default function useMetas(revisao) {
   useEffect(()=>{
     const consulta=++numero.current, abortar=new AbortController();
     setCarregando(true);setErro('');
-    solicitar('/metas',{signal:abortar.signal}).then(r=>{if(numero.current===consulta)setDados(r);})
+    solicitar('/metas/jardim/sincronizar',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}',signal:abortar.signal}).then(r=>{if(numero.current===consulta)setDados(r);})
       .catch(e=>{if(!abortar.signal.aborted&&numero.current===consulta)setErro(e.message);})
       .finally(()=>{if(numero.current===consulta)setCarregando(false);});
     return()=>abortar.abort();

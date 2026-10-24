@@ -49,6 +49,7 @@ export async function verificarMissoes({pool,servidor,a,b,usuarioId}) {
   assert.equal((await obter(manual,'2026-11-01')).atual,0);
   await metas.marcar(usuarioId,manual,'2026-11-01',{versao:5,dia:'2026-11-01',cumprido:true});assert.deepEqual((await obter(manual,'2026-11-01')).dias_marcados,['2026-11-01']);
   await metas.editar(usuarioId,manual,{...padrao,tipo:'manual',medida:'dias',titulo:'Semanal',quantidade:3,versao:6});assert.equal((await obter(manual)).atual,0);
+  await pool.execute('DELETE FROM jardim_conquistas WHERE usuario_id=? AND meta_id IN ('+ids.map(()=>'?').join(',')+')',[usuarioId,...ids]);
   // Mantém o retrato das contas usado no teste de exclusão/rollback.
   for(const meta of ids)await metas.remover(usuarioId,meta,{versao:(await obter(meta)).versao});
   for(const t of tarefas)await pool.execute('DELETE FROM tarefas WHERE id=?',[t]);

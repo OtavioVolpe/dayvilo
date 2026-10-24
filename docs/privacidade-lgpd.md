@@ -57,3 +57,9 @@ A configuração e as marcações existentes passaram para a seção Metas; a Ro
 - [ANPD — agentes de pequeno porte](https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022)
 
 Consultar versões vigentes ao tomar decisões. Nenhuma pendência listada aqui foi resolvida apenas pela criação deste documento.
+
+### Meu jardim — 24/10/2026
+
+Histórico mínimo em jardim_conquistas (conta, identificador da meta, início/fim do período, data do registro), para guardar plantas e impedir duplicação por edição/desfazer. Uma planta a cada cinco registros; coleção derivada do histórico. Sem títulos, conteúdo, novos destinatários, cookies ou eventos Analytics. Dados privados da conta; persistem após excluir uma meta e são removidos por CASCADE ao excluir a conta. Exportação integral por solicitação deve incluir essa tabela. Política versão 5. Backups e demais pendências gerais continuam aplicáveis. Registro ocorre ao abrir Rotina/Metas e alterar metas, considerando períodos atuais; não há recuperação automática de períodos antigos.
+
+Validação desta entrega: 68 testes unitários e integração em MySQL descartável passaram (incluindo ANSI_QUOTES, concorrência, desfazer/refazer, períodos sobrepostos, virada semanal, isolamento, CSRF, exclusão e rollback). Build aprovado; jardim e animação conferidos no desktop e celular. Migração 033 aplicada no Aiven após SHA-256 e restauração validada do backup de 24/10/2026.

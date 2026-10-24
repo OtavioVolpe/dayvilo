@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Plus, Check, Target, Dumbbell, BookOpen, House, Pencil, Trash2, ChevronDown } from 'lucide-react';
+import Jardim, { ProgressoJardim } from './Jardim.jsx';
 import useMetas from './useMetas.js';
 import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
 import { formatarData } from './datas.js';
@@ -17,11 +18,12 @@ const novaPessoal=periodo=>({tipo:'manual',periodo,medida:'dias',titulo:'',quant
 
 export default function Metas({aoAlterarSujo}) {
   const {dados,erro,carregando,salvando,enviar,recarregar}=useMetas();
+  const [aba,setAba]=useState('metas');
   const [periodo,setPeriodo]=useState('semanal'), [form,setForm]=useState(null), [remover,setRemover]=useState(null), [aviso,setAviso]=useState(''), [detalhe,setDetalhe]=useState(null);
   useEffect(()=>{aoAlterarSujo?.(Boolean(form)||salvando);return()=>aoAlterarSujo?.(false);},[form,salvando,aoAlterarSujo]);
   const metas=(dados?.metas||[]).filter(m=>m.periodo===periodo), bloqueado=carregando||salvando;
   const intervalo=dados?.periodos[periodo];
-  function abrir(m) {setAviso('');setForm(m?{...m}:novaPessoal(periodo));}
+  function abrir(m) {setAba('metas');setAviso('');setForm(m?{...m}:novaPessoal(periodo));}
   async function salvar(e) {
     e.preventDefault();
     const {tipo,periodo,medida,titulo,quantidade,origem,id,versao}=form;
@@ -29,7 +31,10 @@ export default function Metas({aoAlterarSujo}) {
   }
   return <section className="pagina-missoes" aria-labelledby="titulo-metas">
     <header className="missoes-cabecalho"><div><h1 id="titulo-metas">Minhas metas</h1><p>Pequenos compromissos, conquistas de verdade.</p></div><button className="botao-principal" disabled={bloqueado||Boolean(form)} onClick={()=>abrir()}><Plus size={17} aria-hidden="true"/>Nova meta</button></header>
-    <nav className="missoes-abas" aria-label="Período das metas">{[['semanal','Semanais'],['mensal','Mensais']].map(([p,nome])=><button key={p} aria-pressed={periodo===p} disabled={salvando||Boolean(form)} onClick={()=>{setPeriodo(p);setDetalhe(null);setAviso('');}}>{nome}</button>)}</nav>
+    <nav className="missoes-abas" aria-label="Metas e jardim">{[['metas','Minhas metas'],['jardim','Meu jardim']].map(([id,nome])=><button key={id} aria-pressed={aba===id} disabled={salvando||Boolean(form)} onClick={()=>setAba(id)}>{nome}</button>)}</nav>
+    {dados?.jardim&&<ProgressoJardim jardim={dados.jardim}/>}
+    {aba==='jardim'&&dados?.jardim&&<Jardim jardim={dados.jardim}/>}
+    {aba==='metas'&&<nav className="missoes-abas" aria-label="Período das metas">{[['semanal','Semanais'],['mensal','Mensais']].map(([p,nome])=><button key={p} aria-pressed={periodo===p} disabled={salvando||Boolean(form)} onClick={()=>{setPeriodo(p);setDetalhe(null);setAviso('');}}>{nome}</button>)}</nav>}
     {erro&&<p className="mensagem-erro" role="alert">{erro} <button className="botao-secundario" disabled={salvando} onClick={recarregar}>Atualizar metas</button></p>}
     {aviso&&<p className="missoes-aviso" role="status">{aviso}</p>}
     {carregando&&<p className="estado-lista" role="status">Carregando suas metas…</p>}
@@ -44,7 +49,7 @@ export default function Metas({aoAlterarSujo}) {
       {form.id&&<p>Alterar tipo, período ou modo de contagem limpa as marcações manuais. Alterar só nome ou quantidade as preserva.</p>}
       <div className="missao-acoes"><button className="botao-secundario" type="button" onClick={()=>setForm(null)}>Cancelar</button><button className="botao-principal" type="submit">{salvando?'Salvando…':'Salvar meta'}</button></div>
     </fieldset></form>}
-    {!carregando&&dados&&!form&&<>
+    {aba==='metas'&&!carregando&&dados&&!form&&<>
       <div className="missoes-periodo"><h2>{periodo==='semanal'?'Suas missões da semana':'Suas missões do mês'}</h2><span>{formatarData(intervalo.inicio,{day:'2-digit',month:'2-digit'})} a {formatarData(intervalo.fim,{day:'2-digit',month:'2-digit'})}</span></div>
       {metas.length===0&&<div className="missoes-vazio"><Target size={25} aria-hidden="true"/><h3>Um compromisso de cada vez</h3><p>Escolha uma sugestão abaixo ou crie uma meta com a sua cara.</p></div>}
       <div className="missoes-lista">{metas.map(m=>{

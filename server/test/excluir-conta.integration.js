@@ -12,6 +12,7 @@ import { criarAplicacao } from '../src/app.js';
 import { criarServicoAutenticacao } from '../src/servicos/autenticacao.js';
 import { criarServicoMinhaConta } from '../src/servicos/minha-conta.js';
 import { criarServicoMetaSemanal } from '../src/servicos/meta-semanal.js';
+import { verificarJardim } from './jardim-fixture.js';
 import { verificarMissoes } from './metas-fixture.js';
 
 // Instância nova, sem .env, sem credenciais ou dados de desenvolvimento/produção.
@@ -71,6 +72,7 @@ test('exclusão: todas as tabelas, isolamento, autenticação, CSRF e rollback e
       await inserir('INSERT INTO atalhos_usuario(usuario_id,areas) VALUES (?,?)', [u, '[]']);
       await inserir('INSERT INTO metas_semanais(usuario_id,tipo,titulo,dias,semana_manual,dias_manuais) VALUES (?,?,?,?,?,?)', [u, 'manual', 'Praticar violão', 3, '2026-10-19', '["2026-10-22"]']);
       await inserir('INSERT INTO metas(id,usuario_id,tipo,periodo,medida,titulo,quantidade,origem,dias_manuais) VALUES (?,?,?,?,?,?,?,?,?)', [randomUUID(),u,'manual','mensal','dias','Violão',10,'pessoal','[]']);
+      await inserir('INSERT INTO jardim_conquistas(usuario_id,meta_id,inicio,fim) VALUES (?,?,?,?)',[u,randomUUID(),'2026-09-01','2026-09-30']);
       const serie = randomUUID();
       await inserir('INSERT INTO configuracoes_series(serie_id,usuario_id,tipo,ate) VALUES (?,?,?,?)', [serie, u, 'diaria', '2026-10-22']);
       await inserir('INSERT INTO ocorrencias_series(tarefa_id,serie_id) VALUES (?,?)', [t, serie]);
@@ -92,6 +94,7 @@ test('exclusão: todas as tabelas, isolamento, autenticação, CSRF e rollback e
     const antes = await retrato();
     servidor = criarAplicacao({ banco: pool, enviarEmail: async () => {} }).listen(0, '127.0.0.1'); await once(servidor, 'listening');
     await verificarMissoes({pool,servidor,a,b,usuarioId:ua});
+    await verificarJardim({pool,servidor,a,b,usuarioId:ua});
     const metas = criarServicoMetaSemanal(pool);
     async function chamarMeta(method, body, sessao = a, csrf = sessao?.csrf) {
       const r = await fetch(`http://127.0.0.1:${servidor.address().port}/api/meta-semanal`, { method, headers: { 'Content-Type': 'application/json', 'X-Dayvilo': '1', ...(sessao ? { Cookie: `dayvilo_sessao=${sessao.token}`, 'X-CSRF-Token': csrf } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });

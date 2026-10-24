@@ -464,3 +464,7 @@ Rotas /api/metas com sessão, CSRF, validação, limite e versões contra sobres
 Antes de publicar em outro ambiente, executar backup validado e aplicar as migrações pelo migrador. Build e inicialização não migram automaticamente. No Aiven desta instalação, 031 e 032 foram aplicadas em 23/10/2026 após backup restaurado e validado em instância descartável. O verificador de backup agora decodifica stdout em UTF-8, preservando caracteres multibyte divididos entre blocos.
 
 Validação: 68 testes unitários, cenários de missões em server/test/metas-fixture.js chamados pela integração descartável de exclusão de conta, migração com dados legados, ANSI_QUOTES, isolamento/CSRF/versões, contagem semanal/mensal e desfazer, exclusão e rollback, além de build e conferência visual mobile/desktop.
+
+### Meu jardim
+
+Dentro de Metas, a barra reúne metas semanais e mensais: cinco conquistas geram uma margarida permanente e reiniciam o ciclo. A coleção permite rever a animação de crescimento e respeita movimento reduzido. A sincronização autenticada por POST acontece ao abrir Rotina/Metas e após alterar metas. Somente os períodos atuais são avaliados; períodos antigos não são recuperados automaticamente. Desfazer, editar ou excluir não remove uma conquista; períodos sobrepostos da mesma meta não dão recompensa duplicada. Remover e criar uma meta diferente cria um novo compromisso (não é um sistema competitivo). Migração 033, sem novos eventos Analytics.
