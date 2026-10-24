@@ -31,7 +31,7 @@ export default function Metas({aoAlterarSujo}) {
   }
   return <section className="pagina-missoes" aria-labelledby="titulo-metas">
     <header className="missoes-cabecalho"><div><h1 id="titulo-metas">Minhas metas</h1><p>Pequenos compromissos, conquistas de verdade.</p></div><button className="botao-principal" disabled={bloqueado||Boolean(form)} onClick={()=>abrir()}><Plus size={17} aria-hidden="true"/>Nova meta</button></header>
-    <nav className="missoes-abas" aria-label="Metas e jardim">{[['metas','Minhas metas'],['jardim','Meu jardim']].map(([id,nome])=><button key={id} aria-pressed={aba===id} disabled={salvando||Boolean(form)} onClick={()=>setAba(id)}>{nome}</button>)}</nav>
+    <nav className="missoes-abas" aria-label="Metas e árvore">{[['metas','Minhas metas'],['jardim','Minha árvore']].map(([id,nome])=><button key={id} aria-pressed={aba===id} disabled={salvando||Boolean(form)} onClick={()=>setAba(id)}>{nome}</button>)}</nav>
     {dados?.jardim&&<ProgressoJardim jardim={dados.jardim}/>}
     {aba==='jardim'&&dados?.jardim&&<Jardim jardim={dados.jardim}/>}
     {aba==='metas'&&<nav className="missoes-abas" aria-label="Período das metas">{[['semanal','Semanais'],['mensal','Mensais']].map(([p,nome])=><button key={p} aria-pressed={periodo===p} disabled={salvando||Boolean(form)} onClick={()=>{setPeriodo(p);setDetalhe(null);setAviso('');}}>{nome}</button>)}</nav>}

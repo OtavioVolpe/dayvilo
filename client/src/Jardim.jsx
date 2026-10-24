@@ -1,33 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Sprout, RotateCcw } from 'lucide-react';
-import { formatarData } from './datas.js';
+import { desenharArvore } from './arvore.js';
 import './jardim.css';
 
-function Planta({animada=false}) {
-  return <div className={`jardim-planta${animada?' jardim-crescendo':''}`} role="img" aria-label="Uma margarida com folhas verdes e pétalas douradas">
-    <svg viewBox="0 0 200 240" aria-hidden="true">
-      <ellipse cx="100" cy="218" rx="66" ry="9" fill="currentColor" opacity=".1"/>
-      <path className="jardim-caule" d="M100 212 Q90 165 100 76" fill="none" stroke="#76b78d" strokeWidth="7" strokeLinecap="round"/>
-      <g className="jardim-folhas"><path d="M98 166 Q51 170 47 128 Q90 126 98 166" fill="#64a87a"/><path d="M97 141 Q139 146 153 105 Q107 101 97 141" fill="#99d8a9"/><path d="M97 166 L60 139 M99 140 L140 116" stroke="#426d50" strokeWidth="2" fill="none"/></g>
-      <g className="jardim-flor">{Array.from({length:8},(_,i)=><ellipse key={i} cx="100" cy="51" rx="12" ry="23" fill={i%2?'#f0d6a0':'#e6c17a'} transform={`rotate(${i*45} 100 76)`}/>)}<circle cx="100" cy="76" r="17" fill="#aa733d"/><circle cx="95" cy="71" r="5" fill="#dba455"/></g>
-      <path d="M76 210 Q100 199 124 210" stroke="#8ca88c" strokeWidth="4" fill="none" strokeLinecap="round"/>
-    </svg>
-  </div>;
+function Arvore({total,replay}) {
+  const canvas=useRef(null), exibido=useRef(Math.max(0,Math.min(total,30)-1)), ultimaRepeticao=useRef(replay);
+  useEffect(()=>{
+    const elemento=canvas.current, reduzido=window.matchMedia('(prefers-reduced-motion: reduce)');
+    const repetir=ultimaRepeticao.current!==replay;ultimaRepeticao.current=replay;
+    const inicio=repetir?0:exibido.current, destino=Math.min(total,30), tempo=performance.now();
+    let frame;const duracao=repetir?6500:1100;
+    function pintar(agora){const t=reduzido.matches?1:Math.min(1,(agora-tempo)/duracao);exibido.current=inicio+(destino-inicio)*(repetir?t:1-Math.pow(1-t,3));desenharArvore(elemento,exibido.current);if(t<1)frame=requestAnimationFrame(pintar);}
+    frame=requestAnimationFrame(pintar);
+    const resize=new ResizeObserver(()=>desenharArvore(elemento,exibido.current));resize.observe(elemento);
+    function reduzir(){if(reduzido.matches){cancelAnimationFrame(frame);exibido.current=destino;desenharArvore(elemento,destino);}}
+    reduzido.addEventListener('change',reduzir);
+    return()=>{cancelAnimationFrame(frame);resize.disconnect();reduzido.removeEventListener('change',reduzir);};
+  },[total,replay]);
+  return <canvas ref={canvas} className="arvore-canvas" role="img" aria-label={total===0?'Árvore com tronco e galhos, ainda sem folhas':total<20?'Sua árvore com folhas e galhos em crescimento':'Sua árvore com copa desenvolvida e flores'}/>;
 }
 
 export function ProgressoJardim({jardim}) {
-  const [celebrar,setCelebrar]=useState(false);
-  useEffect(()=>{if(jardim.novasPlantas>0)setCelebrar(true);},[jardim.total,jardim.novasPlantas]);
-  return <>
-    <section className="jardim-progresso" aria-label="Progresso para a próxima planta"><div className="jardim-linha"><div><Sprout size={21} aria-hidden="true"/><strong>Um passo para o seu jardim</strong></div><span>{jardim.atual} de {jardim.alvo} metas</span></div><progress max={jardim.alvo} value={jardim.atual} aria-label="Metas cumpridas neste ciclo"/><p>A cada 5 metas cumpridas, uma nova planta. Semanais e mensais contam juntas.</p></section>
-    {celebrar&&<section className="jardim-nascimento" aria-label="Nova planta conquistada"><Planta animada/><div><p className="jardim-etiqueta">Seu jardim cresceu</p><h2>{jardim.novasPlantas>1?'Novas plantas conquistadas!':'Uma nova planta nasceu!'}</h2><p>Ela já está guardada no Meu jardim. Um novo ciclo começou.</p><button className="botao-secundario" onClick={()=>setCelebrar(false)}>Continuar</button></div></section>}
-  </>;
+  const [completo,setCompleto]=useState(false);
+  useEffect(()=>{if(!jardim.novasPlantas){setCompleto(false);return;}setCompleto(true);const timer=setTimeout(()=>setCompleto(false),1500);return()=>clearTimeout(timer);},[jardim.total,jardim.novasPlantas]);
+  const valor=completo?jardim.alvo:jardim.atual;
+  return <section className="jardim-progresso" aria-label="Progresso da árvore"><div className="jardim-linha"><div><Sprout size={21} aria-hidden="true"/><strong>Próximo crescimento</strong></div><span>{valor} de {jardim.alvo} metas</span></div><progress max={jardim.alvo} value={valor} aria-label="Metas cumpridas neste ciclo"/><p role="status">{completo?'Ciclo completo! Sua árvore cresceu.': 'Cada meta alimenta sua árvore. A contagem reinicia a cada 5; o crescimento permanece.'}</p></section>;
 }
 
 export default function Jardim({jardim}) {
-  const [replay,setReplay]=useState({numero:jardim.plantas.at(-1)?.numero,vez:1});
-  return <section className="jardim-colecao" aria-labelledby="titulo-jardim"><header><h2 id="titulo-jardim">Meu jardim</h2><p>{jardim.plantas.length} {jardim.plantas.length===1?'planta conquistada':'plantas conquistadas'} · Cada uma guarda um ciclo de 5 metas.</p></header>
-    {jardim.plantas.length===0?<div className="jardim-vazio"><Sprout size={40} aria-hidden="true"/><h3>Seu jardim começa com pequenos passos</h3><p>Conclua suas metas e volte aqui para ver sua primeira planta nascer.</p></div>:<div className="jardim-grade">{[...jardim.plantas].reverse().map(p=><article className="jardim-vaso" key={p.numero}><Planta key={replay.numero===p.numero?replay.vez:0} animada={replay.numero===p.numero}/><h3>Margarida {p.numero}</h3><p>Conquistada em {formatarData(p.dia,{day:'2-digit',month:'short',year:'numeric'})}</p><button className="botao-secundario" onClick={()=>setReplay({numero:p.numero,vez:replay.vez+1})}><RotateCcw size={14} aria-hidden="true"/>Ver crescer</button></article>)}</div>}
-    <p className="jardim-nota">Sem pressa: suas plantas não desaparecem nos dias de descanso. Cada meta conta uma vez por período. Conquistas já registradas permanecem mesmo se você editar, desfizer ou remover a meta.</p>
-  </section>;
+  const [replay,setReplay]=useState(0);
+  const total=jardim.total;
+  const etapa=total===0?'O começo':total<5?'Primeiras folhas':total<10?'Novos galhos':total<20?'Uma copa mais cheia':'Tempo de florescer';
+  return <section className="arvore-secao" aria-labelledby="titulo-arvore"><header><h2 id="titulo-arvore">Minha árvore</h2><p>Pequenos compromissos criam raízes.</p></header><div className="arvore-cena"><Arvore total={total} replay={replay}/><div className="arvore-legenda"><span>{total} {total===1?'meta cumprida':'metas cumpridas'}</span><span>{etapa}</span></div></div><div className="arvore-acoes"><button className="botao-secundario" disabled={!total} onClick={()=>setReplay(v=>v+1)}><RotateCcw size={15} aria-hidden="true"/>Rever crescimento</button><span>{Math.floor(total/5)} {Math.floor(total/5)===1?'ciclo completo':'ciclos completos'}</span></div><p className="jardim-nota">Sua árvore não perde folhas nos dias de descanso. Conquistas registradas permanecem mesmo ao editar, desfazer ou remover uma meta.</p>{total>=30&&<p className="jardim-nota">Sua árvore está florida. As próximas conquistas continuam somando metas e ciclos.</p>}</section>;
 }
