@@ -67,3 +67,7 @@ Validação desta entrega: 68 testes unitários e integração em MySQL descart�
 ### Minha árvore — 24/10/2026
 
 Troca visual da coleção por uma árvore única, derivada do total já existente. Sem migração, novos dados, cookies ou eventos. Histórico, isolamento e exclusão continuam iguais. Política mantém versão 5, com ajuste de nomenclatura para árvore. O desenho atinge a fase florida em 30 conquistas; contagem e ciclos permanecem cumulativos.
+
+### Biblioteca visual — 25/10/2026
+
+Redesenho local da Leitura: capas tipográficas derivadas de título/autor já cadastrados, destaque de um livro em andamento e filtro Todos. Sem upload, busca externa de capas, novos dados, eventos ou destinatários. Fluxos existentes de páginas, anotações, agendamento e exclusão preservados. Sem migração ou alteração da política pública. Validação em instância descartável com dados fictícios: progresso e agendamento salvos; layout desktop e mobile conferidos.

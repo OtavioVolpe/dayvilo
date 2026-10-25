@@ -1,3 +1,4 @@
+import CapaLivro from './CapaLivro.jsx';
 import CampoHorario from './CampoHorario.jsx';
 import AgendamentosLeitura from './AgendamentosLeitura.jsx';
 import { useEffect, useRef, useState } from 'react';
@@ -14,6 +15,14 @@ const numero = v => v === '' || v == null ? null : Number(v);
 const dataCurta = d => formatarData(d, { day: '2-digit', month: '2-digit', year: 'numeric' });
 const camposLivro = l => ({ titulo: l.titulo, autor: l.autor, estado: l.estado, total_paginas: numero(l.total_paginas), pagina_atual: numero(l.pagina_atual), inicio: l.inicio || null, termino: l.termino || null, ...(l.id ? { versao: l.versao } : {}), encerrar_agendamentos: l.encerrar_agendamentos ?? true });
 
+function Progresso({ livro }) {
+  const conhecido = livro.total_paginas && livro.pagina_atual !== null;
+  return <div className="leitura-progresso">
+    {conhecido && <progress max={livro.total_paginas} value={livro.pagina_atual} aria-label={'Progresso de ' + livro.titulo} />}
+    <div className="leitura-progresso-valores"><span>{livro.pagina_atual !== null ? 'Página ' + livro.pagina_atual : 'Página ainda não registrada'}{livro.total_paginas ? ' de ' + livro.total_paginas : ''}</span>{conhecido && <span>{Math.round(livro.pagina_atual / livro.total_paginas * 100)}%</span>}</div>
+  </div>;
+}
+
 function Janela({ fechar, children }) {
   const ref = useRef(null);
   useEffect(() => { const anterior = document.activeElement; ref.current.showModal(); return () => anterior?.focus(); }, []);
@@ -23,7 +32,7 @@ function Janela({ fechar, children }) {
 }
 
 export default function Leitura({ inicial, aoConsumirInicial, aoAlterarSujo }) {
-  const [dados, setDados] = useState(null), [aba, setAba] = useState('lendo');
+  const [dados, setDados] = useState(null), [aba, setAba] = useState('todos');
   const [id, setId] = useState(inicial || null), [detalhe, setDetalhe] = useState(null);
   const [form, setForm] = useState(null), [sujo, setSujo] = useState(false);
   const [erro, setErro] = useState(''), [aviso, setAviso] = useState(''), [ocupado, setOcupado] = useState(false);
@@ -69,7 +78,7 @@ export default function Leitura({ inicial, aoConsumirInicial, aoAlterarSujo }) {
     } catch (e) { setErro(e.message); }
     finally { bloqueio.current = false; setOcupado(false); }
   }
-  function novo(estado = aba) { setId(null); setErro(''); setAviso(''); setForm({ modo: 'livro', titulo: '', autor: '', estado, pagina_atual: '', total_paginas: '', inicio: '', termino: '' }); }
+  function novo(estado = aba === 'todos' ? 'quero_ler' : aba) { setId(null); setErro(''); setAviso(''); setForm({ modo: 'livro', titulo: '', autor: '', estado, pagina_atual: '', total_paginas: '', inicio: '', termino: '' }); }
   function editar(l, modo = 'livro') { setForm({ ...l, ...(modo === 'progresso' && l.estado !== 'lendo' ? { estado: 'lendo', termino: '' } : {}), modo, encerrar_agendamentos: true }); setErro(''); }
   function agenda(remover = false) { setForm({ modo: 'agenda', remover, frequencia: remover ? 'repetir' : 'unica', inicio: dados.hoje, fim: deslocarData(dados.hoje, 27), dias: [], horario: '' }); setErro(''); }
   function salvar(e) {
@@ -80,20 +89,29 @@ export default function Leitura({ inicial, aoConsumirInicial, aoAlterarSujo }) {
     if (form.remover) setConfirmacao({ rotulo: 'Desagendar leituras', destrutiva: true, mensagem: 'Remover as leituras pendentes nos dias e período selecionados? O histórico será mantido.', acao }); else acao();
   }
   const livro = detalhe?.livro, aberta = Boolean(id || form);
+  const destaque = dados?.livros.find(l => l.estado === 'lendo');
+  const visiveis = dados?.livros.filter(l => aba === 'todos' || l.estado === aba) || [];
   const erroExibido = erro && <p className="mensagem-erro" role="alert">{erro} <button type="button" disabled={ocupado} onClick={() => navegar(() => { setRevisao(n => n + 1); })}>Atualizar dados</button></p>;
   return <section className="leitura">
-    <header className="leitura-topo"><div><h1>Minha estante</h1><p>Escolha sua próxima leitura. Guarde o que ficou.</p></div><button className="botao-principal" onClick={() => novo()} disabled={!dados || ocupado}><Plus size={18} />Novo livro</button></header>
-    <nav className="routine-tabs" aria-label="Situação dos livros">{Object.entries(estados).map(([valor, nome]) => <button key={valor} aria-pressed={aba === valor} onClick={() => setAba(valor)}>{nome}{dados && <span className="leitura-contagem">{dados.livros.filter(l => l.estado === valor).length}</span>}</button>)}</nav>
+    <header className="leitura-topo"><div><h1>Minha biblioteca</h1><p>Um lugar para as suas próximas páginas.</p></div><button className="botao-principal" onClick={() => novo()} disabled={!dados || ocupado}><Plus size={18} />Novo livro</button></header>
     {!aberta && erroExibido}{!aberta && aviso && <p role="status">{aviso}</p>}
-    {!dados ? <p role="status">Carregando sua estante…</p> : <div className="leitura-grade">{dados.livros.filter(l => l.estado === aba).map(l => <article className="leitura-card" key={l.id}>
-      <BookOpen className="leitura-simbolo" size={24} /><h2>{l.titulo}</h2>{l.autor && <p>{l.autor}</p>}
-      <div className="leitura-progresso">{l.total_paginas && l.pagina_atual !== null ? <><progress max={l.total_paginas} value={l.pagina_atual} aria-label={`Progresso de ${l.titulo}`} /><span>{l.pagina_atual} de {l.total_paginas} páginas</span></> : <span>{l.pagina_atual !== null ? `Página ${l.pagina_atual}` : l.total_paginas ? `${l.total_paginas} páginas` : 'Sem acompanhamento de páginas'}</span>}</div>
-      {l.termino && <p>Concluído em {dataCurta(l.termino)}</p>}
-      <div className="leitura-acoes">{l.estado === 'lendo' && <button onClick={() => { setId(l.id); editar(l, 'progresso'); }}>Atualizar progresso</button>}<button aria-label={`Abrir livro: ${l.titulo}`} onClick={() => { setErro(''); setId(l.id); }}><span>Abrir livro</span><ArrowUpRight size={18} /></button></div>
-    </article>)}{!dados.livros.some(l => l.estado === aba) && !erro && <LeituraVazia estado={aba} estanteVazia={!dados.livros.length} bloqueado={ocupado} aoCriar={novo} />}</div>}
+    {destaque && <section className="leitura-destaque" aria-label="Leitura em destaque">
+      <div className="leitura-destaque-capa"><CapaLivro livro={destaque} /></div>
+      <div className="leitura-destaque-info"><span className="leitura-sobrancelha">Continue de onde parou</span><h2>{destaque.titulo}</h2>{destaque.autor && <p>{destaque.autor}</p>}
+        <Progresso livro={destaque} />
+        <div className="leitura-acoes"><button className="botao-principal" onClick={() => { setId(destaque.id); editar(destaque, 'progresso'); }}>Registrar leitura</button><button onClick={() => { setId(destaque.id); agenda(); }}><CalendarDays size={17} />Agendar</button></div>
+        <button className="leitura-link" onClick={() => { setErro(''); setId(destaque.id); }}>Abrir livro e anotações <ArrowUpRight size={16} /></button>
+      </div>
+    </section>}
+    {dados?.livros.length > 0 && <h2 className="leitura-estante-titulo">Na sua estante</h2>}
+    <nav className="routine-tabs" aria-label="Situação dos livros">{Object.entries({ todos: 'Todos', lendo: 'Lendo', quero_ler: 'Quero ler', lido: 'Lidos' }).map(([valor, nome]) => <button key={valor} aria-pressed={aba === valor} onClick={() => setAba(valor)}>{nome}{dados && <span className="leitura-contagem">{dados.livros.filter(l => valor === 'todos' || l.estado === valor).length}</span>}</button>)}</nav>
+    {!dados ? <p role="status">Carregando sua biblioteca…</p> : <div className="leitura-estante">{visiveis.map(l => <button className="leitura-livro" key={l.id} onClick={() => { setErro(''); setId(l.id); }} aria-label={'Abrir livro: ' + l.titulo}>
+      <CapaLivro livro={l} /><span className="leitura-livro-titulo">{l.titulo}</span><span className="leitura-livro-autor">{l.autor || 'Autor não informado'}</span>
+      <span className="leitura-livro-estado">{l.estado === 'lido' ? 'Concluído' : estados[l.estado]}{l.estado === 'lendo' && l.total_paginas && l.pagina_atual !== null ? ' · ' + Math.round(l.pagina_atual / l.total_paginas * 100) + '%' : ''}{l.estado === 'lido' && l.termino ? ' · ' + dataCurta(l.termino) : ''}</span>
+    </button>)}{!visiveis.length && !erro && <LeituraVazia estado={aba === 'todos' ? 'quero_ler' : aba} estanteVazia={!dados.livros.length} bloqueado={ocupado} aoCriar={novo} />}</div>}
     {aberta && <Janela fechar={fechar}>
-      <span className="leitura-etiqueta"><BookOpen size={18} />Leitura</span>
-      <h2>{form ? ({ livro: form.id ? 'Editar livro' : 'Novo livro', progresso: 'Atualizar progresso', nota: form.id ? 'Editar anotação' : 'Nova anotação', agendamentos: 'Agendamentos de leitura', agenda: form.remover ? 'Desagendar leitura' : 'Agendar leitura' })[form.modo] : livro?.titulo || 'Abrindo livro…'}</h2>
+      {!form && livro && <div className="leitura-detalhe-capa"><CapaLivro livro={livro} /></div>}<span className="leitura-etiqueta"><BookOpen size={18} />Leitura</span>
+      <h2>{form ? ({ livro: form.id ? 'Editar livro' : 'Novo livro', progresso: 'Até onde você leu?', nota: form.id ? 'Editar anotação' : 'Nova anotação', agendamentos: 'Agendamentos de leitura', agenda: form.remover ? 'Desagendar leitura' : 'Agendar leitura' })[form.modo] : livro?.titulo || 'Abrindo livro…'}</h2>
       {erroExibido}{aviso && <p role="status">{aviso}</p>}
       {form?.modo === 'agendamentos' ? livro ? <AgendamentosLeitura key={livro.versao} livro={livro} agendamentos={detalhe.agendamentos} hoje={dados.hoje} ocupado={ocupado} voltar={() => navegar(() => {})} remover={tarefas => setConfirmacao({ rotulo: 'Desagendar leituras', destrutiva: true, mensagem: 'Desagendar as ' + tarefas.length + ' leituras selecionadas? Elas serão removidas também da Rotina. Leituras concluídas ou puladas serão mantidas.', acao: () => executar('/leitura/' + id + '/desagendar', 'POST', { versao: livro.versao, tarefas }, r => r.quantidade + ' leitura(s) desagendada(s).' + (r.preservados ? ' ' + r.preservados + ' preservada(s).' : ''), () => setForm({ modo: 'agendamentos' })) })} /> : <p role="status">Carregando agendamentos…</p> : form ? <form onSubmit={salvar}><fieldset disabled={ocupado || (id && !detalhe)}>
         {(form.modo === 'livro' || form.modo === 'progresso') && <>
@@ -111,7 +129,7 @@ export default function Leitura({ inicial, aoConsumirInicial, aoAlterarSujo }) {
         <p>{livro.autor || 'Autor não informado'} · {estados[livro.estado] === 'Lidos' ? 'Lido' : estados[livro.estado]}</p>
         <p>{livro.pagina_atual !== null ? `Página ${livro.pagina_atual}` : 'Sem página registrada'}{livro.total_paginas ? ` de ${livro.total_paginas}` : ''}</p>
         {(livro.inicio || livro.termino) && <p>{livro.inicio && `Início: ${dataCurta(livro.inicio)}`}{livro.termino && ` · Término: ${dataCurta(livro.termino)}`}</p>}
-        <div className="leitura-acoes"><button onClick={() => editar(livro, 'progresso')}>{livro.estado === 'quero_ler' ? 'Começar leitura' : livro.estado === 'lido' ? 'Reabrir leitura' : 'Atualizar progresso'}</button><button onClick={() => editar(livro)}><Pencil size={17} />Editar livro</button>{livro.estado === 'lendo' && <button onClick={() => agenda()}><CalendarDays size={17} />Agendar leitura</button>}</div>
+        <div className="leitura-acoes"><button onClick={() => editar(livro, 'progresso')}>{livro.estado === 'quero_ler' ? 'Começar leitura' : livro.estado === 'lido' ? 'Reabrir leitura' : 'Registrar leitura'}</button><button onClick={() => editar(livro)}><Pencil size={17} />Editar livro</button>{livro.estado === 'lendo' && <button onClick={() => agenda()}><CalendarDays size={17} />Agendar leitura</button>}</div>
         <button className="leitura-ver-agendamentos" onClick={() => { setAviso(''); setForm({ modo: 'agendamentos' }); }}><CalendarDays size={17} />Ver agendamentos</button>
         <div className="leitura-notas-topo"><h3><NotebookText size={19} />Anotações</h3><button onClick={() => setForm({ modo: 'nota', texto: '', pagina: '' })}><Plus size={16} />Nova anotação</button></div>
         {!detalhe.notas.length && <p>Nenhuma anotação ainda. Guarde ideias e trechos que quiser revisitar.</p>}
