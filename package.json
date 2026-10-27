@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "concurrently -k -n api,web \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w client",
+    "build:publico": "npm run build:publico -w client",
     "start": "npm run start -w server",
     "db:backup:online": "node server/scripts/backup-online.js",
     "db:backup:verificar": "node server/scripts/verificar-backup.js",

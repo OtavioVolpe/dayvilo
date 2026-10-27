@@ -12,10 +12,10 @@ const areas = [
   [BookOpen, 'Leitura', 'Organize seus livros, planeje as leituras e guarde suas anotações.'],
 ];
 
-export default function Apresentacao({ cadastroAberto }) {
+export default function Apresentacao({ cadastroAberto, urlApp = '' }) {
   useEffect(() => { if (window.location.hash !== '#conhecer-dayvilo') window.scrollTo(0, 0); }, []);
-  const destino = cadastroAberto ? '#criar-conta' : '#entrar';
-  return <main className="apresentacao" onClick={e => { if (e.target.closest('a')?.getAttribute('href') === '#criar-conta') registrarEvento('start_signup'); }}>
+  const destino = urlApp + (cadastroAberto ? '#criar-conta' : '#entrar');
+  return <main className="apresentacao" onClick={e => { const href = e.target.closest('a')?.getAttribute('href'); if (href === urlApp + '#criar-conta') registrarEvento('start_signup'); else if (href === urlApp + '#entrar') registrarEvento('open_app'); }}>
     <section className="apresentacao-hero" aria-labelledby="apresentacao-titulo">
       <div className="apresentacao-convite">
         <p className="apresentacao-etiqueta">Um espaço para o seu dia a dia</p>
@@ -43,6 +43,6 @@ export default function Apresentacao({ cadastroAberto }) {
       <div className="apresentacao-grade">{areas.map(([Icone, nome, descricao]) => <article key={nome}><Icone size={23} aria-hidden="true" /><h3>{nome}</h3><p>{descricao}</p></article>)}</div>
     </section>
     <section className="apresentacao-final" aria-labelledby="apresentacao-final-titulo"><div><h2 id="apresentacao-final-titulo">Comece com uma coisa do seu dia.</h2><p>Uma tarefa, um treino ou uma leitura. Seu espaço vai tomando forma com o uso.</p></div><a className="botao-principal" href={destino}>{cadastroAberto ? 'Criar minha conta' : 'Entrar'}<ArrowRight size={18} aria-hidden="true" /></a></section>
-    <footer className="apresentacao-rodape"><span>Dayvilo · Seu dia, no seu ritmo.</span><a href="/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade e Cookies</a><button type="button" className="botao-secundario" onClick={abrirPrivacidade}>Preferências de medição</button><a href="#entrar">Já tenho uma conta</a></footer>
+    <footer className="apresentacao-rodape"><span>Dayvilo · Seu dia, no seu ritmo.</span><a href="/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade e Cookies</a><button type="button" className="botao-secundario" onClick={abrirPrivacidade}>Preferências de medição</button><a href={urlApp + '#entrar'}>Já tenho uma conta</a></footer>
   </main>;
 }

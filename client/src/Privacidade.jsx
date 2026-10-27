@@ -3,7 +3,7 @@ import { analytics } from './analytics.js';
 import './privacidade.css';
 
 export default function Privacidade({ tela }) {
-  const [aberto, setAberto] = useState(() => window.location.hash === '#preferencias-privacidade'), [preferencia, setPreferencia] = useState(() => analytics()?.preferencia());
+  const [aberto, setAberto] = useState(() => typeof window !== 'undefined' && window.location.hash === '#preferencias-privacidade'), [preferencia, setPreferencia] = useState(() => analytics()?.preferencia());
   const painel = useRef(null);
   const ativo = analytics()?.habilitado;
   useEffect(() => { try { analytics()?.pagina(tela); } catch {} }, [tela]);
@@ -23,7 +23,7 @@ export default function Privacidade({ tela }) {
     <p>O Dayvilo funciona com ou sem medição. Com sua autorização, usamos o Google Analytics para entender visitas, cadastros e uso das áreas. Cookies ajudam a reconhecer retornos neste navegador.</p>
     <details open={aberto}><summary>Como usamos esses dados</summary>
     <p>Não enviamos nomes, e-mails, senhas, textos das tarefas, anotações ou valores financeiros. O Google recebe informações técnicas do acesso e eventos de uso. Não usamos esta integração para anúncios nem gravação da tela.</p>
-    <p>Sua escolha fica neste navegador por até 180 dias. Você pode alterá-la em “Preferências de medição” na apresentação ou em Minha conta. Recusar interrompe novas medições e remove os cookies do Analytics deste site; não apaga dados já enviados.</p>
+    <p>Sua escolha fica neste navegador e endereço por até 180 dias. A apresentação e o aplicativo em endereços diferentes têm escolhas separadas. Você pode alterá-la em “Preferências de medição” na apresentação ou em Minha conta. Recusar interrompe novas medições neste endereço e remove os cookies do Analytics acessíveis a ele; não apaga dados já enviados.</p>
     <p><a href="/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade e Cookies do Dayvilo</a></p>
     <p><a href="https://policies.google.com/privacy?hl=pt-BR" target="_blank" rel="noreferrer">Privacidade do Google</a> · Dúvidas: <a href="mailto:dayviloapp@gmail.com">dayviloapp@gmail.com</a></p>
     </details>

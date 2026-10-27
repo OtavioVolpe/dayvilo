@@ -29,6 +29,13 @@ Registrar apenas o que mudou: dados/finalidade; necessidade; fundamento e escolh
 
 ## Acompanhamento de entregas
 
+### Preparação de hospedagem pública separada — 26/10/2026
+
+- Build estático independente para Cloudflare Pages; ainda depende de conta, DNS e ativação externa. Render/API/Aiven mantidos. Nenhum dado da conta ou segredo é copiado para o pacote público. Cloudflare passa a tratar requisições técnicas da apresentação quando ativado; registrar configurações e condições reais do fornecedor antes da publicação, sem pressupor certificação ou região brasileira.
+- Política versão 6 inclui o fornecedor e explica escolhas independentes por origem. Não houve nova tabela ou mudança em retenção/exclusão da conta. O cookie de sessão continua restrito ao host do aplicativo. Usuários precisarão autenticar novamente no subdomínio; preferências locais não migram.
+- Analytics compartilhado na mesma propriedade, condicionado ao consentimento em cada endereço. Novo evento fixo `open_app`; `start_signup` já existente. Sem parâmetros livres, tokens ou conteúdo pessoal. Redirecionamentos de links antigos mantêm tokens somente no fragmento antes de montar o painel de medição. Pré-visualizações não ativam Analytics.
+- Plano operacional e verificações em `docs/publicacao-separada.md`. Medição, DNS, certificados, migração dos atalhos instalados e indexação precisam ser conferidos após a ativação; não estão comprovados apenas pelo build local.
+
 ### Entrega de 23/10/2026 — meta semanal opcional
 
 - Uma meta ativa por conta: tipo, título e frequência de 1 a 7 dias. Metas automáticas consultam datas planejadas de tarefas concluídas da semana; a personalizada guarda até sete marcações manuais. Finalidade: acompanhar o compromisso escolhido pelo usuário, dentro da funcionalidade de organização solicitada.

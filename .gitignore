@@ -1,5 +1,6 @@
 node_modules/
 dist/
+client/dist-publico/
 .env
 .env.*
 !.env.example
