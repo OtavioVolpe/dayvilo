@@ -68,8 +68,8 @@ export default function Acesso({ aoEntrar, aviso, aoRecuperar, cadastroAberto = 
       </form>
       {!cadastro && <p className="acesso-alternar acesso-recuperar"><button type="button" disabled={enviando} onClick={aoRecuperar}>Esqueci minha senha</button></p>}
       {cadastroAberto && <p className="acesso-alternar">{cadastro ? 'Já tem uma conta?' : 'Primeira vez aqui?'} <button type="button" disabled={enviando} onClick={() => { definirCadastro(!cadastro); definirErro(''); definirMostrarSenha(false); definirVincular(false); }}>{cadastro ? 'Entrar' : 'Criar conta'}</button></p>}
-      <p><a href="/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade e Cookies</a></p>
-      <button type="button" className="botao-secundario" onClick={abrirPrivacidade}>Preferências de medição</button>
+      <footer className="acesso-privacidade"><a href="/privacidade" target="_blank" rel="noopener noreferrer">Privacidade e cookies</a>
+      <button type="button" className="privacidade-link" onClick={abrirPrivacidade}>Preferências de medição</button></footer>
     </section>
   </main>;
 }
