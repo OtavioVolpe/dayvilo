@@ -56,8 +56,8 @@ export function criarServicoTreinos(banco) {
       const inicio = validarData(query.inicio), fim = validarData(query.fim);
       if (fim < inicio || (new Date(fim) - new Date(inicio)) / 86400000 > 31) throw new ErroValidacao('Consulte até 31 dias.');
       const [fichas] = await banco.execute('SELECT id, nome, exercicios, versao FROM fichas_treino WHERE usuario_id = ? AND arquivada = FALSE ORDER BY id', [usuario.id]);
-      const [sessoes] = await banco.execute('SELECT s.id, s.tarefa_id, t.titulo, t.data_prevista, t.situacao FROM sessoes_treino s JOIN tarefas t ON t.id = s.tarefa_id WHERE t.usuario_id = ? AND t.data_prevista BETWEEN ? AND ? ORDER BY t.data_prevista, t.id', [usuario.id, inicio, fim]);
-      return { fichas: fichas.map(f => ({ ...f, exercicios: json(f.exercicios) })), sessoes };
+      const [sessoes] = await banco.execute('SELECT s.id, s.tarefa_id, s.realizado, t.titulo, t.data_prevista, t.situacao FROM sessoes_treino s JOIN tarefas t ON t.id = s.tarefa_id WHERE t.usuario_id = ? AND t.data_prevista BETWEEN ? AND ? ORDER BY t.data_prevista, t.id', [usuario.id, inicio, fim]);
+      return { fichas: fichas.map(f => ({ ...f, exercicios: json(f.exercicios) })), sessoes: sessoes.map(({ realizado, ...s }) => ({ ...s, pode_desagendar: s.data_prevista >= obterDataHoje(usuario.fuso_horario) && s.situacao !== 'concluida' && !temRegistro(realizado) })) };
     },
     async salvarFicha(usuario, dados, id) {
       const validada = validarFicha(dados);
@@ -125,6 +125,27 @@ export function criarServicoTreinos(banco) {
       });
     },
     async desagendar(usuario, dados) {
+      if (Object.hasOwn(dados, 'sessoes')) {
+        validarObjeto(dados, ['data', 'sessoes']);
+        const data = validarData(dados.data);
+        if (!Array.isArray(dados.sessoes) || !dados.sessoes.length || dados.sessoes.length > 100) throw new ErroValidacao('Escolha os treinos para desagendar.');
+        const ids = [...new Set(dados.sessoes.map(id => validarId(id)))].sort((a, b) => a - b);
+        return transacionar(banco, async c => {
+          const selecionadas = [];
+          for (const id of ids) {
+            const s = await sessao(c, usuario, id, true);
+            if (s.data_prevista !== data) throw new ErroValidacao('O treino não pertence à data selecionada.');
+            selecionadas.push(s);
+          }
+          let quantidade = 0, preservados = 0;
+          for (const s of selecionadas) {
+            if (s.data_prevista < obterDataHoje(usuario.fuso_horario) || s.situacao === 'concluida' || temRegistro(s.realizado)) { preservados++; continue; }
+            await c.execute('DELETE FROM tarefas WHERE id = ? AND usuario_id = ?', [s.tarefa_id, usuario.id]);
+            quantidade++;
+          }
+          return { quantidade, preservados };
+        });
+      }
       validarObjeto(dados, ['ficha_id', 'inicio', 'fim', 'dias']);
       const inicio = validarData(dados.inicio), fim = validarData(dados.fim);
       if (fim < inicio || (new Date(fim) - new Date(inicio)) / 86400000 > 365) throw new ErroValidacao('Escolha um período de até 366 dias.');

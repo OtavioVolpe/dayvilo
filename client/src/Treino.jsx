@@ -1,3 +1,4 @@
+import DesagendamentoTreino from './DesagendamentoTreino.jsx';
 import NavegacaoDatas from './NavegacaoDatas.jsx';
 import AgendamentoTreino from './AgendamentoTreino.jsx';
 import { prepararAgendaTreino } from './agenda-treino.js';
@@ -19,6 +20,7 @@ const enviar = (method, body) => ({ method, headers: { 'Content-Type': 'applicat
 const inicioSemana = data => deslocarData(data, -((new Date(data + 'T12:00:00Z').getUTCDay() + 6) % 7));
 
 export default function Treino({ sessaoInicial = null, aoConsumirSessao, aoAlterarSujo }) {
+  const [desagendamento, setDesagendamento] = useState(null);
   const [confirmacao, setConfirmacao] = useState(null);
   const [hoje, setHoje] = useState(''), [data, setData] = useState(''), [visao, setVisao] = useState('Hoje');
   const [dados, setDados] = useState({ fichas: [], sessoes: [] }), [revisao, setRevisao] = useState(0);
@@ -55,7 +57,7 @@ export default function Treino({ sessaoInicial = null, aoConsumirSessao, aoAlter
   useEffect(() => { if (sessaoInicial) { abrirSessao(sessaoInicial); aoConsumirSessao?.(); } }, [sessaoInicial]);
   function fechar(confirmado = false) {
     if (sujo && confirmado !== true) { setConfirmacao({ mensagem: 'Descartar alterações não salvas?', acao: () => fechar(true) }); return; }
-    setFicha(null); setAgenda(null); setSessao(null); setSujo(false); setErro('');
+    setDesagendamento(null); setFicha(null); setAgenda(null); setSessao(null); setSujo(false); setErro('');
   }
   function editarExercicio(indice, campo, valor) {
     setSujo(true); setFicha(f => ({ ...f, exercicios: f.exercicios.map((e, i) => i === indice ? { ...e, [campo]: valor } : e) }));
@@ -74,15 +76,6 @@ export default function Treino({ sessaoInicial = null, aoConsumirSessao, aoAlter
     e.preventDefault();
     const previa = prepararAgendaTreino(agenda);
     if (previa.erro) { setErro(previa.erro); return; }
-    if (agenda.desagendar) {
-      const selecao = previa.selecao;
-      setConfirmacao({ rotulo: 'Desagendar treinos', destrutiva: true, mensagem: `Desagendar os treinos de “${dados.fichas.find(f => f.id === agenda.ficha_id)?.nome}” nas datas selecionadas? ${previa.resumo} Remove também da Rotina, sem desfazer. Passados, concluídos e treinos com registros serão mantidos.`, acao: () => executar(async () => {
-        const r = await solicitar('/treinos/agenda/desagendar', enviar('POST', selecao));
-        setAgenda(null); setSujo(false); setRevisao(v => v + 1);
-        setAviso(`${r.quantidade} treino(s) desagendado(s).${r.preservados ? ` ${r.preservados} preservado(s) por histórico ou registros.` : ''}`);
-      }) });
-      return;
-    }
     await executar(async () => {
       const selecao = previa.selecao;
       const r = await solicitar('/treinos/agenda', enviar('POST', selecao));
@@ -113,7 +106,7 @@ export default function Treino({ sessaoInicial = null, aoConsumirSessao, aoAlter
       setAviso('Treino reaberto. Seus registros foram mantidos.');
     });
   }
-  const editando = Boolean(ficha || agenda || sessao), bloqueado = ocupado || carregando;
+  const editando = Boolean(ficha || agenda || sessao || desagendamento), bloqueado = ocupado || carregando;
   const dias = data ? (visao === 'Hoje' ? [data] : Array.from({ length: 7 }, (_, i) => deslocarData(inicioSemana(data), i))) : [];
   return <section className="treino" aria-label="Treinos" aria-busy={ocupado || carregando}>
     {confirmacao && <ConfirmacaoTreino rotulo={confirmacao.rotulo} destrutiva={confirmacao.destrutiva} mensagem={confirmacao.mensagem} cancelar={() => setConfirmacao(null)} confirmar={() => { const acao = confirmacao.acao; setConfirmacao(null); acao(); }} />}
@@ -121,13 +114,12 @@ export default function Treino({ sessaoInicial = null, aoConsumirSessao, aoAlter
     {erro && <p className="mensagem-erro" role="alert">{erro}</p>}{aviso && <p className="mensagem-sucesso" role="status">{aviso}</p>}
     {!editando && <>
       <nav className="routine-tabs" aria-label="Visualizações do treino">{['Hoje', 'Semana'].map(v => <button key={v} disabled={ocupado} aria-pressed={visao === v} onClick={() => setVisao(v)}>{v}</button>)}</nav>
-      <div className="navegacao-secoes"><NavegacaoDatas data={data} hoje={hoje} dias={dias} semanal={visao === 'Semana'} bloqueado={bloqueado} aoEscolher={setData} aoVoltar={() => setData(hoje)} /></div>
+      <div className="navegacao-secoes"><NavegacaoDatas data={data} hoje={hoje} dias={dias} semanal={visao === 'Semana'} bloqueado={bloqueado} aoEscolher={setData} aoVoltar={() => setData(hoje)} /><button disabled={bloqueado || !data} onClick={() => { setDesagendamento(data); setErro(''); setAviso(''); }}>Desagendar treinos</button></div>
       {carregando ? <p role="status">Carregando treinos…</p> : <div className={visao === 'Semana' ? 'treino-semana' : 'treino-dia'}>{dias.map(d => <section className="treino-dia-card" key={d}><h2>{formatarData(d, { weekday: 'short', day: '2-digit', month: '2-digit' })}{d === hoje && <small>Hoje</small>}</h2>{dados.sessoes.filter(s => s.data_prevista === d).map(s => <button className="treino-agendado" key={s.id} disabled={ocupado} onClick={() => abrirSessao(s.id)}><Dumbbell size={20} /><span><strong>{s.titulo}</strong><small>{({ pendente: 'Abrir treino', concluida: 'Concluído · ver registro', pulada: 'Pulado · ver ficha' })[s.situacao]}</small></span><ChevronRight size={18} /></button>)}{!dados.sessoes.some(s => s.data_prevista === d) && <p className="treino-vazio">Sem treino agendado.</p>}</section>)}</div>}
       <h2 className="treino-fichas-titulo">Minhas fichas</h2><p className="treino-ajuda">Monte os exercícios e escolha os dias para treinar.</p>
       {!dados.fichas.length && !carregando && !erro && data && <TreinoVazio bloqueado={bloqueado} aoCriar={criarFicha} />}
       <div className="treino-fichas">{dados.fichas.map(f => <FichaTreinoCard key={f.id} ficha={f} bloqueado={bloqueado}
         agendar={() => { setAgenda({ ficha_id: f.id, frequencia: 'unica', inicio: data, fim: deslocarData(data, 27), dias: [] }); setSujo(false); setAviso(''); }}
-        desagendar={() => { setAgenda({ ficha_id: f.id, frequencia: 'unica', inicio: data, fim: deslocarData(data, 27), dias: [], desagendar: true }); setSujo(false); setAviso(''); }}
         editar={() => { setFicha(structuredClone(f)); setSujo(false); setAviso(''); }}
         excluir={() => { setConfirmacao({ rotulo: 'Excluir ficha', destrutiva: true, mensagem: `Excluir a ficha “${f.nome}” e seus treinos de hoje em diante sem registros? Passados, concluídos e treinos com registros serão mantidos. Não pode ser desfeito.`, acao: () => executar(async () => { const r = await solicitar('/treinos/fichas/' + f.id, { method: 'DELETE' }); setAviso(r.mensagem); setRevisao(v => v + 1); }) }); }}
       />)}</div>

@@ -26,3 +26,5 @@
 .treino .treino-ficha-menu button{width:100%;border:0;justify-content:flex-start;background:transparent;font-size:.85rem}
 .treino .treino-ficha-menu button:hover{background:var(--background)}
 .treino .treino-ficha-menu .treino-ficha-excluir{border-top:1px solid var(--line);border-radius:0 0 8px 8px;margin-top:5px;padding-top:14px}
+
+.treino .treino-desagendar-opcao{display:flex;flex-direction:row;align-items:center;gap:12px;padding:16px;margin-top:12px;border:1px solid var(--borda,#34463a);border-radius:12px}.treino-desagendar-opcao span{display:grid;gap:6px}.treino-desagendar-opcao small{opacity:.75}.treino .navegacao-secoes{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
