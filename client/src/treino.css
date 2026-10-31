@@ -28,3 +28,6 @@
 .treino .treino-ficha-menu .treino-ficha-excluir{border-top:1px solid var(--line);border-radius:0 0 8px 8px;margin-top:5px;padding-top:14px}
 
 .treino .treino-desagendar-opcao{display:flex;flex-direction:row;align-items:center;gap:12px;padding:16px;margin-top:12px;border:1px solid var(--borda,#34463a);border-radius:12px}.treino-desagendar-opcao span{display:grid;gap:6px}.treino-desagendar-opcao small{opacity:.75}.treino .navegacao-secoes{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.treino .navegacao-secoes .treino-desagendar-acao{margin-left:auto;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 14px;border:1px solid transparent;border-radius:999px;background:transparent;color:var(--muted);font-size:.85rem;font-weight:500;transition:background .15s,color .15s,border-color .15s}
+.treino .navegacao-secoes .treino-desagendar-acao:hover:not(:disabled){background:var(--soft);color:var(--accent);border-color:var(--line)}
+.treino .navegacao-secoes .treino-desagendar-acao:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
