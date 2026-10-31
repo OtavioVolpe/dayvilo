@@ -6,7 +6,6 @@ import './observacao-tarefa.css';
 export default function ObservacaoTarefa({ tarefa, fechar, aoSalvar }) {
   const dialogo = useRef(null), tituloId = useId();
   const campo = useRef(null), trava = useRef(false);
-  const cliqueComecouFora = useRef(false);
   const [editando, setEditando] = useState(false), [texto, setTexto] = useState(tarefa.observacao ?? '');
   const [salvando, setSalvando] = useState(false), [erro, setErro] = useState(''), [descarte, setDescarte] = useState(null);
   const sujo = editando && texto !== (tarefa.observacao ?? '');
@@ -44,21 +43,9 @@ export default function ObservacaoTarefa({ tarefa, fechar, aoSalvar }) {
     };
   }, []);
 
-  function estaFora(e) {
-    if (e.target !== e.currentTarget) return false;
-    const r = e.currentTarget.getBoundingClientRect();
-    return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
-  }
-  function clicarFora(e) {
-    const comecouFora = cliqueComecouFora.current;
-    cliqueComecouFora.current = false;
-    if (comecouFora && estaFora(e)) sair('fechar');
-  }
-
-  return <dialog ref={dialogo} className="observacao-dialogo" aria-labelledby={tituloId}
-    onPointerDownCapture={e => { cliqueComecouFora.current = e.button === 0 && estaFora(e); }}
-    onPointerCancel={() => { cliqueComecouFora.current = false; }}
-    onCancel={e => { e.preventDefault(); sair('fechar'); }} onClick={clicarFora}>
+  // Fechar apenas por ação explícita: selecionar texto pode terminar fora da janela.
+  return <dialog ref={dialogo} className="observacao-dialogo" aria-labelledby={tituloId} closedby="closerequest"
+    onCancel={e => { e.preventDefault(); sair('fechar'); }}>
     <header className="observacao-topo">
       <div><span><NotebookText size={16} aria-hidden="true" />Observação</span><h2 id={tituloId}>{tarefa.titulo}</h2></div>
       <div className="observacao-botoes">{!editando && <button type="button" aria-label="Editar observação" title="Editar observação" onClick={() => { setTexto(tarefa.observacao ?? ''); setEditando(true); }}><Pencil size={18} aria-hidden="true" /></button>}
