@@ -6,6 +6,7 @@ import './observacao-tarefa.css';
 export default function ObservacaoTarefa({ tarefa, fechar, aoSalvar }) {
   const dialogo = useRef(null), tituloId = useId();
   const campo = useRef(null), trava = useRef(false);
+  const cliqueComecouFora = useRef(false);
   const [editando, setEditando] = useState(false), [texto, setTexto] = useState(tarefa.observacao ?? '');
   const [salvando, setSalvando] = useState(false), [erro, setErro] = useState(''), [descarte, setDescarte] = useState(null);
   const sujo = editando && texto !== (tarefa.observacao ?? '');
@@ -43,13 +44,20 @@ export default function ObservacaoTarefa({ tarefa, fechar, aoSalvar }) {
     };
   }, []);
 
-  function clicarFora(e) {
-    if (e.target !== e.currentTarget) return;
+  function estaFora(e) {
+    if (e.target !== e.currentTarget) return false;
     const r = e.currentTarget.getBoundingClientRect();
-    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) sair('fechar');
+    return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+  }
+  function clicarFora(e) {
+    const comecouFora = cliqueComecouFora.current;
+    cliqueComecouFora.current = false;
+    if (comecouFora && estaFora(e)) sair('fechar');
   }
 
   return <dialog ref={dialogo} className="observacao-dialogo" aria-labelledby={tituloId}
+    onPointerDownCapture={e => { cliqueComecouFora.current = e.button === 0 && estaFora(e); }}
+    onPointerCancel={() => { cliqueComecouFora.current = false; }}
     onCancel={e => { e.preventDefault(); sair('fechar'); }} onClick={clicarFora}>
     <header className="observacao-topo">
       <div><span><NotebookText size={16} aria-hidden="true" />Observação</span><h2 id={tituloId}>{tarefa.titulo}</h2></div>
