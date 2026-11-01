@@ -61,6 +61,10 @@ export function criarControladorTarefas(banco) {
     async ocorrenciasSerie(requisicao, resposta) {
       resposta.json(await tarefas.ocorrenciasSerie(requisicao.usuario, requisicao.query, requisicao.params.id));
     },
+    async estenderSerie(requisicao, resposta) {
+      if (!requisicao.is('application/json')) return resposta.status(415).json({ erro: 'Use conteúdo JSON.' });
+      resposta.json(await tarefas.estenderSerie(requisicao.usuario, requisicao.body, requisicao.params.id));
+    },
     async editarSerie(requisicao, resposta) {
       const resultado = await tarefas.editarSerie(requisicao.usuario, requisicao.body, requisicao.params.id);
       resposta.json(resultado);

@@ -359,6 +359,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
   const grupoConcluidas = itens => itens.length > 0 && <details className="tarefas-concluidas grupo-concluidas" open><summary><span className="grupo-titulo"><ChevronRight className="grupo-seta" size={17} aria-hidden="true" /><CircleCheck size={18} aria-hidden="true" />Concluídas<span className="grupo-contagem">{itens.length}</span></span></summary><ul className="lista-tarefas">{itens.map(tarefa => linha(tarefa))}</ul></details>;
   return <section className={`planejamento ${casa ? 'planejamento-casa' : ''}`} aria-label={casa ? "Tarefas de casa" : historico ? "Histórico de tarefas" : semanal ? "Tarefas da semana" : "Tarefas do dia"} aria-busy={carregando}>
     {repeticaoAberta && <RepeticaoTarefa tarefa={repeticaoAberta} hoje={hoje} fechar={() => definirRepeticaoAberta(null)}
+      aoEstender={r => { definirRepeticaoAberta(null); definirAviso(`${r.criadas} ocorrência(s) adicionadas. Histórico preservado.`); definirCarregando(true); definirTentativa(v => v + 1); }}
       bloqueado={salvando || carregando || atualizando.length > 0}
       editar={() => { const tarefa = repeticaoAberta; definirRepeticaoAberta(null); abrirFormulario(tarefa, data, true); }}
       encerrar={() => encerrarSerie(repeticaoAberta)} />}

@@ -96,7 +96,7 @@ export function criarRepositorioTarefas(banco) {
       return { limites, ocorrencias: ocorrencias.map(apresentarTarefa) };
     },
     async salvarConfiguracao(usuarioId, serieId, regra) {
-      await banco.execute('UPDATE configuracoes_series SET tipo = ?, dias = ?, ate = ? WHERE usuario_id = ? AND serie_id = ?', [regra.tipo, JSON.stringify(regra.dias ?? null), regra.ate, usuarioId, serieId]);
+      await banco.execute('UPDATE configuracoes_series SET tipo = ?, dias = ?, ate = ?, inicio = COALESCE(?, inicio) WHERE usuario_id = ? AND serie_id = ?', [regra.tipo, JSON.stringify(regra.dias ?? null), regra.ate, regra.inicio ?? null, usuarioId, serieId]);
     },
     async prolongar(usuarioId, serieId, dados, datas) {
       let criadas = 0;

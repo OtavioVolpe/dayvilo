@@ -91,6 +91,31 @@ export function criarServicoTarefas(banco) {
       const lista = await tarefas.ocorrenciasSerie(usuario.id, referencia.serie_id, inicio, final.toISOString().slice(0, 10));
       return { mes, configuracao: await tarefas.configuracaoSerie(usuario.id, referencia.serie_id), ...lista };
     },
+    async estenderSerie(usuario, entrada, parametroId) {
+      validarObjeto(entrada, ['inicio', 'ate', 'tipo', 'dias', 'horario', 'horario_final', 'previa', 'termino_anterior']);
+      if (typeof entrada.previa !== 'boolean') throw new ErroValidacao('Informe se deseja conferir ou confirmar a extensão.');
+      const inicio = validarData(entrada.inicio), ate = validarData(entrada.ate);
+      return alterar(usuario, validarId(parametroId), ['pendente', 'concluida', 'pulada'], async (repositorio, referencia) => {
+        if (!referencia.serie_id) throw new ErroAplicacao(404, 'Série não encontrada para esta tarefa.');
+        if (referencia.leitura || referencia.refeicao_id || referencia.treino_sessao_id) throw new ErroValidacao('Use a área de origem para agendar esta atividade.');
+        const anterior = await repositorio.configuracaoSerie(usuario.id, referencia.serie_id, true);
+        if (entrada.termino_anterior !== anterior.ate) throw new ErroAplicacao(409, 'A repetição mudou. Feche e abra novamente esta janela.');
+        if (inicio < obterDataHoje(usuario.fuso_horario) || inicio <= anterior.ate) throw new ErroValidacao('Continue a partir de hoje ou de uma data após o término atual.');
+        const regra = { tipo: entrada.tipo, ate, ...(['semanal', 'quinzenal'].includes(entrada.tipo) ? { dias: entrada.dias } : {}) };
+        const { tarefa: dados, datas } = prepararRepeticao({ tarefa: {
+          titulo: referencia.titulo, observacao: referencia.observacao, area: referencia.area, ambiente: referencia.ambiente,
+          prioridade: referencia.prioridade, data_prevista: inicio, horario: entrada.horario, horario_final: entrada.horario_final,
+        }, repeticao: regra }, anterior.tipo === regra.tipo ? (anterior.inicio || inicio) : inicio);
+        const { ocorrencias } = await repositorio.ocorrenciasSerie(usuario.id, referencia.serie_id, inicio, ate);
+        const existentes = new Set(ocorrencias.map(o => o.data_prevista));
+        const novas = datas.filter(data => !existentes.has(data));
+        if (!novas.length) throw new ErroValidacao('Não há novas ocorrências para adicionar nesse período.');
+        if (entrada.previa) return { quantidade: novas.length, inicio: novas[0], fim: novas.at(-1) };
+        const criadas = await repositorio.prolongar(usuario.id, referencia.serie_id, dados, novas);
+        await repositorio.salvarConfiguracao(usuario.id, referencia.serie_id, { ...regra, inicio: anterior.tipo === regra.tipo ? (anterior.inicio || inicio) : inicio });
+        return { criadas, inicio: novas[0], fim: novas.at(-1) };
+      });
+    },
     async editarSerie(usuario, entrada, parametroId) {
       const id = validarId(parametroId);
       validarObjeto(entrada, ['titulo', 'observacao', 'horario', 'horario_final', 'prioridade', 'ate', 'regra', 'area', 'ambiente']);
