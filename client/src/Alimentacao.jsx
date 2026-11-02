@@ -4,6 +4,7 @@ import CampoHorario from './CampoHorario.jsx';
 import DestinosAlimentacao from './DestinosAlimentacao.jsx';
 import AguaDia from './AguaDia.jsx';
 import AlimentacaoVazia from './AlimentacaoVazia.jsx';
+import ResumoCopiaAlimentacao from './ResumoCopiaAlimentacao.jsx';
 import { destinosAlimentacao } from './destinos-alimentacao.js';
 import { useEffect, useRef, useState } from 'react';
 import { Plus, Copy, Utensils, Clock, Pencil, Trash2, SkipForward, Circle, CircleCheck, NotebookPen, RotateCcw } from 'lucide-react';
@@ -101,7 +102,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
           <DestinosAlimentacao form={form} alterar={alterar} hoje={dados.hoje} selecao={selecaoCopia} />
           <label>Se já houver refeições<select value={form.tipo} onChange={e => alterar('tipo', e.target.value)}><option value="adicionar">Manter e adicionar as novas</option><option value="substituir">Substituir somente as pendentes</option></select></label>
           <p className="ali-ajuda">Refeições feitas ou puladas são preservadas. {form.tipo === 'adicionar' && 'Adicionar pode criar refeições com o mesmo nome.'}</p>
-          {form.previa && <div className="ali-previa"><h3>Confira antes de copiar</h3>{form.previa.resumo.map(r => <p key={r.data}><strong>{formatarData(r.data)}</strong> · {r.adicionar} novas · {r.remover} removidas · {r.existentes - r.remover} mantidas</p>)}</div>}
+          {form.previa && <ResumoCopiaAlimentacao resumo={form.previa.resumo} />}
           <div className="ali-acoes"><button onClick={() => navegar(() => {})}>Cancelar</button>{form.previa ? <button className="botao-principal" onClick={() => copiar(true)}>Confirmar cópia</button> : <button className="botao-principal" disabled={Boolean(selecaoCopia.erro) || !selecaoCopia.destinos.length} onClick={() => copiar()}>Revisar cópia</button>}</div>
         </fieldset>
       </section> : <form className="ali-form" onSubmit={salvar}><fieldset disabled={ocupado}><legend>{form.modo === 'nota' ? 'O que mudou?' : form.id ? 'Editar refeição' : 'Nova refeição'}</legend>
