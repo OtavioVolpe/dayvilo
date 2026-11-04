@@ -84,6 +84,27 @@ export function criarServicoLeitura(banco) {
       const [r] = await banco.execute('INSERT INTO livros (titulo, autor, estado, total_paginas, pagina_atual, inicio, termino, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [...v, u.id]);
       return { id: r.insertId };
     },
+    async registrar(u, id, d) {
+      validarObjeto(d, ['data']);
+      const data = validarData(d.data);
+      if (data > obterDataHoje(u.fuso_horario)) throw new ErroValidacao('Escolha hoje ou uma data anterior.');
+      return transacionar(banco, async c => {
+        const livro = await obter(c, u, id, true);
+        const [[tarefa]] = await c.execute(
+          "SELECT t.id, t.situacao FROM leituras_agendadas a JOIN tarefas t ON t.id = a.tarefa_id WHERE a.livro_id = ? AND t.usuario_id = ? AND t.data_prevista = ? ORDER BY FIELD(t.situacao, 'concluida', 'pendente', 'pulada'), t.id LIMIT 1 FOR UPDATE",
+          [livro.id, u.id, data]
+        );
+        if (tarefa?.situacao === 'concluida') return { existente: true };
+        if (tarefa) {
+          await c.execute("UPDATE tarefas SET situacao = 'concluida', concluida_em = CURRENT_TIMESTAMP WHERE usuario_id = ? AND id = ?", [u.id, tarefa.id]);
+        } else {
+          const [nova] = await c.execute("INSERT INTO tarefas (usuario_id, titulo, data_prevista, situacao, concluida_em) VALUES (?, ?, ?, 'concluida', CURRENT_TIMESTAMP)", [u.id, 'Ler - ' + livro.titulo, data]);
+          await c.execute('INSERT INTO leituras_agendadas (livro_id, tarefa_id) VALUES (?, ?)', [livro.id, nova.insertId]);
+        }
+        await c.execute('UPDATE livros SET versao = versao + 1 WHERE usuario_id = ? AND id = ?', [u.id, livro.id]);
+        return { existente: false };
+      });
+    },
     async agendar(u, id, d, remover = false) {
       if (remover && d?.tarefas !== undefined) {
         validarObjeto(d, ['versao', 'tarefas']);

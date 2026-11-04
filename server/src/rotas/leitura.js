@@ -11,6 +11,7 @@ export function criarRotasLeitura(banco) {
   r.get('/:id', async (req, res) => res.json(await s.detalhes(req.usuario, req.params.id)));
   r.post('/', async (req, res) => res.status(201).json(await s.salvar(req.usuario, req.body)));
   r.put('/:id', async (req, res) => res.json(await s.salvar(req.usuario, req.body, req.params.id)));
+  r.post('/:id/registrar', async (req, res) => res.json(await s.registrar(req.usuario, req.params.id, req.body)));
   r.post('/:id/agendar', async (req, res) => res.json(await s.agendar(req.usuario, req.params.id, req.body)));
   r.post('/:id/desagendar', async (req, res) => res.json(await s.agendar(req.usuario, req.params.id, req.body, true)));
   r.post('/:id/notas', async (req, res) => res.json(await s.anotar(req.usuario, req.params.id, req.body)));
