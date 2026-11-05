@@ -1,8 +1,9 @@
 import CapaLivro from './CapaLivro.jsx';
+import MenuTarefa from './MenuTarefa.jsx';
 import CampoHorario from './CampoHorario.jsx';
 import AgendamentosLeitura from './AgendamentosLeitura.jsx';
 import { useEffect, useRef, useState } from 'react';
-import { BookOpen, Plus, ArrowUpRight, Pencil, Trash2, X, CalendarDays, NotebookText } from 'lucide-react';
+import { BookOpen, Plus, ArrowUpRight, Pencil, Trash2, X, CalendarDays } from 'lucide-react';
 import { solicitar } from './api.js';
 import { deslocarData, formatarData } from './datas.js';
 import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
@@ -23,10 +24,10 @@ function Progresso({ livro }) {
   </div>;
 }
 
-function Janela({ fechar, children }) {
+function Janela({ fechar, children, essencial }) {
   const ref = useRef(null);
   useEffect(() => { const anterior = document.activeElement; ref.current.showModal(); return () => anterior?.focus(); }, []);
-  return <dialog className="leitura-janela" ref={ref} aria-label="Livro e anotações" onCancel={e => { e.preventDefault(); fechar(); }}>
+  return <dialog className={"leitura-janela" + (essencial ? " leitura-essencial" : "")} ref={ref} aria-label="Livro e anotações" onCancel={e => { e.preventDefault(); fechar(); }}>
     <button type="button" className="leitura-fechar" aria-label="Fechar livro" onClick={fechar}><X size={22} /></button>{children}
   </dialog>;
 }
@@ -117,9 +118,14 @@ export default function Leitura({ inicial, aoConsumirInicial, aoAlterarSujo }) {
       <CapaLivro livro={l} /><span className="leitura-livro-titulo">{l.titulo}</span><span className="leitura-livro-autor">{l.autor || 'Autor não informado'}</span>
       <span className="leitura-livro-estado">{l.estado === 'lido' ? 'Concluído' : estados[l.estado]}{l.estado === 'lendo' && l.total_paginas && l.pagina_atual !== null ? ' · ' + Math.round(l.pagina_atual / l.total_paginas * 100) + '%' : ''}{l.estado === 'lido' && l.termino ? ' · ' + dataCurta(l.termino) : ''}</span>
     </button>)}{!visiveis.length && !erro && <LeituraVazia estado={aba === 'todos' ? 'quero_ler' : aba} estanteVazia={!dados.livros.length} bloqueado={ocupado} aoCriar={novo} />}</div>}
-    {aberta && <Janela fechar={fechar}>
-      {!form && livro && <div className="leitura-detalhe-capa"><CapaLivro livro={livro} /></div>}<span className="leitura-etiqueta"><BookOpen size={18} />Leitura</span>
-      <h2>{form ? ({ registro: 'Registrar esta leitura na Rotina?', livro: form.id ? 'Editar livro' : 'Novo livro', progresso: 'Até onde você leu?', nota: form.id ? 'Editar anotação' : 'Nova anotação', agendamentos: 'Agendamentos de leitura', agenda: form.remover ? 'Desagendar leitura' : 'Agendar leitura' })[form.modo] : livro?.titulo || 'Abrindo livro…'}</h2>
+    {aberta && <Janela fechar={fechar} essencial={!form && Boolean(livro)}>
+      {!form && livro ? <>
+        <div className="leitura-detalhe-topo"><span className="leitura-sobrancelha">Sua leitura</span><MenuTarefa titulo={livro.titulo} bloqueado={ocupado} opcoes={[
+          { texto: 'Editar livro', Icone: Pencil, executar: () => editar(livro) },
+          { texto: 'Excluir livro', Icone: Trash2, separador: true, executar: () => setConfirmacao({ rotulo: 'Excluir livro', destrutiva: true, mensagem: 'Excluir o livro e todas as suas anotações? As leituras pendentes de hoje em diante também serão removidas. O histórico da Rotina será preservado, mas sem acesso ao livro. Não pode ser desfeito.', acao: () => executar('/leitura/' + id, 'DELETE', { versao: livro.versao }, 'Livro excluído; histórico da Rotina preservado.', () => setId(null)) }) }
+        ]} /></div>
+        <div className="leitura-identidade"><div className="leitura-detalhe-capa"><CapaLivro livro={livro} /></div><div className="leitura-identidade-texto"><span className="leitura-detalhe-estado">{livro.estado === 'lido' ? 'Lido' : estados[livro.estado]}</span><h2>{livro.titulo}</h2><p>{livro.autor || 'Autor não informado'}</p></div></div>
+      </> : <><span className="leitura-etiqueta"><BookOpen size={18} />Leitura</span><h2>{form ? ({ registro: 'Registrar esta leitura na Rotina?', livro: form.id ? 'Editar livro' : 'Novo livro', progresso: 'Até onde você leu?', nota: form.id ? 'Editar anotação' : 'Nova anotação', agendamentos: 'Agendamentos de leitura', agenda: form.remover ? 'Desagendar leitura' : 'Agendar leitura' })[form.modo] : 'Abrindo livro…'}</h2></>}
       {erroExibido}{aviso && <p role="status">{aviso}</p>}
       {form?.modo === 'agendamentos' ? livro ? <AgendamentosLeitura key={livro.versao} livro={livro} agendamentos={detalhe.agendamentos} hoje={dados.hoje} ocupado={ocupado} voltar={() => navegar(() => {})} remover={tarefas => setConfirmacao({ rotulo: 'Desagendar leituras', destrutiva: true, mensagem: 'Desagendar as ' + tarefas.length + ' leituras selecionadas? Elas serão removidas também da Rotina. Leituras concluídas ou puladas serão mantidas.', acao: () => executar('/leitura/' + id + '/desagendar', 'POST', { versao: livro.versao, tarefas }, r => r.quantidade + ' leitura(s) desagendada(s).' + (r.preservados ? ' ' + r.preservados + ' preservada(s).' : ''), () => setForm({ modo: 'agendamentos' })) })} /> : <p role="status">Carregando agendamentos…</p> : form ? <form onSubmit={salvar}><fieldset disabled={ocupado || (id && !detalhe)}>
         {form.modo === 'registro' && <>
@@ -138,15 +144,15 @@ export default function Leitura({ inicial, aoConsumirInicial, aoAlterarSujo }) {
         {form.modo === 'agenda' && <><p>{livro?.titulo}</p><label>Frequência<select value={form.frequencia} onChange={e => alterar('frequencia', e.target.value)}><option value="unica">Uma vez</option><option value="repetir">Repetir</option></select></label>{form.frequencia === 'unica' ? <label>Data<input type="date" required min={dados.hoje} value={form.inicio} onInput={e => alterar('inicio', e.target.value)} /></label> : <><div className="leitura-dupla"><label>De<input type="date" required min={dados.hoje} value={form.inicio} onInput={e => alterar('inicio', e.target.value)} /></label><label>Até<input type="date" required min={form.inicio} value={form.fim} onInput={e => alterar('fim', e.target.value)} /></label></div><div className="leitura-dias" role="group" aria-label="Dias da semana">{[['Seg', 1], ['Ter', 2], ['Qua', 3], ['Qui', 4], ['Sex', 5], ['Sáb', 6], ['Dom', 0]].map(([nome, dia]) => <label key={dia}><input type="checkbox" checked={form.dias.includes(dia)} onChange={e => alterar('dias', e.target.checked ? [...form.dias, dia] : form.dias.filter(v => v !== dia))} />{nome}</label>)}</div></>}{!form.remover && <label>Horário <small>(opcional)</small><CampoHorario value={form.horario} onInput={e => alterar('horario', e.target.value)} /></label>}<p className="leitura-ajuda">{form.remover ? 'Remove apenas leituras pendentes. Dias passados, concluídos e pulados são preservados.' : 'Aparece na Rotina. Dias já agendados não serão duplicados. Concluir a tarefa não altera as páginas do livro.'}</p></>}
         <div className="leitura-acoes"><button type="button" onClick={() => navegar(() => {})}>{form.modo === 'registro' ? 'Agora não' : 'Cancelar'}</button><button className="botao-principal" type="submit" disabled={form.modo === 'agenda' && form.frequencia !== 'unica' && !form.dias.length}>{ocupado ? 'Salvando…' : form.modo === 'registro' ? 'Registrar como concluída' : form.modo === 'agenda' ? form.remover ? 'Desagendar' : 'Agendar' : 'Salvar'}</button></div>
       </fieldset></form> : livro && <>
-        <p>{livro.autor || 'Autor não informado'} · {estados[livro.estado] === 'Lidos' ? 'Lido' : estados[livro.estado]}</p>
-        <p>{livro.pagina_atual !== null ? `Página ${livro.pagina_atual}` : 'Sem página registrada'}{livro.total_paginas ? ` de ${livro.total_paginas}` : ''}</p>
-        {(livro.inicio || livro.termino) && <p>{livro.inicio && `Início: ${dataCurta(livro.inicio)}`}{livro.termino && ` · Término: ${dataCurta(livro.termino)}`}</p>}
-        <div className="leitura-acoes"><button onClick={() => editar(livro, 'progresso')}>{livro.estado === 'quero_ler' ? 'Começar leitura' : livro.estado === 'lido' ? 'Reabrir leitura' : 'Registrar leitura'}</button><button onClick={() => editar(livro)}><Pencil size={17} />Editar livro</button>{livro.estado === 'lendo' && <button onClick={() => agenda()}><CalendarDays size={17} />Agendar leitura</button>}</div>
-        <button className="leitura-ver-agendamentos" onClick={() => { setAviso(''); setForm({ modo: 'agendamentos' }); }}><CalendarDays size={17} />Ver agendamentos</button>
-        <div className="leitura-notas-topo"><h3><NotebookText size={19} />Anotações</h3><button onClick={() => setForm({ modo: 'nota', texto: '', pagina: '' })}><Plus size={16} />Nova anotação</button></div>
-        {!detalhe.notas.length && <p>Nenhuma anotação ainda. Guarde ideias e trechos que quiser revisitar.</p>}
+        <Progresso livro={livro} />
+        {(livro.inicio || livro.termino) && <p className="leitura-detalhe-datas">{livro.inicio && `Início: ${dataCurta(livro.inicio)}`}{livro.termino && `${livro.inicio ? ' · ' : ''}Término: ${dataCurta(livro.termino)}`}</p>}
+        <button className="botao-principal leitura-registrar" disabled={ocupado} onClick={() => editar(livro, 'progresso')}><BookOpen size={18} />{livro.estado === 'quero_ler' ? 'Começar leitura' : livro.estado === 'lido' ? 'Reabrir leitura' : 'Registrar leitura'}</button>
+        <section className="leitura-detalhe-agenda" aria-label="Agendamentos do livro"><div className="leitura-secao-topo"><h3>Agendamentos</h3>{livro.estado === 'lendo' && <button className="leitura-acao-texto" disabled={ocupado} aria-label="Agendar leitura" onClick={() => agenda()}><Plus size={17} />Agendar</button>}</div>
+        <button className="leitura-acao-texto" onClick={() => { setAviso(''); setForm({ modo: 'agendamentos' }); }}>Ver agendamentos<ArrowUpRight size={17} /></button></section>
+        <div className="leitura-secao-topo leitura-detalhe-notas"><h3>Anotações</h3><button className="leitura-acao-texto" disabled={ocupado} aria-label="Nova anotação" onClick={() => setForm({ modo: 'nota', texto: '', pagina: '' })}><Plus size={16} />Nova</button></div>
+        {!detalhe.notas.length && <div className="leitura-notas-vazias"><p>Uma ideia para guardar?</p><span>Seus trechos e pensamentos ficam aqui.</span></div>}
         {detalhe.notas.map(n => <article className="leitura-nota" key={n.id}>{n.pagina && <span>Página {n.pagina}</span>}<p>{n.texto}</p><div className="leitura-acoes"><button aria-label="Editar anotação" onClick={() => setForm({ ...n, modo: 'nota' })}><Pencil size={16} /></button><button aria-label="Excluir anotação" onClick={() => setConfirmacao({ rotulo: 'Excluir anotação', destrutiva: true, mensagem: 'Excluir esta anotação? Não pode ser desfeito.', acao: () => executar(`/leitura/${id}/notas`, 'POST', { nota_id: n.id, excluir: true, versao: livro.versao }, 'Anotação excluída.') })}><Trash2 size={16} /></button></div></article>)}
-        <button className="leitura-excluir" disabled={ocupado} onClick={() => setConfirmacao({ rotulo: 'Excluir livro', destrutiva: true, mensagem: 'Excluir o livro e todas as suas anotações? As leituras pendentes de hoje em diante também serão removidas. O histórico da Rotina será preservado, mas sem acesso ao livro. Não pode ser desfeito.', acao: () => executar('/leitura/' + id, 'DELETE', { versao: livro.versao }, 'Livro excluído; histórico da Rotina preservado.', () => setId(null)) })}><Trash2 size={16} />Excluir livro</button>
+
       </>}
     </Janela>}
     {confirmacao && <ConfirmacaoTreino rotulo={confirmacao.rotulo} destrutiva={confirmacao.destrutiva} mensagem={confirmacao.mensagem} cancelar={() => setConfirmacao(null)} confirmar={() => { const fn = confirmacao.acao; setConfirmacao(null); fn(); }} />}

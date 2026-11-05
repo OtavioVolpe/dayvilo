@@ -70,3 +70,42 @@
 @media(max-width:600px){.leitura-topo{flex-direction:row;gap:12px}.leitura-topo h1{font-size:1.6rem}.leitura-topo p{font-size:.85rem}.leitura-topo>button{font-size:.8rem;flex-shrink:0;padding:10px}.leitura-destaque{grid-template-columns:80px minmax(0,1fr);gap:18px;padding:20px 16px;align-items:start}.leitura-destaque-capa{padding:0}.livro-capa{padding:14px 12px;gap:10px}.leitura-destaque-capa .livro-capa-titulo{font-size:1rem}.leitura-destaque-capa .livro-capa-arte{height:20px}.leitura-destaque-capa .livro-capa-autor{font-size:.6rem}.leitura-destaque-info h2{font-size:1.4rem}.leitura-destaque-info>p{font-size:.8rem}.leitura-destaque .leitura-acoes{flex-direction:column;align-items:stretch}.leitura-destaque .leitura-acoes button{font-size:.8rem;padding:10px 8px}.leitura-estante{grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 22px}.leitura .routine-tabs{flex-wrap:wrap}.leitura .routine-tabs button{font-size:.85rem;padding-inline:8px}.leitura-contagem{margin-left:5px}}
 
 .leitura .routine-tabs button{white-space:nowrap}
+
+/* Detalhes do livro: ação principal e seções compactas. */
+.leitura-essencial { width: min(590px, calc(100vw - 32px)); }
+.leitura-detalhe-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; margin-right: 48px; }
+.leitura-essencial .botao-mais-acoes { border: 0; background: transparent; width: 44px; padding: 8px; }
+.leitura-identidade { display: flex; align-items: center; gap: 22px; margin: 22px 0 26px; clear: both; }
+.leitura-identidade .leitura-detalhe-capa { flex: 0 0 86px; width: 86px; margin: 0; }
+.leitura-identidade .livro-capa { box-sizing: border-box; padding: 12px 10px; }
+.leitura-identidade .livro-capa-autor { font-size: .5rem; }
+.leitura-identidade .livro-capa-titulo { font-size: 1rem; -webkit-line-clamp: 3; }
+.leitura-identidade .livro-capa-arte { height: 18px; }
+.leitura-identidade-texto { min-width: 0; }
+.leitura-identidade-texto h2 { margin: 6px 0 8px; font-size: 1.7rem; line-height: 1.2; }
+.leitura-identidade-texto p { margin: 0; color: var(--muted); line-height: 1.5; }
+.leitura-detalhe-estado { color: var(--muted); font-size: .8rem; }
+.leitura-essencial .leitura-progresso { display: flex; flex-direction: column; gap: 12px; padding: 0; margin: 0; }
+.leitura-essencial .leitura-progresso-valores { order: -1; color: var(--ink); }
+.leitura-essencial .leitura-progresso progress { margin: 0; border: 0; border-radius: 8px; overflow: hidden; background: var(--line); }
+.leitura-essencial progress::-webkit-progress-bar { background: var(--line); }
+.leitura-essencial progress::-webkit-progress-value { background: var(--accent); border-radius: 8px; }
+.leitura-essencial progress::-moz-progress-bar { background: var(--accent); border-radius: 8px; }
+.leitura-essencial .leitura-detalhe-datas { font-size: .78rem; color: var(--muted); margin: 10px 0 0; }
+.leitura-essencial .leitura-registrar { width: 100%; margin-top: 22px; min-height: 48px; }
+.leitura-detalhe-agenda { margin-top: 24px; padding: 14px 0; border-block: 1px solid var(--line); }
+.leitura-secao-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.leitura-secao-topo h3 { font-size: 1rem; margin: 0; }
+.leitura-essencial .leitura-acao-texto { border: 0; background: transparent; color: var(--accent); padding: 10px 0; }
+.leitura-essencial .leitura-acao-texto:hover { text-decoration: underline; }
+.leitura-detalhe-notas { margin-top: 18px; }
+.leitura-notas-vazias { padding: 20px 0 12px; text-align: center; color: var(--muted); line-height: 1.6; }
+.leitura-notas-vazias p { margin: 0 0 4px; }
+.leitura-notas-vazias span { font-size: .8rem; }
+@media(max-width: 600px) {
+  .leitura-identidade { gap: 16px; margin: 18px 0 22px; }
+  .leitura-identidade .leitura-detalhe-capa { flex-basis: 72px; width: 72px; }
+  .leitura-identidade-texto h2 { font-size: 1.4rem; }
+  .leitura-identidade-texto p { font-size: .85rem; }
+  .leitura-identidade .livro-capa-titulo { font-size: .85rem; }
+}
