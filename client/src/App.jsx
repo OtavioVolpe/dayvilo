@@ -1,3 +1,4 @@
+import AtualizacaoAplicativo from './AtualizacaoAplicativo.jsx';
 import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
 import MenuMobile from './MenuMobile.jsx';
 import Metas from './Metas.jsx';
@@ -87,6 +88,7 @@ export default function App() {
   return (
     <div className={`app-shell${sessao && !recuperacao ? ' com-menu-mobile' : ''}`}>
       {confirmacaoTreino && <ConfirmacaoTreino mensagem={confirmacaoTreino.mensagem} cancelar={() => setConfirmacaoTreino(null)} confirmar={() => { const acao = confirmacaoTreino.acao; setConfirmacaoTreino(null); acao(); }} />}
+      <AtualizacaoAplicativo />
       <header className="app-header">
         <span className="brand"><span className="brand-mark"><Sprout size={22} aria-hidden="true" /></span>Dayvilo</span>
         {sessao === null && !recuperacao && !mostrarAcesso && <nav className="apresentacao-navegacao" aria-label="Acesso à conta"><a className="botao-secundario" href="#entrar">Entrar</a></nav>}

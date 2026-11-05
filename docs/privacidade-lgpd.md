@@ -78,3 +78,7 @@ Troca visual da coleção por uma árvore única, derivada do total já existent
 ### Biblioteca visual — 25/10/2026
 
 Redesenho local da Leitura: capas tipográficas derivadas de título/autor já cadastrados, destaque de um livro em andamento e filtro Todos. Sem upload, busca externa de capas, novos dados, eventos ou destinatários. Fluxos existentes de páginas, anotações, agendamento e exclusão preservados. Sem migração ou alteração da política pública. Validação em instância descartável com dados fictícios: progresso e agendamento salvos; layout desktop e mobile conferidos.
+
+### Aviso de nova versão — 04/11/2026
+
+O build do aplicativo emite um identificador aleatório por compilação em versao.json. O cliente consulta esse arquivo público ao abrir, voltar ao app e a cada cinco minutos visíveis, exibindo aviso e botão de recarga com confirmação. A consulta não envia cookies e não inclui identificadores da conta ou conteúdo pessoal. O contador de gravações pendentes existe apenas em memória e impede a recarga pelo aviso durante salvamentos. Sem novas tabelas, armazenamento local, eventos Analytics, destinatários ou mudança nas finalidades e retenção já descritas. Política pública mantida. Validado em sessões locais com telas de celular e computador, respostas inválidas, cancelamento e gravação em andamento.

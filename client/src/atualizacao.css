@@ -1,0 +1,28 @@
+.atualizacao-aplicativo {
+  position: fixed;
+  inset-inline: 20px;
+  bottom: 24px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 760px;
+  margin-inline: auto;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 12px 36px #0003;
+}
+.atualizacao-aplicativo > svg { flex-shrink: 0; color: var(--accent); }
+.atualizacao-aplicativo > div { flex: 1; min-width: 0; }
+.atualizacao-aplicativo strong { font-size: .95rem; }
+.atualizacao-aplicativo p { margin: 5px 0 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
+.atualizacao-aplicativo button { flex-shrink: 0; }
+@media (max-width: 750px) {
+  .atualizacao-aplicativo { inset-inline: 12px; bottom: calc(16px + env(safe-area-inset-bottom)); padding: 16px; flex-wrap: wrap; gap: 12px; }
+  .com-menu-mobile .atualizacao-aplicativo { bottom: calc(94px + env(safe-area-inset-bottom)); }
+  .atualizacao-aplicativo button { width: 100%; }
+}
+

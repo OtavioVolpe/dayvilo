@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { versaoAplicativo } from './versao-build.js';
 import { apresentacaoEstatica } from './seo-build.js';
 
 export default defineConfig({
-  plugins: [react(), apresentacaoEstatica(), {
+  plugins: [react(), versaoAplicativo(), apresentacaoEstatica(), {
     name: 'politica-publica-dev',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {

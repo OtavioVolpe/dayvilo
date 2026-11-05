@@ -1,7 +1,7 @@
 let csrf = '';
 export function definirCsrf(valor) { csrf = valor ?? ''; }
 
-export async function solicitar(caminho, opcoes = {}) {
+async function executarSolicitacao(caminho, opcoes = {}) {
   const metodo = (opcoes.method || 'GET').toUpperCase();
   const escrita = !['GET', 'HEAD'].includes(metodo);
   const falhaResposta = () => new Error(escrita
@@ -32,4 +32,21 @@ export async function solicitar(caminho, opcoes = {}) {
   }
   if (Object.keys(dados).length === 0) throw falhaResposta();
   return dados;
+}
+
+let escritasPendentes = 0;
+export function obterEscritasPendentes() { return escritasPendentes; }
+
+function sinalizarEscritas() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('dayvilo:escritas'));
+}
+
+export async function solicitar(caminho, opcoes = {}) {
+  const escrita = !['GET', 'HEAD'].includes((opcoes.method || 'GET').toUpperCase());
+  if (escrita) { escritasPendentes++; sinalizarEscritas(); }
+  try {
+    return await executarSolicitacao(caminho, opcoes);
+  } finally {
+    if (escrita) { escritasPendentes--; sinalizarEscritas(); }
+  }
 }
