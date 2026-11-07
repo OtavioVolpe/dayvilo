@@ -22,3 +22,12 @@
 .financeiro .fin-aporte,.fin-linha-aporte>.fin-valor,.financeiro .fin-linha-aporte>.fin-simbolo,.fin-linha-aporte .fin-direcao{color:var(--fin-cor-aporte)}
 .fin-resumo-movimentos{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:800px){.fin-resumo-movimentos{grid-template-columns:repeat(2,minmax(0,1fr))}.fin-resumo-movimentos>div:last-child{grid-column:auto}}
+
+/* O preenchimento destaca a ação pendente; o check identifica o realizado. */
+.financeiro .fin-acoes-linha>.fin-realizado{color:var(--accent);background:var(--soft);border-color:transparent;font-weight:500}
+.financeiro .fin-acoes-linha>.fin-realizado:hover:not(:disabled){border-color:var(--accent)}
+.financeiro .fin-acoes-linha>.fin-liquidar{font-weight:600}
+.fin-realizado svg,.fin-liquidar svg{flex-shrink:0}
+.financeiro .fin-situacao-pendente{display:flex;align-items:center;gap:5px;color:var(--ink);font-weight:500}
+.fin-situacao-pendente svg{flex-shrink:0;color:var(--muted)}
+.financeiro .fin-situacao-pendente.fin-atraso,.fin-situacao-pendente.fin-atraso svg{color:var(--fin-cor-saida)}
