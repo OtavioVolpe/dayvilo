@@ -1,3 +1,5 @@
+import AlimentosRefeicao, { ListaAlimentos } from './AlimentosRefeicao.jsx';
+import { prepararRefeicao, textoRefeicao } from './alimentos-refeicao.js';
 import NavegacaoDatas from './NavegacaoDatas.jsx';
 import './navegacao-secoes.css';
 import CampoHorario from './CampoHorario.jsx';
@@ -33,7 +35,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
         setDados(r);
         if (abrirInicial.current) {
           const refeicao = r.refeicoes.find(item => item.id === abrirInicial.current.id);
-          if (refeicao) setForm({ modo: 'refeicao', ...refeicao, horario: refeicao.horario || '' });
+          if (refeicao) setForm(prepararRefeicao({ modo: 'refeicao', ...refeicao, horario: refeicao.horario || '' }));
           else setErro('A refeição não está mais nesse dia. Consulte a data atual na Rotina.');
           abrirInicial.current = null; aoConsumirInicial?.();
         }
@@ -55,7 +57,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
     const executar = () => { setForm(null); setSujo(false); setErro(''); setAviso(''); acao(); };
     if (sujo) setConfirmacao({ mensagem: 'Descartar alterações não salvas?', executar }); else executar();
   }
-  function abrir(v) { navegar(() => setForm(v)); }
+  function abrir(v) { navegar(() => setForm(v.modo === 'refeicao' ? prepararRefeicao(v) : v)); }
   function alterar(campo, valor) { setSujo(true); setForm(v => ({ ...v, [campo]: valor, previa: null })); }
   async function executar(acao, mensagem, fechar = true) {
     if (bloqueio.current) return;
@@ -71,7 +73,10 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
   async function salvar(e) {
     e.preventDefault();
     if (form.modo === 'nota') return executar(() => solicitar(`/alimentacao/${form.id}/nota`, json('PATCH', { revisao: form.revisao, nota: form.nota })), 'Anotação salva. O planejamento foi mantido.');
-    const body = { titulo: form.titulo, observacao: form.observacao, horario: form.horario || null, data_prevista: form.data_prevista, mostrar_rotina: form.mostrar_rotina, ...(form.id ? { revisao: form.revisao } : {}) };
+    const observacao = textoRefeicao(form);
+    if (form.alimentos.some(a => !a.nome.trim())) { setErro('Informe o nome de cada alimento.'); return; }
+    if (observacao.length > 4000) { setErro('Os alimentos, quantidades e observação devem ter até 4.000 caracteres no total.'); return; }
+    const body = { titulo: form.titulo, observacao, horario: form.horario || null, data_prevista: form.data_prevista, mostrar_rotina: form.mostrar_rotina, ...(form.id ? { revisao: form.revisao } : {}) };
     const r = await executar(() => solicitar('/alimentacao' + (form.id ? '/' + form.id : ''), json(form.id ? 'PUT' : 'POST', body)), 'Refeição salva.');
     if (r) setData(body.data_prevista);
   }
@@ -109,7 +114,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
         {form.modo === 'nota' ? <><p className="ali-ajuda">{form.titulo} · {formatarData(form.data_prevista)}. O planejamento original será mantido.</p><label>Anotação<textarea maxLength={2000} value={form.nota} onChange={e => alterar('nota', e.target.value)} placeholder="Ex.: troquei o frango por peixe" /></label></> : <>
           <label>Refeição<input required maxLength={200} list="ali-nomes" value={form.titulo} onChange={e => alterar('titulo', e.target.value)} placeholder="Ex.: Almoço" /><datalist id="ali-nomes">{nomes.map(n => <option key={n} value={n} />)}</datalist></label>
           <div className="ali-campos"><label>Data<input type="date" required min="1001-01-01" max="9998-12-31" value={form.data_prevista} onInput={e => alterar('data_prevista', e.target.value)} /></label><label>Horário · opcional<CampoHorario value={form.horario} onInput={e => alterar('horario', e.target.value)} /></label></div>
-          <label>Alimentos e quantidades<textarea required maxLength={4000} value={form.observacao} onChange={e => alterar('observacao', e.target.value)} placeholder="Ex.: arroz, feijão e 100 g de frango" /></label>
+          <AlimentosRefeicao form={form} alterar={alterar} />
           <label className="ali-check"><input type="checkbox" checked={form.mostrar_rotina} onChange={e => alterar('mostrar_rotina', e.target.checked)} />Mostrar na Rotina</label>
           <p className="ali-ajuda">Na Rotina aparece o nome da refeição, com uma seta para abrir os alimentos aqui. Deixe desmarcado para manter somente em Alimentação.</p>
         </>}
@@ -129,7 +134,7 @@ export default function Alimentacao({ inicial, aoConsumirInicial, aoAlterarSujo 
       {!dados.refeicoes.length && !erro && <AlimentacaoVazia dia={dia} bloqueado={desabilitado} aoCriar={nova} />}
       <div className="ali-refeicoes">{dados.refeicoes.map(r => <article key={r.id} className="ali-refeicao">
         <header><div><h3><Utensils size={18} />{r.titulo}</h3><div className="ali-meta"><span><Clock size={13} />{r.horario || 'Sem horário'}</span>{r.mostrar_rotina && <span className="ali-verde">Na Rotina</span>}</div></div><button disabled={desabilitado} className="ali-icone" aria-label={'Editar ' + r.titulo} title="Editar refeição" onClick={() => abrir({ modo: 'refeicao', ...r, horario: r.horario || '' })}><Pencil size={18} /></button></header>
-        <p className="ali-alimentos">{r.observacao}</p>
+        <ListaAlimentos texto={r.observacao} />
         {r.nota && <p className="ali-nota"><NotebookPen size={15} /><span>{r.nota}</span></p>}
         <footer><button disabled={desabilitado} className={r.situacao === 'concluida' ? 'ali-feita' : ''} title={r.situacao === 'pendente' ? 'Marcar como feita' : 'Voltar para pendente'} onClick={() => situacao(r, r.situacao === 'pendente' ? 'concluida' : 'pendente')}>{r.situacao === 'concluida' ? <CircleCheck size={16} /> : r.situacao === 'pulada' ? <RotateCcw size={16} /> : <Circle size={16} />}{r.situacao === 'concluida' ? 'Feita' : r.situacao === 'pulada' ? 'Pulada' : 'Marcar feita'}</button><div>
           <button className="ali-icone" disabled={desabilitado || r.situacao === 'concluida'} aria-label={r.situacao === 'pulada' ? 'Restaurar ' + r.titulo : 'Pular ' + r.titulo} title={r.situacao === 'pulada' ? 'Voltar para pendente' : 'Pular refeição'} onClick={() => situacao(r, r.situacao === 'pulada' ? 'pendente' : 'pulada')}><SkipForward size={18} /></button>
