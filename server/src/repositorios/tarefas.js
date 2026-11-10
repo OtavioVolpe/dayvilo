@@ -1,12 +1,20 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 const colunas = '(SELECT lancamento_id FROM financeiro_lembretes WHERE tarefa_id = tarefas.id) AS financeiro_id, (SELECT livro_id FROM leituras_agendadas WHERE tarefa_id = tarefas.id) AS livro_id, EXISTS(SELECT 1 FROM leituras_agendadas WHERE tarefa_id = tarefas.id) AS leitura, (SELECT id FROM refeicoes WHERE tarefa_id = tarefas.id) AS refeicao_id, (SELECT id FROM sessoes_treino WHERE tarefa_id = tarefas.id) AS treino_sessao_id, id, titulo, observacao, area, ambiente, data_prevista, horario, horario_final, prioridade, situacao, ordem, (SELECT serie_id FROM ocorrencias_series WHERE tarefa_id = tarefas.id) AS serie_id';
 export const visivelNaRotina = 'NOT EXISTS (SELECT 1 FROM refeicoes WHERE tarefa_id = tarefas.id AND mostrar_rotina = FALSE)';
+
+function versaoTarefa({ id, titulo, observacao, area, ambiente, data_prevista, horario, horario_final, prioridade, situacao }) {
+  return createHash('sha256').update(JSON.stringify([id, titulo, observacao, area, ambiente, data_prevista, horario, horario_final, prioridade, situacao])).digest('hex');
+}
 
 function apresentarTarefa(tarefa) {
   // Padroniza também agendamentos antigos, sem reescrever o histórico no banco.
   if (tarefa.leitura) tarefa = { ...tarefa, titulo: tarefa.titulo.replace(/^Ler — /, 'Ler - ') };
   return { ...tarefa, prioridade: Boolean(tarefa.prioridade), horario: tarefa.horario?.slice(0, 5) ?? null, horario_final: tarefa.horario_final?.slice(0, 5) ?? null };
+}
+
+function apresentarTarefaEditavel(tarefa) {
+  return { ...apresentarTarefa(tarefa), versao: versaoTarefa(tarefa) };
 }
 
 export function criarRepositorioTarefas(banco) {
@@ -20,14 +28,14 @@ export function criarRepositorioTarefas(banco) {
         `SELECT ${colunas} FROM tarefas WHERE ${visivelNaRotina} AND usuario_id = ? AND data_prevista <=> ? ORDER BY ordem = 0, ordem, id`,
         [usuarioId, data],
       );
-      return tarefas.map(apresentarTarefa);
+      return tarefas.map(apresentarTarefaEditavel);
     },
     async listarAtrasadas(usuarioId, hoje) {
       const [tarefas] = await banco.execute(
         'SELECT ' + colunas + ` FROM tarefas WHERE ${visivelNaRotina} AND usuario_id = ? AND situacao = 'pendente' AND data_prevista < ? ORDER BY data_prevista, horario IS NULL, horario, id`,
         [usuarioId, hoje],
       );
-      return tarefas.map(apresentarTarefa);
+      return tarefas.map(apresentarTarefaEditavel);
     },
     async reagendar(usuarioId, id, data) {
       await banco.execute('UPDATE tarefas SET ordem = IF(data_prevista <=> ?, ordem, 0), data_prevista = ? WHERE usuario_id = ? AND id = ?', [data, data, usuarioId, id]);
@@ -42,11 +50,11 @@ export function criarRepositorioTarefas(banco) {
         'SELECT ' + colunas + ` FROM tarefas WHERE ${visivelNaRotina} AND usuario_id = ? AND data_prevista BETWEEN ? AND ? ORDER BY data_prevista, horario IS NULL, horario, ordem, id`,
         [usuarioId, inicio, fim],
       );
-      return tarefas.map(apresentarTarefa);
+      return tarefas.map(apresentarTarefaEditavel);
     },
     async buscar(usuarioId, id, bloquear = false) {
       const [[tarefa]] = await banco.execute(`SELECT ${colunas} FROM tarefas WHERE usuario_id = ? AND id = ?${bloquear ? ' FOR UPDATE' : ''}`, [usuarioId, id]);
-      return tarefa ? apresentarTarefa(tarefa) : null;
+      return tarefa ? apresentarTarefaEditavel(tarefa) : null;
     },
     async criar(usuarioId, dados) {
       const [resultado] = await banco.execute(
@@ -94,6 +102,13 @@ export function criarRepositorioTarefas(banco) {
       const [[limites]] = await banco.execute('SELECT MIN(t.data_prevista) AS inicio, MAX(t.data_prevista) AS fim FROM tarefas t JOIN ocorrencias_series o ON o.tarefa_id = t.id WHERE t.usuario_id = ? AND o.serie_id = ?', [usuarioId, serieId]);
       const [ocorrencias] = await banco.execute('SELECT t.id, t.titulo, t.data_prevista, t.horario, t.horario_final, t.situacao FROM tarefas t JOIN ocorrencias_series o ON o.tarefa_id = t.id WHERE t.usuario_id = ? AND o.serie_id = ? AND t.data_prevista BETWEEN ? AND ? ORDER BY t.data_prevista, t.horario, t.id', [usuarioId, serieId, inicio, fim]);
       return { limites, ocorrencias: ocorrencias.map(apresentarTarefa) };
+    },
+    async versoesProximas(usuarioId, serieId, inicio, hoje, bloquear = false) {
+      const [tarefas] = await banco.execute(
+        "SELECT t.id, t.titulo, t.observacao, t.area, t.ambiente, t.data_prevista, t.horario, t.horario_final, t.prioridade, t.situacao FROM tarefas t JOIN ocorrencias_series o ON o.tarefa_id = t.id WHERE t.usuario_id = ? AND o.serie_id = ? AND t.data_prevista >= ? AND (t.situacao = 'pendente' OR (t.situacao = 'pulada' AND t.data_prevista > ?)) ORDER BY t.id" + (bloquear ? ' FOR UPDATE' : ''),
+        [usuarioId, serieId, inicio, hoje],
+      );
+      return tarefas.map(versaoTarefa);
     },
     async salvarConfiguracao(usuarioId, serieId, regra) {
       await banco.execute('UPDATE configuracoes_series SET tipo = ?, dias = ?, ate = ?, inicio = COALESCE(?, inicio) WHERE usuario_id = ? AND serie_id = ?', [regra.tipo, JSON.stringify(regra.dias ?? null), regra.ate, regra.inicio ?? null, usuarioId, serieId]);

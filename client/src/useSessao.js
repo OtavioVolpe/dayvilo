@@ -30,8 +30,10 @@ export function useSessao() {
       definirAviso('Sua sessão terminou. Entre novamente para continuar.');
     };
     const sincronizar = () => { definirSessao(undefined); atualizar(); };
+    const voltarAoAplicativo = () => { if (document.visibilityState === 'visible') atualizar(); };
     window.addEventListener('dayvilo:sessao-expirada', expirar);
-    window.addEventListener('focus', atualizar);
+    window.addEventListener('focus', voltarAoAplicativo);
+    document.addEventListener('visibilitychange', voltarAoAplicativo);
     if ('BroadcastChannel' in window) {
       canal.current = new BroadcastChannel('dayvilo-conta');
       canal.current.onmessage = sincronizar;
@@ -39,7 +41,8 @@ export function useSessao() {
     return () => {
       versao.current++;
       window.removeEventListener('dayvilo:sessao-expirada', expirar);
-      window.removeEventListener('focus', atualizar);
+      window.removeEventListener('focus', voltarAoAplicativo);
+      document.removeEventListener('visibilitychange', voltarAoAplicativo);
       canal.current?.close();
     };
   }, [atualizar]);

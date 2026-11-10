@@ -121,6 +121,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
       try {
         const configuracao = await solicitar('/tarefas/' + tarefa.id + '/serie');
         definirConfiguracaoSerie(configuracao); definirFimSerie(configuracao.ate);
+        tarefa = configuracao.tarefa;
       } catch (falha) { definirAviso(''); definirErro(falha.message); return; }
       finally { definirAtualizando(ids => ids.filter(id => id !== tarefa.id)); }
     }
@@ -157,6 +158,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
       const dadosTarefa = { titulo: campos.get('titulo'), horario: campos.get('horario') || null, horario_final: campos.get('horario_final') || null,
         observacao: campos.get('observacao'), prioridade: campos.has('prioridade'), data_prevista: campos.get('data_prevista'),
         ...((editando?.area === 'casa' || (!editando && casa)) ? { area: 'casa', ambiente: campos.get('ambiente') } : {}) };
+      if (editando) dadosTarefa.versao = modoSerie ? configuracaoSerie.versao : editando.versao;
       if (modoSerie && editando) {
         const { data_prevista, ...dadosSerie } = dadosTarefa;
         if (fimSerie !== configuracaoSerie.ate) {

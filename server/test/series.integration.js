@@ -35,7 +35,14 @@ test('séries preservam passado e concluídas, atualizam puladas futuras e isola
     assert.equal((await chamar('/tarefas/'+tarefas[0].id+'/serie/ocorrencias?mes=2026-13')).status,400);
     assert.equal((await chamar('/tarefas/'+tarefas[0].id+'/serie/ocorrencias?mes=2000-01')).dados.ocorrencias.length,0);
     const [[antes]]=await banco.execute('SELECT concluida_em FROM tarefas WHERE id=?',[concluidaId]);
-    const alterada=await chamar('/tarefas/'+tarefas[0].id+'/serie','PUT',{titulo:'Novo',horario:'07:00',prioridade:true});
+    const rotaSerie = '/tarefas/' + tarefas[0].id + '/serie';
+    const anterior = (await chamar(rotaSerie)).dados;
+    await repo.definirObservacao(u.insertId, tarefas[4].id, 'Salva em outro dispositivo');
+    const mudanca = { titulo: 'Novo', horario: '07:00', prioridade: true };
+    assert.equal((await chamar(rotaSerie, 'PUT', { ...mudanca, versao: anterior.versao })).status, 409);
+    assert.equal((await repo.buscar(u.insertId, tarefas[4].id)).observacao, 'Salva em outro dispositivo');
+    const { versao } = (await chamar(rotaSerie)).dados;
+    const alterada = await chamar(rotaSerie, 'PUT', { ...mudanca, versao });
     assert.equal(alterada.status,200);assert.equal(alterada.dados.inicio,hoje);assert.equal(alterada.dados.quantidade,4);
     tarefas=await repo.listarPeriodo(u.insertId,dia(-1),dia(4));
     assert.deepEqual(tarefas.map(t=>t.titulo),['Original','Novo','Original','Novo','Novo','Novo']);

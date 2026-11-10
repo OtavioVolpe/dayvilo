@@ -29,7 +29,8 @@ test('regras: puladas exigem restauração, futuras acompanham edição e encerr
    for(const [sufixo,method,body] of [['','PUT',{titulo:'Bloqueada'}],['/agendamento','PATCH',{data_prevista:hoje}],['/serie','PUT',{titulo:'Bloqueada'}],['/serie/encerramento','PATCH',{}]])assert.equal((await chamar(id(n),sufixo,method,body)).status,409);
   }
   for(const [sufixo,body] of [['/conclusao',{concluida:true}],['/conclusao',{concluida:false}],['/situacao',{situacao:'concluida'}]])assert.equal((await chamar(id(2),sufixo,'PATCH',body)).status,409);
-  const editada=await chamar(id(-1),'/serie','PUT',{titulo:'Acordar',horario:'07:30'});
+  const { versao } = (await chamar(id(-1), '/serie', 'GET')).dados;
+  const editada=await chamar(id(-1),'/serie','PUT',{titulo:'Acordar',horario:'07:30',versao});
   assert.equal(editada.status,200);assert.equal(editada.dados.inicio,hoje);assert.equal(editada.dados.quantidade,4);
   for(const n of [-2,-1,0,3])assert.equal((await repo.buscar(u.insertId,id(n))).horario,'07:00');
   for(const n of [1,2,4,5])assert.equal((await repo.buscar(u.insertId,id(n))).horario,'07:30');

@@ -23,9 +23,10 @@ test('Casa compartilha tarefas com Rotina, preserva ambiente e isola contas', as
     assert.equal((await repo.buscar(usuario.id, primeiro.id)).situacao, 'concluida');
     await assert.rejects(servico.editar(usuario, { titulo: 'Não editar' }, primeiro.id), { status: 409 });
     const fevereiro = (await repo.listar(usuario.id, '2030-02-28'))[0];
-    await servico.editar(usuario, { titulo: 'Limpar janelas' }, fevereiro.id);
+    await servico.editar(usuario, { titulo: 'Limpar janelas', versao: fevereiro.versao }, fevereiro.id);
     assert.equal((await repo.buscar(usuario.id, fevereiro.id)).ambiente, 'Sala');
-    await servico.editarSerie(usuario, { titulo: 'Limpar janelas', area: 'casa', ambiente: 'Quarto', ate: '2030-04-30' }, fevereiro.id);
+    const { versao } = await servico.consultarSerie(usuario, {}, fevereiro.id);
+    await servico.editarSerie(usuario, { titulo: 'Limpar janelas', area: 'casa', ambiente: 'Quarto', ate: '2030-04-30', versao }, fevereiro.id);
     const lista = await repo.listarPeriodo(usuario.id, '2030-01-01', '2030-04-30');
     assert.deepEqual(lista.map(t => t.data_prevista), ['2030-01-31','2030-02-28','2030-03-31','2030-04-30']);
     assert.deepEqual(lista.map(t => t.ambiente), ['Sala','Quarto','Quarto','Quarto']);

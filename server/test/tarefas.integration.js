@@ -56,7 +56,7 @@ test('MySQL: criar, listar, concluir e isolar tarefas por usuário', async () =>
     assert.deepEqual(ocorrencias.map(tarefa => tarefa.data_prevista), ['2024-03-04','2024-03-06','2024-03-08']);
     assert.ok(ocorrencias.every(tarefa => tarefa.prioridade && tarefa.horario === '08:00'));
     await chamar('/tarefas/' + ocorrencias[0].id + '/conclusao', 'PATCH', { concluida: true });
-    await chamar('/tarefas/' + ocorrencias[1].id, 'PUT', { titulo: 'Só quarta' });
+    await chamar('/tarefas/' + ocorrencias[1].id, 'PUT', { titulo: 'Só quarta', versao: ocorrencias[1].versao });
     const verificadas = (await chamar('/tarefas/semana?data=2024-03-04')).dados.tarefas;
     assert.equal(verificadas[0].situacao, 'concluida');
     assert.equal(verificadas[1].titulo, 'Só quarta');
@@ -66,7 +66,7 @@ test('MySQL: criar, listar, concluir e isolar tarefas por usuário', async () =>
     assert.equal((await chamar('/tarefas/semana?data=2024-03-04')).dados.tarefas.length, 2);
     assert.equal((await chamar('/tarefas/repetidas', 'POST', { tarefa: { titulo: 'Inválida', data_prevista: '2024-03-04' }, repeticao: { tipo: 'semanal', ate: '2024-03-10', dias: [] } })).status, 400);
     assert.equal((await chamar('/tarefas/semana?data=2024-03-04')).dados.tarefas.length, 2);
-    const alteracao = { titulo: 'Leitura revisada', horario: '18:15', prioridade: false, observacao: 'Capítulo 2' };
+    const alteracao = { titulo: 'Leitura revisada', horario: '18:15', prioridade: false, observacao: 'Capítulo 2', versao: criada.dados.tarefa.versao };
     await chamar('/tarefas/' + id + '/conclusao', 'PATCH', { concluida: true });
     assert.equal((await chamar('/tarefas/' + id, 'PUT', alteracao)).status, 409);
     await chamar('/tarefas/' + id + '/conclusao', 'PATCH', { concluida: false });
@@ -76,11 +76,17 @@ test('MySQL: criar, listar, concluir e isolar tarefas por usuário', async () =>
     assert.equal(editada.dados.tarefa.data_prevista, '2026-09-24');
     assert.equal(editada.dados.tarefa.horario, '18:15');
     assert.equal(editada.dados.tarefa.prioridade, false);
+    assert.notEqual(editada.dados.tarefa.versao, alteracao.versao);
+    assert.equal((await chamar('/tarefas/' + id, 'PUT', { ...alteracao, titulo: 'Título antigo', horario: '10:00', observacao: '' })).status, 409);
+    assert.equal((await chamar('/tarefas/' + id, 'PUT', { titulo: 'Cliente sem versão' })).status, 409);
+    const atual = (await chamar('/tarefas?data=2026-09-24')).dados.tarefas[0];
+    assert.equal(atual.observacao, 'Capítulo 2');
+    assert.equal(atual.horario, '18:15');
     assert.equal((await chamar('/tarefas?data=2026-09-24')).dados.tarefas[0].titulo, 'Leitura revisada');
     assert.equal((await chamar('/tarefas/' + id, 'PUT', { titulo: ' ' })).status, 400);
     assert.equal((await chamar('/tarefas/' + alheia.insertId, 'PUT', alteracao)).status, 404);
     assert.equal((await chamar('/tarefas/' + alheia.insertId, 'DELETE')).status, 404);
-    const reagendada = await chamar('/tarefas/' + id, 'PUT', { ...alteracao, data_prevista: '2026-09-25' });
+    const reagendada = await chamar('/tarefas/' + id, 'PUT', { ...alteracao, versao: atual.versao, data_prevista: '2026-09-25' });
     assert.equal(reagendada.status, 200);
     assert.equal(reagendada.dados.tarefa.situacao, 'pendente');
     assert.equal((await chamar('/tarefas?data=2026-09-24')).dados.tarefas.length, 0);
@@ -88,7 +94,7 @@ test('MySQL: criar, listar, concluir e isolar tarefas por usuário', async () =>
     assert.equal((await chamar('/tarefas/' + id, 'PUT', { ...alteracao, data_prevista: '2026-02-30' })).status, 400);
     assert.equal((await chamar('/tarefas/' + id, 'PUT', { ...alteracao, data_prevista: null })).status, 400);
     assert.equal((await chamar('/tarefas?data=2026-09-25')).dados.tarefas[0].data_prevista, '2026-09-25');
-    await chamar('/tarefas/' + id, 'PUT', { ...alteracao, data_prevista: '2026-10-01' });
+    await chamar('/tarefas/' + id, 'PUT', { ...alteracao, versao: reagendada.dados.tarefa.versao, data_prevista: '2026-10-01' });
     assert.equal((await chamar('/tarefas/semana?data=2026-09-24')).dados.tarefas.some(tarefa => tarefa.id === id), false);
     assert.equal((await chamar('/tarefas/semana?data=2026-10-01')).dados.tarefas.find(tarefa => tarefa.id === id).situacao, 'pendente');
     assert.equal((await chamar('/tarefas/' + id, 'DELETE')).status, 200);
