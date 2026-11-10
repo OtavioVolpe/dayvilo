@@ -10,5 +10,8 @@
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.js",
     "test": "node --test --test-isolation=none test/*.test.js"
   },
-  "dependencies": { "express": "5.2.1", "mysql2": "3.24.4" }
+  "dependencies": {
+    "express": "5.3.0",
+    "mysql2": "3.24.4"
+  }
 }

@@ -3,8 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "workspaces": ["client", "server"],
-  "engines": { "node": ">=24.0.0" },
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "dev": "concurrently -k -n api,web \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w client",
@@ -20,6 +25,7 @@
     "test:integracao": "node --env-file-if-exists=server/.env --test --test-isolation=none server/test/*.integration.js",
     "test": "node --test --test-isolation=none server/test/*.test.js"
   },
-  "devDependencies": { "concurrently": "10.0.5" }
+  "devDependencies": {
+    "concurrently": "10.0.7"
+  }
 }
-
