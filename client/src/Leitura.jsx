@@ -32,13 +32,20 @@ function Janela({ fechar, children, essencial }) {
   </dialog>;
 }
 
-export default function Leitura({ inicial, aoConsumirInicial, aoAlterarSujo }) {
+export default function Leitura({ revalidacao = 0, inicial, aoConsumirInicial, aoAlterarSujo }) {
   const [dados, setDados] = useState(null), [aba, setAba] = useState('todos');
   const [id, setId] = useState(inicial || null), [detalhe, setDetalhe] = useState(null);
   const [form, setForm] = useState(null), [sujo, setSujo] = useState(false);
   const [erro, setErro] = useState(''), [aviso, setAviso] = useState(''), [ocupado, setOcupado] = useState(false);
   const [revisao, setRevisao] = useState(0), [confirmacao, setConfirmacao] = useState(null);
   const bloqueio = useRef(false), inicialRef = useRef(inicial);
+  const ultimaRevalidacao = useRef(revalidacao);
+  useEffect(() => {
+    // Recarrega somente após conferir a conta e sem substituir um formulário aberto.
+    if (ultimaRevalidacao.current === revalidacao || form || ocupado || confirmacao) return;
+    ultimaRevalidacao.current = revalidacao;
+    setRevisao(n => n + 1);
+  }, [revalidacao, form, ocupado, confirmacao]);
   useEffect(() => {
     const abortar = new AbortController();
     solicitar('/leitura', { signal: abortar.signal }).then(r => { if (!abortar.signal.aborted) setDados(r); }).catch(e => { if (!abortar.signal.aborted) setErro(e.message); });

@@ -21,7 +21,7 @@ import CasaVazia from './CasaVazia.jsx';
 import { deslocarData, formatarData } from './datas.js';
 import { Check, Plus, Star, Clock, ListTodo, Pencil, Trash2, SkipForward, CircleCheck, ChevronRight, RotateCcw, CalendarArrowUp, RefreshCw, House, Dumbbell, ArrowUpRight, Utensils, NotebookText, BookOpen, Wallet } from 'lucide-react';
 
-export default function Planejamento({ semanal = false, historico = false, casa = false, aoAbrirTreino, aoAbrirRefeicao, aoAbrirLivro, aoAbrirFinanceiro, aoAbrirMetas }) {
+export default function Planejamento({ aoAlterarSujo, semanal = false, historico = false, casa = false, aoAbrirTreino, aoAbrirRefeicao, aoAbrirLivro, aoAbrirFinanceiro, aoAbrirMetas }) {
   const [observacaoAberta, definirObservacaoAberta] = useState(null);
   const [repeticaoAberta, definirRepeticaoAberta] = useState(null);
   const [diaSelecao, definirDiaSelecao] = useState(null);
@@ -57,6 +57,23 @@ export default function Planejamento({ semanal = false, historico = false, casa 
   const [erro, definirErro] = useState('');
   const [aberto, definirAberto] = useState(false);
   const [salvando, definirSalvando] = useState(false);
+  const [sujo, definirSujo] = useState(false);
+  const [confirmarDescarte, definirConfirmarDescarte] = useState(false);
+  useEffect(() => { aoAlterarSujo?.(sujo || salvando); }, [sujo, salvando, aoAlterarSujo]);
+  useEffect(() => () => aoAlterarSujo?.(false), [aoAlterarSujo]);
+  useEffect(() => {
+    if (!sujo && !salvando) return;
+    const proteger = e => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', proteger);
+    return () => window.removeEventListener('beforeunload', proteger);
+  }, [sujo, salvando]);
+  function fecharFormulario() {
+    definirSujo(false); definirAberto(false); definirEditando(null);
+  }
+  function cancelarFormulario() {
+    if (salvando) return;
+    if (sujo) definirConfirmarDescarte(true); else fecharFormulario();
+  }
   const [atualizando, definirAtualizando] = useState([]);
   const [ordem, definirOrdem] = useState('manual');
   const [diaCasa, definirDiaCasa] = useState('');
@@ -113,6 +130,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
   }, [tarefaMovida]);
 
   async function abrirFormulario(tarefa = null, dia = data, serie = false, tituloInicial = '', sugestaoCasa = null) {
+    if (aberto || salvando) return;
     if (tarefa?.financeiro_id) { aoAbrirFinanceiro?.(tarefa.financeiro_id, 'editar'); return; }
     if (tarefa?.refeicao_id) { aoAbrirRefeicao?.(tarefa); return; }
     definirConfiguracaoSerie(null); definirFimSerie(''); definirTipoSerieAntiga('');
@@ -169,7 +187,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
           method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dadosSerie),
         });
         definirAviso(resultado.quantidade + ' ocorrência(s) atualizadas; ' + (resultado.criadas || 0) + ' criadas e ' + (resultado.removidas || 0) + ' removidas. Demais tarefas mantidas.');
-        definirAberto(false); definirEditando(null); definirModoSerie(false);
+        fecharFormulario(); definirModoSerie(false);
         definirCarregando(true); definirTentativa(valor => valor + 1);
         return;
       }
@@ -197,7 +215,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
         definirCarregando(true); definirTentativa(valor => valor + 1);
       }
       definirCarregando(true); definirTentativa(valor => valor + 1);
-      formulario.reset(); definirAberto(false); definirEditando(null); definirRepeticao('nenhuma');
+      formulario.reset(); fecharFormulario(); definirRepeticao('nenhuma');
     } catch (falha) { definirAviso(''); definirErro(falha.message); }
     finally { definirSalvando(false); }
   }
@@ -370,7 +388,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
       definirTarefas(lista => lista.map(t => t.id === tarefa.id ? tarefa : t));
       definirAtrasadas(lista => lista.map(t => t.id === tarefa.id ? tarefa : t));
     }} />}
-    <div className="lista-cabecalho"><div><h1>{casa ? "Minha casa" : historico ? "Meu histórico" : semanal ? "Minha semana" : "Minha rotina"}</h1>{!historico && data && <p className="data-planejamento">{casa ? 'Planeje aqui. Acompanhe também na Rotina.' : semanal ? 'Sua rotina, dia a dia.' : formatarData(data, { weekday: 'long', day: 'numeric', month: 'long' })}</p>}</div>{!historico && <button className="botao-principal" disabled={diaSelecao !== null || salvando || carregando || !data} onClick={() => abrirFormulario(null, casa ? diaCasa : data)} aria-expanded={aberto}><Plus size={17} aria-hidden="true" />Nova tarefa</button>}</div>
+    <div className="lista-cabecalho"><div><h1>{casa ? "Minha casa" : historico ? "Meu histórico" : semanal ? "Minha semana" : "Minha rotina"}</h1>{!historico && data && <p className="data-planejamento">{casa ? 'Planeje aqui. Acompanhe também na Rotina.' : semanal ? 'Sua rotina, dia a dia.' : formatarData(data, { weekday: 'long', day: 'numeric', month: 'long' })}</p>}</div>{!historico && <button className="botao-principal" disabled={diaSelecao !== null || aberto || salvando || carregando || !data} onClick={() => abrirFormulario(null, casa ? diaCasa : data)} aria-expanded={aberto}><Plus size={17} aria-hidden="true" />Nova tarefa</button>}</div>
     {historico && periodoConsultado && <FiltroPeriodo hoje={hoje} periodo={periodoConsultado} bloqueado={bloqueado} aoConsultar={consultarPeriodo} />}
     {!historico && <div className="controles-planejamento">
       <NavegacaoDatas data={data} hoje={hoje} dias={dias} semanal={semanal} bloqueado={bloqueado} aoEscolher={escolherData} aoVoltar={() => escolherData('')} />
@@ -381,7 +399,8 @@ export default function Planejamento({ semanal = false, historico = false, casa 
     </div>}
     {aviso && <p className="aviso-tarefa" role="status">{aviso}</p>}
     {erro && <div className="mensagem-erro" role="alert">{erro} <button type="button" onClick={() => definirTentativa(valor => valor + 1)}>Recarregar lista</button></div>}
-    <form key={(editando?.id ?? `nova-${novaData || data}`) + String(modoSerie) + '-' + rascunhoInicial.abertura} ref={formularioRef} onSubmit={adicionar} className="formulario-tarefa" hidden={!aberto}>
+    {confirmarDescarte && <ConfirmacaoTreino mensagem="Descartar alterações não salvas?" rotulo="Descartar" cancelar={() => definirConfirmarDescarte(false)} confirmar={() => { definirConfirmarDescarte(false); if (!salvando) fecharFormulario(); }} />}
+    <form key={(editando?.id ?? `nova-${novaData || data}`) + String(modoSerie) + '-' + rascunhoInicial.abertura} ref={formularioRef} onSubmit={adicionar} onChange={() => definirSujo(true)} className="formulario-tarefa" hidden={!aberto}>
       <fieldset disabled={diaSelecao !== null || salvando || carregando}><legend>{modoSerie ? "Editar próximas ocorrências" : editando ? "Editar tarefa" : "Nova tarefa"}</legend>
         {!editando && rascunhoInicial.titulo && <p className="rotina-sugestao-nota">{casa ? 'Preenchemos uma sugestão de título e ambiente.' : 'Preenchemos só uma sugestão de título.'} Revise a data e os detalhes; a tarefa só será criada quando você salvar.</p>}
         <label>O que você quer fazer?<input defaultValue={editando?.titulo ?? rascunhoInicial.titulo} name="titulo" required maxLength={200} placeholder={casa ? "Ex.: limpar o banheiro" : "Ex.: ler algumas páginas"} /></label>
@@ -408,7 +427,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
           <p>Atualiza pendentes e puladas futuras a partir de {formatarData(editando.data_prevista > hoje ? editando.data_prevista : hoje, { day: '2-digit', month: '2-digit', year: 'numeric' })}, incluindo edições individuais. Concluídas, passado e puladas de hoje ficam mantidos.</p><label className="campo-prioridade"><input type="checkbox" required />Confirmo as alterações e exclusões indicadas.</label></div>}
         {editando && !modoSerie && <p className="explicacao-historico">Altera só esta tarefa.</p>}
         <label>Observação (opcional)<textarea defaultValue={editando?.observacao ?? ""} name="observacao" maxLength={4000} rows={2} /></label>
-        <div className="acoes-formulario"><button type="button" className="botao-secundario" onClick={() => { definirAberto(false); definirEditando(null); }}>Cancelar</button><button className="botao-principal" type="submit">{salvando ? 'Salvando…' : 'Salvar tarefa'}</button></div>
+        <div className="acoes-formulario"><button type="button" className="botao-secundario" onClick={cancelarFormulario}>Cancelar</button><button className="botao-principal" type="submit">{salvando ? 'Salvando…' : 'Salvar tarefa'}</button></div>
       </fieldset>
     </form>
     {carregando ? <p role="status" className="estado-lista">Carregando sua rotina…</p> : data && consultaValida && <>
@@ -426,7 +445,7 @@ export default function Planejamento({ semanal = false, historico = false, casa 
         const itens = tarefas.filter(tarefa => tarefa.data_prevista === dia).sort((a, b) => Number(a.situacao === 'concluida') - Number(b.situacao === 'concluida') || compararTarefas(ordem)(a, b));
         return <section className={`dia-semana ${dia === hoje ? 'dia-atual' : ''} ${casa && dia !== diaCasa ? 'dia-casa-oculto' : ''}`} key={dia} aria-label={formatarData(dia, { weekday: 'long', day: 'numeric', month: 'long' })}>
           <header><h3>{formatarData(dia, { weekday: 'short' })} <span>{formatarData(dia)}</span>{dia === hoje && <small>Hoje</small>}</h3>
-          <div className="controles-dia">{!casa && diaSelecao !== dia && barraSelecao(dia)}<button className="botao-secundario" disabled={diaSelecao !== null || salvando || atualizando.length > 0} aria-label={'Adicionar tarefa em ' + formatarData(dia)} onClick={() => abrirFormulario(null, dia)}><Plus size={16} aria-hidden="true" />Tarefa</button></div></header>
+          <div className="controles-dia">{!casa && diaSelecao !== dia && barraSelecao(dia)}<button className="botao-secundario" disabled={diaSelecao !== null || aberto || salvando || atualizando.length > 0} aria-label={'Adicionar tarefa em ' + formatarData(dia)} onClick={() => abrirFormulario(null, dia)}><Plus size={16} aria-hidden="true" />Tarefa</button></div></header>
           {diaSelecao === dia && barraSelecao(dia)}
           <div className="resumo-controles-dia"><p className="resumo-dia">{itens.filter(tarefa => tarefa.situacao === 'concluida').length} de {itens.filter(tarefa => tarefa.situacao !== "pulada").length} concluídas · {itens.filter(tarefa => tarefa.situacao === "pulada").length} puladas</p>{casa && diaSelecao !== dia && barraSelecao(dia)}</div>
           {itens.some(tarefa => tarefa.situacao === 'pendente') ? <ul className="lista-tarefas">{itens.filter(tarefa => tarefa.situacao === 'pendente').map(tarefa => linha(tarefa))}</ul> : itens.length === 0 && <p className="dia-vazio">Sem tarefas neste dia.</p>}

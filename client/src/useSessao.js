@@ -7,6 +7,7 @@ export function useSessao() {
   const [erro, definirErro] = useState('');
   const [aviso, definirAviso] = useState('');
   const [saindo, definirSaindo] = useState(false);
+  const [revalidacao, definirRevalidacao] = useState(0);
   const canal = useRef(null);
   const versao = useRef(0);
 
@@ -18,6 +19,7 @@ export function useSessao() {
       if (consulta !== versao.current) return;
       definirCadastroAberto(dados.cadastro_aberto === true);
       definirCsrf(dados.csrf); definirSessao(dados.usuario);
+      definirRevalidacao(n => n + 1);
     } catch (falha) {
       if (consulta === versao.current) definirErro(falha.message);
     }
@@ -63,5 +65,5 @@ export function useSessao() {
   }
   function atualizarNome(nome) { definirSessao(atual => ({ ...atual, nome })); canal.current?.postMessage('atualizar'); }
   function encerrar(mensagem) { versao.current++; definirCsrf(''); definirSessao(null); definirAviso(mensagem); definirErro(''); canal.current?.postMessage('atualizar'); }
-  return { sessao, cadastroAberto, erro, aviso, saindo, entrar, sair, atualizar, atualizarNome, encerrar };
+  return { sessao, revalidacao, cadastroAberto, erro, aviso, saindo, entrar, sair, atualizar, atualizarNome, encerrar };
 }

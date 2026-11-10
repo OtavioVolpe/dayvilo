@@ -1,3 +1,4 @@
+import { obterEscritasPendentes } from './api.js';
 import AtualizacaoAplicativo from './AtualizacaoAplicativo.jsx';
 import ConfirmacaoTreino from './ConfirmacaoTreino.jsx';
 import MenuMobile from './MenuMobile.jsx';
@@ -95,7 +96,7 @@ const telasPrivacidade = {
   Conta: 'conta', BoasVindas: 'boas_vindas',
 };
 
-function EspacoDaConta({ sessao, erro, aviso, saindo, sair, atualizar, atualizarNome, encerrar, instalacao, contaNova, aoConcluirOrientacao }) {
+function EspacoDaConta({ sessao, revalidacao, erro, aviso, saindo, sair, atualizar, atualizarNome, encerrar, instalacao, contaNova, aoConcluirOrientacao }) {
   const [{ view, inicial }, setNavegacao] = useState(() => ({
     view: contaNova || temOrientacaoPendente(sessao.id) ? 'BoasVindas' : 'Hoje',
     inicial: null,
@@ -104,6 +105,7 @@ function EspacoDaConta({ sessao, erro, aviso, saindo, sair, atualizar, atualizar
   const [confirmacao, setConfirmacao] = useState(null);
 
   function comConfirmacao(acao, mensagem) {
+    if (sujo && obterEscritasPendentes()) return;
     if (sujo) setConfirmacao({ acao, mensagem });
     else acao();
   }
@@ -124,7 +126,7 @@ function EspacoDaConta({ sessao, erro, aviso, saindo, sair, atualizar, atualizar
   return <>
     {confirmacao && <ConfirmacaoTreino mensagem={confirmacao.mensagem} cancelar={() => setConfirmacao(null)} confirmar={() => {
       setConfirmacao(null);
-      return confirmacao.acao();
+      if (!obterEscritasPendentes()) return confirmacao.acao();
     }} />}
     <Cabecalho>
       <div className="conta-atual">
@@ -161,14 +163,14 @@ function EspacoDaConta({ sessao, erro, aviso, saindo, sair, atualizar, atualizar
           : <>
             <AvisoConfirmacao sessao={sessao} atualizar={atualizar} aviso={aviso} />
             {['Hoje', 'Semana', 'Histórico'].includes(view) && <nav className="routine-tabs" aria-label="Visualizações da rotina">
-              {['Hoje', 'Semana', 'Histórico'].map(item => <button key={item} aria-pressed={view === item} onClick={() => setNavegacao({ view: item, inicial: null })}>{item}</button>)}
+              {['Hoje', 'Semana', 'Histórico'].map(item => <button key={item} aria-pressed={view === item} onClick={() => navegar(item)}>{item}</button>)}
             </nav>}
             {view === 'Metas' ? <Metas aoAlterarSujo={setSujo} />
-              : view === 'Leitura' ? <Leitura inicial={inicial} aoConsumirInicial={consumirInicial} aoAlterarSujo={setSujo} />
+              : view === 'Leitura' ? <Leitura revalidacao={revalidacao} inicial={inicial} aoConsumirInicial={consumirInicial} aoAlterarSujo={setSujo} />
               : view === 'Alimentação' ? <Alimentacao inicial={inicial} aoConsumirInicial={consumirInicial} aoAlterarSujo={setSujo} />
               : view === 'Financeiro' ? <Financeiro inicial={inicial} aoConsumirInicial={consumirInicial} aoAlterarSujo={setSujo} />
               : view === 'Treino' ? <Treino sessaoInicial={inicial} aoConsumirSessao={consumirInicial} aoAlterarSujo={setSujo} />
-              : <Planejamento key={view} casa={view === 'Casa'} semanal={view === 'Semana' || view === 'Casa'} historico={view === 'Histórico'}
+              : <Planejamento aoAlterarSujo={setSujo} key={view} casa={view === 'Casa'} semanal={view === 'Semana' || view === 'Casa'} historico={view === 'Histórico'}
                 aoAbrirMetas={() => navegar('Metas')} aoAbrirFinanceiro={(id, acao) => navegar('Financeiro', { id, acao })}
                 aoAbrirLivro={id => navegar('Leitura', id)} aoAbrirRefeicao={r => navegar('Alimentação', { id: r.refeicao_id, data: r.data_prevista })}
                 aoAbrirTreino={id => navegar('Treino', id)} />}
